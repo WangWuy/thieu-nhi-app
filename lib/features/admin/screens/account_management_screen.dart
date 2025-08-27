@@ -1,0 +1,757 @@
+// lib/features/admin/screens/account_management_screen.dart - COMPACT VERSION
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:thieu_nhi_app/core/models/user_model.dart';
+import 'package:thieu_nhi_app/core/services/permission_service.dart';
+import 'package:thieu_nhi_app/features/auth/bloc/auth_bloc.dart';
+import 'package:thieu_nhi_app/features/auth/bloc/auth_state.dart';
+import 'package:thieu_nhi_app/features/admin/bloc/admin_bloc.dart';
+import 'package:thieu_nhi_app/features/admin/bloc/admin_event.dart';
+import 'package:thieu_nhi_app/features/admin/bloc/admin_state.dart';
+import 'package:thieu_nhi_app/features/admin/widgets/user_details_dialog.dart';
+import 'package:thieu_nhi_app/theme/app_colors.dart';
+
+class AccountManagementScreen extends StatefulWidget {
+  const AccountManagementScreen({super.key});
+
+  @override
+  State<AccountManagementScreen> createState() => _AccountManagementScreenState();
+}
+
+class _AccountManagementScreenState extends State<AccountManagementScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  final TextEditingController _searchController = TextEditingController();
+  
+  String _searchQuery = '';
+  String? _selectedDepartmentFilter;
+  bool _showInactiveOnly = false;
+
+  // Department mapping name -> ID (từ backend schema)
+  final Map<String, int> _departmentMapping = {
+    'Chiên': 1,
+    'Ấu': 2, 
+    'Thiếu': 3,
+    'Nghĩa': 4,
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 4, vsync: this);
+    _searchController.addListener(_onSearchChanged);
+    
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadUsers();
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _loadUsers() {
+    final adminBloc = context.read<AdminBloc>();
+    if (adminBloc.state is AdminInitial || adminBloc.state is AdminError) {
+      adminBloc.add(const LoadAllUsers());
+    }
+  }
+
+  void _onSearchChanged() {
+    final query = _searchController.text.trim();
+    if (query != _searchQuery) {
+      setState(() => _searchQuery = query);
+      
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (query == _searchController.text.trim()) {
+          _applyFilters();
+        }
+      });
+    }
+  }
+
+  // Apply all active filters
+  void _applyFilters() {
+    final adminBloc = context.read<AdminBloc>();
+    
+    if (_searchQuery.isNotEmpty) {
+      // If searching, use search API
+      adminBloc.add(SearchUsers(_searchQuery));
+    } else {
+      // Load users with current filters
+      adminBloc.add(LoadAllUsers(
+        departmentId: _selectedDepartmentFilter != null 
+            ? _departmentMapping[_selectedDepartmentFilter!] 
+            : null,
+      ));
+    }
+  }
+
+  // Clear all filters and reload
+  void _clearAllFilters() {
+    setState(() {
+      _searchQuery = '';
+      _selectedDepartmentFilter = null;
+      _showInactiveOnly = false;
+    });
+    context.read<AdminBloc>().add(const LoadAllUsers());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<AuthBloc, AuthState>(
+      builder: (context, authState) {
+        if (authState is! AuthAuthenticated) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        final currentUser = authState.user;
+        final permissionService = PermissionService();
+
+        if (!permissionService.canCreateUser(currentUser)) {
+          return _buildAccessDenied();
+        }
+
+        return Scaffold(
+          backgroundColor: Colors.grey[50],
+          body: BlocConsumer<AdminBloc, AdminState>(
+            listener: _handleBlocStateChange,
+            builder: (context, state) {
+              return RefreshIndicator(
+                onRefresh: () async {
+                  context.read<AdminBloc>().add(const RefreshUsers());
+                },
+                child: CustomScrollView(
+                  slivers: [
+                    _buildCompactAppBar(),
+                    _buildCompactFilter(),
+                    _buildTabBar(),
+                    _buildUserList(state, currentUser),
+                  ],
+                ),
+              );
+            },
+          ),
+          floatingActionButton: FloatingActionButton.extended(
+            onPressed: () => context.push('/admin/accounts/add'),
+            backgroundColor: AppColors.primary,
+            icon: const Icon(Icons.person_add, color: Colors.white),
+            label: const Text(
+              'Thêm TK',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // COMPACT APP BAR - No expandable space
+  Widget _buildCompactAppBar() {
+    return SliverAppBar(
+      pinned: true,
+      floating: false,
+      backgroundColor: AppColors.primary,
+      elevation: 2,
+      title: const Text(
+        'Quản lý tài khoản',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.refresh, color: Colors.white),
+          onPressed: () => context.read<AdminBloc>().add(const RefreshUsers()),
+          tooltip: 'Làm mới',
+        ),
+        PopupMenuButton<String>(
+          icon: const Icon(Icons.more_vert, color: Colors.white),
+          onSelected: _handleMenuAction,
+          itemBuilder: (context) => [
+            const PopupMenuItem(
+              value: 'export',
+              child: Row(
+                children: [Icon(Icons.download), SizedBox(width: 8), Text('Xuất Excel')],
+              ),
+            ),
+            const PopupMenuItem(
+              value: 'import',
+              child: Row(
+                children: [Icon(Icons.upload), SizedBox(width: 8), Text('Nhập Excel')],
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // COMPACT FILTER - Single row, minimal padding
+  Widget _buildCompactFilter() {
+    return SliverToBoxAdapter(
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+        color: Colors.white,
+        child: Column(
+          children: [
+            // Search bar
+            SizedBox(
+              height: 40,
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'Tìm kiếm...',
+                  hintStyle: const TextStyle(fontSize: 14),
+                  prefixIcon: const Icon(Icons.search, size: 20),
+                  suffixIcon: _searchQuery.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear, size: 18),
+                          onPressed: () {
+                            _searchController.clear();
+                            _clearAllFilters();
+                          },
+                        )
+                      : null,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide: BorderSide(color: AppColors.grey300),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide: BorderSide(color: AppColors.grey300),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide: BorderSide(color: AppColors.primary),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            
+            // Filter chips in single row
+            Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: Container(
+                    height: 36,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: AppColors.grey300),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        hint: const Text('Ngành', style: TextStyle(fontSize: 13)),
+                        value: _selectedDepartmentFilter,
+                        items: [
+                          const DropdownMenuItem(value: null, child: Text('Tất cả', style: TextStyle(fontSize: 13))),
+                          ...['Chiên', 'Ấu', 'Thiếu', 'Nghĩa'].map((dept) => 
+                            DropdownMenuItem(
+                              value: dept,
+                              child: Text(dept, style: const TextStyle(fontSize: 13)),
+                            )),
+                        ],
+                        onChanged: (value) {
+                          setState(() => _selectedDepartmentFilter = value);
+                          _applyFilters();
+                        },
+                        isExpanded: true,
+                        style: const TextStyle(fontSize: 13, color: Colors.black87),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                
+                // Inactive filter chip
+                FilterChip(
+                  label: const Text('Bị khóa', style: TextStyle(fontSize: 12)),
+                  selected: _showInactiveOnly,
+                  onSelected: (value) {
+                    setState(() => _showInactiveOnly = value ?? false);
+                    _applyFilters();
+                  },
+                  selectedColor: AppColors.error.withOpacity(0.2),
+                  checkmarkColor: AppColors.error,
+                  side: BorderSide(
+                    color: _showInactiveOnly ? AppColors.error : AppColors.grey300,
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // SIMPLE TAB BAR - No counts
+  Widget _buildTabBar() {
+    return SliverPersistentHeader(
+      pinned: true,
+      delegate: _TabBarDelegate(
+        Container(
+          color: Colors.white,
+          child: TabBar(
+            controller: _tabController,
+            onTap: (_) {
+              setState(() {});
+              // Apply filters when tab changes
+              _applyFilters();
+            },
+            labelColor: AppColors.primary,
+            unselectedLabelColor: Colors.grey,
+            indicatorColor: AppColors.primary,
+            indicatorWeight: 2,
+            labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            unselectedLabelStyle: const TextStyle(fontSize: 14),
+            tabs: const [
+              Tab(text: 'Tất cả'),
+              Tab(text: 'BĐH'),
+              Tab(text: 'PDT'),
+              Tab(text: 'GLV'),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUserList(AdminState state, UserModel currentUser) {
+    if (state is AdminLoading) {
+      return const SliverFillRemaining(
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (state is AdminError) {
+      return SliverFillRemaining(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error, size: 64, color: AppColors.error),
+              const SizedBox(height: 16),
+              Text(state.message),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => context.read<AdminBloc>().add(const LoadAllUsers()),
+                child: const Text('Thử lại'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (state is! AdminLoaded) {
+      return const SliverFillRemaining(
+        child: Center(child: Text('Không có dữ liệu')),
+      );
+    }
+
+    final filteredUsers = _getFilteredUsers(state.users);
+
+    if (filteredUsers.isEmpty) {
+      return const SliverFillRemaining(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.person_off, size: 64, color: Colors.grey),
+              SizedBox(height: 16),
+              Text('Không tìm thấy tài khoản nào'),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return SliverPadding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            final user = filteredUsers[index];
+            return _buildCompactUserCard(user, currentUser);
+          },
+          childCount: filteredUsers.length,
+        ),
+      ),
+    );
+  }
+
+  // COMPACT USER CARD
+  Widget _buildCompactUserCard(UserModel user, UserModel currentUser) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        leading: CircleAvatar(
+          radius: 20,
+          backgroundColor: _getRoleColor(user.role),
+          child: Text(
+            _getUserInitials(user),
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+          ),
+        ),
+        title: Text(
+          user.displayName,
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('@${user.username}', style: const TextStyle(fontSize: 13)),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: _getRoleColor(user.role).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    user.role.displayName,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w500,
+                      color: _getRoleColor(user.role),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text('${user.department}', style: const TextStyle(fontSize: 12)),
+              ],
+            ),
+          ],
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (!user.isActive)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.red[100],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text(
+                  'Khóa',
+                  style: TextStyle(color: Colors.red, fontSize: 10),
+                ),
+              ),
+            const SizedBox(width: 8),
+            PopupMenuButton<String>(
+              onSelected: (action) => _handleUserAction(action, user),
+              itemBuilder: (context) => [
+                const PopupMenuItem(value: 'view', child: Text('Xem')),
+                const PopupMenuItem(value: 'edit', child: Text('Sửa')),
+                const PopupMenuItem(value: 'reset_password', child: Text('Reset MK')),
+                PopupMenuItem(
+                  value: user.isActive ? 'deactivate' : 'activate',
+                  child: Text(user.isActive ? 'Khóa' : 'Mở khóa'),
+                ),
+                if (currentUser.id != user.id)
+                  const PopupMenuItem(
+                    value: 'delete',
+                    child: Text('Xóa', style: TextStyle(color: Colors.red)),
+                  ),
+              ],
+            ),
+          ],
+        ),
+        onTap: () => _showUserDetailsDialog(user),
+      ),
+    );
+  }
+
+  Widget _buildAccessDenied() {
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.lock, size: 64, color: AppColors.error),
+            const SizedBox(height: 16),
+            const Text('Không có quyền truy cập'),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => context.pop(),
+              child: const Text('Quay lại'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _handleBlocStateChange(BuildContext context, AdminState state) {
+    if (state is AdminError) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(state.message),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+
+    if (state is UserOperationSuccess) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(state.message),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    }
+  }
+
+  void _handleMenuAction(String action) {
+    switch (action) {
+      case 'export':
+        // TODO: Implement export
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Chức năng xuất Excel đang phát triển')),
+        );
+        break;
+      case 'import':
+        // TODO: Implement import
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Chức năng nhập Excel đang phát triển')),
+        );
+        break;
+    }
+  }
+
+  List<UserModel> _getFilteredUsers(List<UserModel> users) {
+    var filtered = users;
+
+    // Apply department filter
+    if (_selectedDepartmentFilter != null) {
+      filtered = filtered.where((user) => user.department == _selectedDepartmentFilter).toList();
+    }
+
+    // Apply active/inactive filter
+    if (_showInactiveOnly) {
+      filtered = filtered.where((user) => !user.isActive).toList();
+    }
+
+    // Apply tab filter
+    switch (_tabController.index) {
+      case 1: // BĐH
+        filtered = filtered.where((user) => user.role == UserRole.admin).toList();
+        break;
+      case 2: // PDT
+        filtered = filtered.where((user) => user.role == UserRole.department).toList();
+        break;
+      case 3: // GLV
+        filtered = filtered.where((user) => user.role == UserRole.teacher).toList();
+        break;
+    }
+
+    return filtered;
+  }
+
+  void _handleUserAction(String action, UserModel user) {
+    switch (action) {
+      case 'edit':
+        context.push('/admin/accounts/add', extra: user);
+        break;
+      case 'view':
+        _showUserDetailsDialog(user);
+        break;
+      case 'reset_password':
+        _showResetPasswordDialog(user);
+        break;
+      case 'activate':
+      case 'deactivate':
+        _showToggleStatusDialog(user);
+        break;
+      case 'delete':
+        _showDeleteUserDialog(user);
+        break;
+    }
+  }
+
+  void _showUserDetailsDialog(UserModel user) {
+    showDialog(
+      context: context,
+      builder: (context) => UserDetailsDialog(user: user),
+    );
+  }
+
+  void _showResetPasswordDialog(UserModel user) {
+    final passwordController = TextEditingController();
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Đặt lại mật khẩu'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Đặt lại mật khẩu cho tài khoản ${user.displayName}'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: passwordController,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Mật khẩu mới',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Hủy'),
+          ),
+          TextButton(
+            onPressed: () {
+              final newPassword = passwordController.text.trim();
+              if (newPassword.length >= 6) {
+                Navigator.pop(context);
+                context.read<AdminBloc>().add(
+                  ResetUserPassword(userId: user.id, newPassword: newPassword),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Mật khẩu phải có ít nhất 6 ký tự')),
+                );
+              }
+            },
+            child: const Text('Đồng ý'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showToggleStatusDialog(UserModel user) {
+    final action = user.isActive ? 'vô hiệu hóa' : 'kích hoạt';
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('${action.capitalize()} tài khoản'),
+        content: Text('Bạn có chắc muốn $action tài khoản ${user.displayName}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Hủy'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              if (user.isActive) {
+                context.read<AdminBloc>().add(DeactivateUser(user.id));
+              } else {
+                context.read<AdminBloc>().add(ActivateUser(user.id));
+              }
+            },
+            child: const Text('Đồng ý'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteUserDialog(UserModel user) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Xác nhận xóa'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Bạn có chắc muốn xóa tài khoản ${user.displayName}?'),
+            const SizedBox(height: 8),
+            const Text(
+              'Hành động này không thể hoàn tác!',
+              style: TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Hủy'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              context.read<AdminBloc>().add(DeleteUser(user.id));
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Xóa'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _getRoleColor(UserRole role) {
+    switch (role) {
+      case UserRole.admin:
+        return Colors.red;
+      case UserRole.department:
+        return Colors.orange;
+      case UserRole.teacher:
+        return Colors.green;
+    }
+  }
+
+  String _getUserInitials(UserModel user) {
+    if (user.fullName != null && user.fullName!.isNotEmpty) {
+      final parts = user.fullName!.split(' ');
+      if (parts.length >= 2) {
+        return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
+      }
+      return user.fullName![0].toUpperCase();
+    }
+    return user.username[0].toUpperCase();
+  }
+}
+
+class _TabBarDelegate extends SliverPersistentHeaderDelegate {
+  final Widget tabBar;
+
+  _TabBarDelegate(this.tabBar);
+
+  @override
+  double get minExtent => 48;
+
+  @override
+  double get maxExtent => 48;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return tabBar;
+  }
+
+  @override
+  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) => false;
+}
+
+extension StringExtension on String {
+  String capitalize() {
+    return "${this[0].toUpperCase()}${substring(1)}";
+  }
+}
