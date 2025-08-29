@@ -14,7 +14,8 @@ class BackendStudentAdapter {
         phone: json['phoneNumber'] ?? '',
         parentPhone: json['parentPhone1'] ?? '',
         address: json['address'] ?? '',
-        birthDate: _parseDate(json['birthDate']) ?? DateTime.now().subtract(const Duration(days: 3650)),
+        birthDate: _parseDate(json['birthDate']) ??
+            DateTime.now().subtract(const Duration(days: 3650)),
         classId: json['classId'].toString(),
         className: json['class']?['name'] ?? 'Unknown',
         department: json['class']?['department']?['displayName'] ?? 'Unknown',
@@ -22,7 +23,7 @@ class BackendStudentAdapter {
         grades: _parseGrades(json),
         createdAt: _parseDate(json['createdAt']) ?? DateTime.now(),
         updatedAt: _parseDate(json['updatedAt']) ?? DateTime.now(),
-        
+
         // Backend specific fields
         saintName: json['saintName'],
         parentPhone2: json['parentPhone2'],
@@ -49,17 +50,18 @@ class BackendStudentAdapter {
   }
 
   static int? _parseInt(dynamic value) => int.tryParse(value?.toString() ?? '');
-  static double? _parseDouble(dynamic value) => double.tryParse(value?.toString() ?? '');
+  static double? _parseDouble(dynamic value) =>
+      double.tryParse(value?.toString() ?? '');
 
   static List<double> _parseGrades(Map<String, dynamic> json) {
     final grades = <double>[];
     final fields = ['study45Hk1', 'examHk1', 'study45Hk2', 'examHk2'];
-    
+
     for (final field in fields) {
       final grade = _parseDouble(json[field]);
       if (grade != null && grade > 0) grades.add(grade);
     }
-    
+
     return grades.isEmpty ? [0.0] : grades;
   }
 
@@ -67,23 +69,31 @@ class BackendStudentAdapter {
     return StudentModel(
       id: json['id']?.toString() ?? 'unknown',
       name: json['fullName'] ?? 'Unknown Student',
-      phone: '', parentPhone: '', address: '',
+      phone: '',
+      parentPhone: '',
+      address: '',
       birthDate: DateTime.now().subtract(const Duration(days: 3650)),
-      classId: '0', className: 'Unknown', department: 'Unknown',
-      attendance: {}, grades: [0.0],
-      createdAt: DateTime.now(), updatedAt: DateTime.now(),
+      classId: '0',
+      className: 'Unknown',
+      department: 'Unknown',
+      attendance: {},
+      grades: [0.0],
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
     );
   }
 
   // ✅ Convert methods
   static Map<String, dynamic> toBackendCreateJson(StudentModel student) {
     return {
-      'studentCode': student.qrId ?? 'TN${DateTime.now().millisecondsSinceEpoch}',
+      'studentCode':
+          student.qrId ?? 'TN${DateTime.now().millisecondsSinceEpoch}',
       'fullName': student.name,
       'classId': int.tryParse(student.classId) ?? 0,
       'address': student.address,
       'birthDate': student.birthDate.toIso8601String(),
-      if (student.saintName?.isNotEmpty ?? false) 'saintName': student.saintName,
+      if (student.saintName?.isNotEmpty ?? false)
+        'saintName': student.saintName,
       if (student.phone.isNotEmpty) 'phoneNumber': student.phone,
       if (student.parentPhone.isNotEmpty) 'parentPhone1': student.parentPhone,
     };
@@ -91,16 +101,17 @@ class BackendStudentAdapter {
 
   static Map<String, dynamic> toBackendUpdateJson(StudentModel student) {
     final data = <String, dynamic>{};
-    
+
     if (student.name.isNotEmpty) data['fullName'] = student.name;
-    if (student.saintName?.isNotEmpty ?? false) data['saintName'] = student.saintName;
+    if (student.saintName?.isNotEmpty ?? false)
+      data['saintName'] = student.saintName;
     if (student.phone.isNotEmpty) data['phoneNumber'] = student.phone;
     if (student.address.isNotEmpty) data['address'] = student.address;
-    
+
     data['birthDate'] = student.birthDate.toIso8601String();
     final classId = int.tryParse(student.classId);
     if (classId != null && classId > 0) data['classId'] = classId;
-    
+
     return data;
   }
 }
@@ -223,8 +234,7 @@ class BackendClassAdapter {
       name: json['name'] ?? '',
       department: _getDepartmentName(json),
       departmentId: json['departmentId'] ?? 0,
-      teacherId: _getTeacherId(json),
-      teacherName: _getTeacherName(json),
+      classTeachers: _getClassTeachers(json),
       studentIds: _getStudentIds(json),
       totalStudents: _getTotalStudents(json),
       createdAt:
@@ -232,6 +242,21 @@ class BackendClassAdapter {
       updatedAt:
           DateTime.parse(json['updatedAt'] ?? DateTime.now().toIso8601String()),
     );
+  }
+
+  static List<ClassTeacher> _getClassTeachers(Map<String, dynamic> json) {
+    if (json['classTeachers'] != null && json['classTeachers'] is List) {
+      return (json['classTeachers'] as List).map((teacher) {
+        final user = teacher['user'] ?? {};
+        return ClassTeacher(
+          id: user['id'].toString(),
+          fullName: user['fullName'] ?? '',
+          saintName: user['saintName'],
+          isPrimary: teacher['isPrimary'] ?? false,
+        );
+      }).toList();
+    }
+    return [];
   }
 
   static String _getDepartmentName(Map<String, dynamic> json) {

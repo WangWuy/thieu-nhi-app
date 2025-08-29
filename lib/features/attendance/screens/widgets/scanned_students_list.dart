@@ -54,16 +54,6 @@ class ScannedStudentsList extends StatelessWidget {
           ),
         ),
         const Spacer(),
-        // ✅ GIỮ LẠI nút xóa tất cả ở đây (trong header list)
-        if (scannedStudents.isNotEmpty)
-          TextButton.icon(
-            onPressed: onClearAll,
-            icon: const Icon(Icons.clear_all, size: 18),
-            label: const Text('Xóa tất cả'),
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.red,
-            ),
-          ),
       ],
     );
   }

@@ -93,34 +93,25 @@ class ClassManagementCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          classModel.name,
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: AppColors.grey800,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 4,
-          ),
-          decoration: BoxDecoration(
-            color: AppColors.grey100,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.people,
-                color: AppColors.grey600,
-                size: 16,
+        // Tên lớp và số thiếu nhi cùng dòng
+        Row(
+          children: [
+            Text(
+              classModel.name,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: AppColors.grey800,
               ),
-              const SizedBox(width: 4),
-              Text(
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: AppColors.grey100,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
                 '${classModel.totalStudents} thiếu nhi',
                 style: TextStyle(
                   fontSize: 12,
@@ -128,12 +119,24 @@ class ClassManagementCard extends StatelessWidget {
                   color: AppColors.grey600,
                 ),
               ),
-            ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        // GLV hiển thị đầy đủ
+        Text(
+          'GLV: ${classModel.teachersDisplay}',
+          style: TextStyle(
+            fontSize: 14,
+            color: AppColors.grey600,
           ),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
         ),
       ],
     );
   }
+
   Color _getDepartmentColor(String department) {
     switch (department) {
       case 'Chiên':
