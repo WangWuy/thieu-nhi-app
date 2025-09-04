@@ -1,8 +1,11 @@
-// lib/features/main/screens/main_layout_screen.dart
+// lib/features/main/screens/main_layout_screen.dart - UPDATED WITH MANUAL ATTENDANCE
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:thieu_nhi_app/core/models/user_model.dart';
+import 'package:thieu_nhi_app/core/services/attendance_service.dart';
 import 'package:thieu_nhi_app/features/attendance/screens/qr_scanner_screen.dart';
+import 'package:thieu_nhi_app/features/attendance/screens/manual_attendance_screen.dart';
+import 'package:thieu_nhi_app/features/attendance/bloc/attendance_bloc.dart';
 import 'package:thieu_nhi_app/features/auth/bloc/auth_bloc.dart';
 import 'package:thieu_nhi_app/features/auth/bloc/auth_state.dart';
 import 'package:thieu_nhi_app/features/dashboard/screens/dashboard_screen.dart';
@@ -39,14 +42,19 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
               final index = entry.key;
               final tab = entry.value;
 
-              // Rebuild QR Scanner khi switch tab để reset camera
-              if (index == 1 && tab.screen is QRScannerScreen) {
+              // Provide AttendanceBloc for attendance-related screens
+              if (tab.requiresAttendanceBloc) {
                 return _currentIndex == index
-                    ? tab.screen
-                    : Container(); // Empty container khi không active
+                    ? BlocProvider(
+                        create: (context) => AttendanceBloc(
+                          attendanceService: AttendanceService(),
+                        ),
+                        child: tab.screen,
+                      )
+                    : Container();
               }
 
-              return tab.screen;
+              return _currentIndex == index ? tab.screen : Container();
             }).toList(),
           ),
           bottomNavigationBar: _buildBottomNavigationBar(tabs, user),
@@ -56,29 +64,43 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
   }
 
   List<TabItem> _getTabsForUser(UserModel user) {
-    final baseTabs = [
+    return [
+      // Dashboard
       TabItem(
-        icon: Icons.home,
-        activeIcon: Icons.home_rounded,
+        icon: Icons.home_outlined,
+        activeIcon: Icons.home,
         label: 'Trang chủ',
         screen: const DashboardScreen(),
+        requiresAttendanceBloc: false,
       ),
-      // ← Thêm tab QR Scanner ở giữa
+      
+      // QR Scanner
       TabItem(
         icon: Icons.qr_code_scanner_outlined,
         activeIcon: Icons.qr_code_scanner,
-        label: 'Điểm danh',
+        label: 'Quét QR',
         screen: const QRScannerScreen(),
+        requiresAttendanceBloc: true,
       ),
+      
+      // Manual Attendance ✅ NEW TAB
+      TabItem(
+        icon: Icons.edit_outlined,
+        activeIcon: Icons.edit,
+        label: 'Thủ công',
+        screen: const ManualAttendanceScreen(),
+        requiresAttendanceBloc: true,
+      ),
+      
+      // Profile
       TabItem(
         icon: Icons.person_outline,
         activeIcon: Icons.person,
         label: 'Cá nhân',
         screen: const ProfileScreen(),
+        requiresAttendanceBloc: false,
       ),
     ];
-
-    return baseTabs;
   }
 
   Widget _buildBottomNavigationBar(List<TabItem> tabs, UserModel user) {
@@ -99,7 +121,7 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
             minHeight: 70,
             maxHeight: 90,
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: tabs.asMap().entries.map((entry) {
@@ -107,8 +129,9 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
               final tab = entry.value;
               final isActive = index == _currentIndex;
 
-              // ← Đặc biệt cho tab QR Scanner (tab giữa)
-              final isQRTab = index == 1; // Tab QR là index 1
+              // Special styling for QR tab (middle)
+              final isQRTab = index == 1;
+              final isManualTab = index == 2; // Manual attendance tab
 
               return Expanded(
                 child: GestureDetector(
@@ -118,11 +141,11 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 4),
                     decoration: BoxDecoration(
                       color: isActive
-                          ? (isQRTab
+                          ? (isQRTab || isManualTab
                               ? AppColors.secondary.withOpacity(0.1)
                               : _getRoleColor(user.role).withOpacity(0.1))
                           : Colors.transparent,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
@@ -131,20 +154,22 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
                         AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
                           padding: EdgeInsets.all(
-                              isQRTab ? 8 : 6), // QR tab lớn hơn 1 chút
+                            isQRTab || isManualTab ? 8 : 6,
+                          ),
                           decoration: BoxDecoration(
                             color: isActive
-                                ? (isQRTab
+                                ? (isQRTab || isManualTab
                                     ? AppColors.secondary
                                     : _getRoleColor(user.role))
                                 : Colors.transparent,
-                            borderRadius:
-                                BorderRadius.circular(isQRTab ? 16 : 12),
+                            borderRadius: BorderRadius.circular(
+                              isQRTab || isManualTab ? 14 : 12,
+                            ),
                           ),
                           child: Icon(
                             isActive ? tab.activeIcon : tab.icon,
                             color: isActive ? Colors.white : AppColors.grey600,
-                            size: isQRTab ? 26 : 22, // QR icon lớn hơn
+                            size: isQRTab || isManualTab ? 22 : 20,
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -152,11 +177,11 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
                           child: Text(
                             tab.label,
                             style: TextStyle(
-                              fontSize: 11,
+                              fontSize: 10,
                               fontWeight:
                                   isActive ? FontWeight.w600 : FontWeight.w500,
                               color: isActive
-                                  ? (isQRTab
+                                  ? (isQRTab || isManualTab
                                       ? AppColors.secondary
                                       : _getRoleColor(user.role))
                                   : AppColors.grey600,
@@ -201,11 +226,13 @@ class TabItem {
   final IconData activeIcon;
   final String label;
   final Widget screen;
+  final bool requiresAttendanceBloc;
 
   TabItem({
     required this.icon,
     required this.activeIcon,
     required this.label,
     required this.screen,
+    this.requiresAttendanceBloc = false,
   });
 }

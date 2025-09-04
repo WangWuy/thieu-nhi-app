@@ -1,69 +1,58 @@
+// lib/features/dashboard/dashboard_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:thieu_nhi_app/core/models/department_model.dart';
 import 'package:thieu_nhi_app/core/models/user_model.dart';
-import 'package:thieu_nhi_app/core/services/auth_service.dart';
+import 'package:thieu_nhi_app/core/services/dashboard_service.dart';
 import 'package:thieu_nhi_app/features/auth/bloc/auth_bloc.dart';
 import 'package:thieu_nhi_app/features/auth/bloc/auth_state.dart';
-import 'package:thieu_nhi_app/features/dashboard/bloc/dashboard_bloc.dart';
-import 'package:thieu_nhi_app/features/dashboard/bloc/dashboard_event.dart';
-import 'package:thieu_nhi_app/features/dashboard/bloc/dashboard_state.dart';
+import 'package:thieu_nhi_app/features/dashboard/cubit/dashboard_cubit.dart';
 import 'package:thieu_nhi_app/features/dashboard/widgets/department_card.dart';
 import 'package:thieu_nhi_app/theme/app_colors.dart';
 
-class DashboardScreen extends StatefulWidget {
+class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
 
   @override
-  State<DashboardScreen> createState() => _DashboardScreenState();
-}
-
-class _DashboardScreenState extends State<DashboardScreen> {
-  late AuthService _authService;
-
-  @override
-  void initState() {
-    super.initState();
-    _authService = AuthService();
-    context.read<DashboardBloc>().add(LoadDashboardData());
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AuthBloc, AuthState>(
-      builder: (context, authState) {
-        if (authState is! AuthAuthenticated) {
-          return const Center(child: CircularProgressIndicator());
-        }
+    return BlocProvider(
+      create: (context) => DashboardCubit(DashboardService())..loadDashboard(),
+      child: BlocBuilder<AuthBloc, AuthState>(
+        builder: (context, authState) {
+          if (authState is! AuthAuthenticated) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-        final user = authState.user;
-        return Scaffold(
-          body: SafeArea(
-            child: RefreshIndicator(
-              onRefresh: () async {
-                context.read<DashboardBloc>().add(RefreshDashboardData());
-              },
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildHeader(user),
-                      const SizedBox(height: 20),
-                      _buildStatsSection(user),
-                      const SizedBox(height: 24),
-                      _buildMainContent(user),
-                      const SizedBox(height: 20),
-                    ],
+          final user = authState.user;
+          return Scaffold(
+            body: SafeArea(
+              child: RefreshIndicator(
+                onRefresh: () async {
+                  context.read<DashboardCubit>().refreshDashboard();
+                },
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildHeader(user),
+                        const SizedBox(height: 20),
+                        _buildStatsSection(user),
+                        const SizedBox(height: 24),
+                        _buildMainContent(user),
+                        const SizedBox(height: 20),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
@@ -119,12 +108,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildStatsSection(UserModel user) {
-    return BlocBuilder<DashboardBloc, DashboardState>(
+    return BlocBuilder<DashboardCubit, DashboardState>(
       builder: (context, state) {
-        if (state is DashboardLoadedWithTeachers || state is DashboardLoaded) {
-          final stats = state is DashboardLoadedWithTeachers
-              ? state.stats
-              : (state as DashboardLoaded).stats;
+        if (state is DashboardLoaded || state is DashboardRefreshing) {
+          final data = state is DashboardLoaded
+              ? state.data
+              : (state as DashboardRefreshing).previousData;
 
           return Container(
             padding: const EdgeInsets.all(20),
@@ -173,7 +162,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            _getStatsSubtitle(user, stats),
+                            _getStatsSubtitle(user, data),
                             style: TextStyle(
                               color: Colors.white.withOpacity(0.9),
                               fontSize: 14,
@@ -182,10 +171,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ],
                       ),
                     ),
+                    // Refresh indicator
+                    if (state is DashboardRefreshing)
+                      Container(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      ),
                   ],
                 ),
                 const SizedBox(height: 20),
-                _buildStatsContent(user, stats),
+                _buildStatsContent(user, data),
               ],
             ),
           );
@@ -195,7 +195,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildStatsContent(UserModel user, Map<String, dynamic> stats) {
+  Widget _buildStatsContent(UserModel user, data) {
     switch (user.role) {
       case UserRole.admin:
         return Row(
@@ -203,7 +203,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Expanded(
               child: _buildStatItem(
                 'Tổng thiếu nhi',
-                stats['totalStudents'].toString(),
+                data.totalStudents.toString(),
                 Icons.groups,
               ),
             ),
@@ -211,14 +211,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Expanded(
               child: _buildStatItem(
                 'Tổng lớp',
-                stats['totalClasses'].toString(),
+                data.totalClasses.toString(),
                 Icons.school,
               ),
             ),
           ],
         );
       case UserRole.department:
-        final departmentStudents = (stats['totalStudents'] as int) ~/ 4;
+        final departmentStudents = (data.totalStudents as int) ~/ 4;
         return Row(
           children: [
             Expanded(
@@ -231,9 +231,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             const SizedBox(width: 16),
             Expanded(
               child: _buildStatItem(
-                'Lớp học',
-                _getDepartmentClassCount(user.department).toString(),
-                Icons.school,
+                'Có mặt hôm nay',
+                data.presentToday.toString(),
+                Icons.check_circle,
               ),
             ),
           ],
@@ -244,7 +244,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Expanded(
               child: _buildStatItem(
                 'thiếu nhi lớp',
-                '25', // TODO: Get real data
+                '25', // TODO: Get real data from class
                 Icons.people,
               ),
             ),
@@ -252,7 +252,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Expanded(
               child: _buildStatItem(
                 'Có mặt hôm nay',
-                '23', // TODO: Get real data
+                '23', // TODO: Get real data from class
                 Icons.check_circle,
               ),
             ),
@@ -315,171 +315,153 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildMainContent(UserModel user) {
-    switch (user.role) {
-      case UserRole.admin:
-        return _buildAdminContent();
-      case UserRole.department:
-        return _buildDepartmentContent(user);
-      case UserRole.teacher:
-        return _buildTeacherContent(user);
-    }
+    return BlocBuilder<DashboardCubit, DashboardState>(
+      builder: (context, state) {
+        if (state is DashboardLoaded || state is DashboardRefreshing) {
+          final data = state is DashboardLoaded
+              ? state.data
+              : (state as DashboardRefreshing).previousData;
+
+          switch (user.role) {
+            case UserRole.admin:
+              return _buildAdminContent(context, data);
+            case UserRole.department:
+              return _buildDepartmentContent(context, user);
+            case UserRole.teacher:
+              return _buildTeacherContent(context, user);
+          }
+        } else if (state is DashboardError) {
+          return _buildErrorContent(state.message);
+        }
+        return _buildLoadingContent();
+      },
+    );
   }
 
-  Widget _buildAdminContent() {
+  Widget _buildAdminContent(BuildContext context, data) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionHeader('Quản lý ngành', Icons.business),
         const SizedBox(height: 16),
-        BlocBuilder<DashboardBloc, DashboardState>(
-          builder: (context, state) {
-            if (state is DashboardLoadedWithTeachers ||
-                state is DashboardLoaded) {
-              final departments = state is DashboardLoadedWithTeachers
-                  ? state.departments
-                  : (state as DashboardLoaded).departments;
 
-              return Column(
-                children: [
-                  // Departments + Account Management grid
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: 0.9,
-                    ),
-                    itemCount:
-                        departments.length + 1, // +1 for Account Management
-                    itemBuilder: (context, index) {
-                      // Account Management card
-                      if (index == departments.length) {
-                        return _buildAccountManagementCard();
-                      }
-
-                      // Regular department cards
-                      final department = departments[index];
-                      return DepartmentCard(
-                        name: department.displayName,
-                        totalClasses: department.totalClasses,
-                        isAccessible: true,
-                        onTap: () => context.push('/classes/${department.id}',
-                            extra: department),
-                      );
-                    },
-                  ),
-                ],
-              );
+        // Convert data.departments to DepartmentModels for compatibility
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: 0.9,
+          ),
+          itemCount: data.departments.length + 1, // +1 for Account Management
+          itemBuilder: (context, index) {
+            if (index == data.departments.length) {
+              return _buildAccountManagementCard(
+                  context, data.usersByRole['giao_ly_vien'] ?? 0);
             }
-            return _buildLoadingGrid();
+
+            final dept = data.departments[index];
+            // Convert DepartmentSummary to DepartmentModel
+            final departmentModel = DepartmentModel(
+              id: int.tryParse(dept.id) ?? 0,
+              name: dept.name,
+              displayName: dept.displayName,
+              description: null,
+              classIds: [],
+              totalClasses: dept.totalClasses,
+              totalStudents: dept.totalStudents,
+              totalTeachers: dept.totalTeachers,
+              isActive: true,
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+            );
+
+            return DepartmentCard(
+              name: dept.displayName,
+              totalClasses: dept.totalClasses,
+              isAccessible: true,
+              onTap: () =>
+                  context.push('/classes/${dept.id}', extra: departmentModel),
+            );
           },
         ),
       ],
     );
   }
 
-  Widget _buildAccountManagementCard() {
-    return BlocBuilder<DashboardBloc, DashboardState>(
-      builder: (context, state) {
-        // Lấy số lượng teachers từ state
-        int teacherCount = 0;
-        if (state is DashboardLoadedWithTeachers) {
-          teacherCount = state.teachers.length;
-        } else if (state is DashboardRefreshing) {
-          final prevState = state.previousState;
-          if (prevState is DashboardLoadedWithTeachers) {
-            teacherCount = prevState.teachers.length;
-          }
-        }
-
-        return GestureDetector(
-          onTap: () => context.push('/admin/accounts'),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.grey200),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  blurRadius: 12,
-                  offset: const Offset(0, 6),
+  Widget _buildAccountManagementCard(BuildContext context, int teacherCount) {
+    return GestureDetector(
+      onTap: () => context.push('/admin/accounts'),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.grey200),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  gradient:
+                      const LinearGradient(colors: AppColors.errorGradient),
+                  borderRadius: BorderRadius.circular(16),
                 ),
-              ],
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: AppColors.errorGradient,
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: const Icon(
-                      Icons.school, // Đổi icon cho phù hợp hơn
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Giáo lý viên',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.grey800,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-
-                  // UPDATED: Hiển thị số lượng teachers thay vì text cố định
-                  teacherCount > 0
-                      ? Text(
-                          '$teacherCount GLV',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.primary,
-                          ),
-                        )
-                      : Text(
-                          'Đang tải...',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.grey600,
-                          ),
-                        ),
-                ],
+                child: const Icon(
+                  Icons.school,
+                  color: Colors.white,
+                  size: 24,
+                ),
               ),
-            ),
+              const SizedBox(height: 12),
+              const Text(
+                'Giáo lý viên',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.grey800,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '$teacherCount GLV',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primary,
+                ),
+              ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
-  // UPDATED: Simplified Department content - only "Danh sách lớp"
-  Widget _buildDepartmentContent(UserModel user) {
+  Widget _buildDepartmentContent(BuildContext context, UserModel user) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionHeader('Quản lý ngành ${user.department}', Icons.business),
         const SizedBox(height: 16),
-
-        // Single centered management card
         Center(
-          child: Container(
+          child: SizedBox(
             width: MediaQuery.of(context).size.width * 0.7,
-            child: _buildDepartmentManagementCard(
+            child: _buildManagementCard(
+              context: context,
               title: 'Danh sách lớp',
               subtitle: 'Quản lý lớp và thiếu nhi',
               icon: Icons.school,
@@ -492,7 +474,34 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildDepartmentManagementCard({
+  Widget _buildTeacherContent(BuildContext context, UserModel user) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader('Lớp học của tôi', Icons.school),
+        const SizedBox(height: 16),
+        if (user.className != null)
+          Center(
+            child: SizedBox(
+              width: MediaQuery.of(context).size.width * 0.7,
+              child: _buildManagementCard(
+                context: context,
+                title: user.className!,
+                subtitle: 'Quản lý thiếu nhi',
+                icon: Icons.school,
+                color: AppColors.success,
+                onTap: () => context.push('/students/${user.classId}'),
+              ),
+            ),
+          )
+        else
+          _buildNoClassAssignedCard(),
+      ],
+    );
+  }
+
+  Widget _buildManagementCard({
+    required BuildContext context,
     required String title,
     required String subtitle,
     required IconData icon,
@@ -507,10 +516,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              color,
-              color.withOpacity(0.8),
-            ],
+            colors: [color, color.withOpacity(0.8)],
           ),
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
@@ -531,11 +537,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 color: Colors.white.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: Icon(
-                icon,
-                color: Colors.white,
-                size: 32,
-              ),
+              child: Icon(icon, color: Colors.white, size: 32),
             ),
             const SizedBox(height: 16),
             Text(
@@ -550,92 +552,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
             const SizedBox(height: 8),
             Text(
               subtitle,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.white.withOpacity(0.9),
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTeacherContent(UserModel user) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionHeader('Lớp học của tôi', Icons.school),
-        const SizedBox(height: 16),
-
-        // Single centered management card like Department style
-        if (user.className != null)
-          Center(
-            child: Container(
-              width: MediaQuery.of(context).size.width * 0.7,
-              child: _buildTeacherClassCard(user),
-            ),
-          )
-        else
-          _buildNoClassAssignedCard(),
-      ],
-    );
-  }
-
-  Widget _buildTeacherClassCard(UserModel user) {
-    return GestureDetector(
-      onTap: () =>
-          context.push('/students/${user.classId}'), // Direct to students
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              AppColors.success,
-              AppColors.success.withOpacity(0.8),
-            ],
-          ),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.success.withOpacity(0.3),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Icon(
-                Icons.school,
-                color: Colors.white,
-                size: 32,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              user.className!,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Quản lý thiếu nhi',
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.white.withOpacity(0.9),
@@ -668,14 +584,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
               color: AppColors.warning,
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            'Vui lòng liên hệ Ban Điều Hành để được phân công lớp học',
-            style: TextStyle(color: AppColors.grey600),
-            textAlign: TextAlign.center,
-          ),
         ],
       ),
+    );
+  }
+
+  Widget _buildErrorContent(String message) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          Icon(Icons.error_outline, size: 64, color: AppColors.error),
+          const SizedBox(height: 16),
+          Text(
+            'Có lỗi xảy ra',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Text(message, textAlign: TextAlign.center),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadingContent() {
+    return Container(
+      height: 200,
+      child: Center(child: CircularProgressIndicator()),
     );
   }
 
@@ -693,49 +628,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildLoadingGrid() {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: 0.9,
-      ),
-      itemCount: 5, // 4 departments + 1 account management
-      itemBuilder: (context, index) => _buildLoadingCard(),
-    );
-  }
-
-  Widget _buildLoadingCard() {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.grey100,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: const Center(
-        child: CircularProgressIndicator(strokeWidth: 2),
-      ),
-    );
-  }
-
-  void _showComingSoonDialog(String feature) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(feature),
-        content: Text('Tính năng "$feature" đang được phát triển.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Đóng'),
-          ),
-        ],
-      ),
     );
   }
 
@@ -784,29 +676,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  String _getStatsSubtitle(UserModel user, Map<String, dynamic> stats) {
+  String _getStatsSubtitle(UserModel user, data) {
     switch (user.role) {
       case UserRole.admin:
-        return 'Quản lý ${stats['totalStudents']} thiếu nhi';
+        return 'Quản lý ${data.totalStudents} thiếu nhi';
       case UserRole.department:
         return 'Ngành ${user.department}';
       case UserRole.teacher:
         return user.className ?? 'Chưa phân công lớp';
-    }
-  }
-
-  int _getDepartmentClassCount(String department) {
-    switch (department) {
-      case 'Chiên':
-        return 6;
-      case 'Âu':
-        return 2;
-      case 'Thiếu':
-        return 3;
-      case 'Nghĩa':
-        return 1;
-      default:
-        return 0;
     }
   }
 }

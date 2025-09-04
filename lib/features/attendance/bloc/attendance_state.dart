@@ -34,82 +34,52 @@ class QRScannerError extends AttendanceState {
   List<Object?> get props => [message];
 }
 
-class AttendanceScanning extends AttendanceState {
-  final List<ScannedStudentInfo> scannedStudents;
-  final bool isScanning;
-
-  const AttendanceScanning({
-    required this.scannedStudents,
-    required this.isScanning,
-  });
-
-  @override
-  List<Object?> get props => [scannedStudents, isScanning];
-
-  AttendanceScanning copyWith({
-    List<ScannedStudentInfo>? scannedStudents,
-    bool? isScanning,
-  }) {
-    return AttendanceScanning(
-      scannedStudents: scannedStudents ?? this.scannedStudents,
-      isScanning: isScanning ?? this.isScanning,
-    );
-  }
-}
-
-class AttendanceSubmitting extends AttendanceState {
-  final List<ScannedStudentInfo> scannedStudents;
-
-  const AttendanceSubmitting({required this.scannedStudents});
-
-  @override
-  List<Object?> get props => [scannedStudents];
-}
-
-class AttendanceSubmitted extends AttendanceState {
-  final String message;
-  final int successCount;
-  final List<String>? invalidCodes;
-
-  const AttendanceSubmitted({
-    required this.message,
-    required this.successCount,
-    this.invalidCodes,
-  });
-
-  @override
-  List<Object?> get props => [message, successCount, invalidCodes];
-}
-
-class AttendanceSubmissionError extends AttendanceState {
-  final String message;
-  final List<String>? invalidCodes;
-
-  const AttendanceSubmissionError({
-    required this.message,
-    this.invalidCodes,
-  });
-
-  @override
-  List<Object?> get props => [message, invalidCodes];
-}
-
-// ✅ UPDATED: Model cho scanned student info với rawQRData
-class ScannedStudentInfo extends Equatable {
+// ✅ UPDATED: Processing individual attendance with presence status
+class AttendanceProcessing extends AttendanceState {
   final String studentCode;
-  final String displayName;
-  final DateTime scannedAt;
-  final String? className;
-  final String? rawQRData; // ✅ Thêm để debug
+  final String studentName;
+  final bool isPresent; // ✅ NEW: Track if marking present or absent
 
-  const ScannedStudentInfo({
+  const AttendanceProcessing({
     required this.studentCode,
-    required this.displayName,
-    required this.scannedAt,
-    this.className,
-    this.rawQRData,
+    required this.studentName,
+    this.isPresent = true, // ✅ Default present
   });
 
   @override
-  List<Object?> get props => [studentCode, displayName, scannedAt, className, rawQRData];
+  List<Object?> get props => [studentCode, studentName, isPresent];
+}
+
+// ✅ UPDATED: Individual attendance success with presence status
+class AttendanceSuccess extends AttendanceState {
+  final String studentCode;
+  final String studentName;
+  final String message;
+  final bool isPresent; // ✅ NEW: Track final presence status
+
+  const AttendanceSuccess({
+    required this.studentCode,
+    required this.studentName,
+    required this.message,
+    this.isPresent = true, // ✅ Default present
+  });
+
+  @override
+  List<Object?> get props => [studentCode, studentName, message, isPresent];
+}
+
+// Keep AttendanceError unchanged
+class AttendanceError extends AttendanceState {
+  final String studentCode;
+  final String studentName;
+  final String error;
+
+  const AttendanceError({
+    required this.studentCode,
+    required this.studentName,
+    required this.error,
+  });
+
+  @override
+  List<Object?> get props => [studentCode, studentName, error];
 }

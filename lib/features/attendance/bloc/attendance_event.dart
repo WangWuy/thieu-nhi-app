@@ -21,35 +21,20 @@ class ScanQRCode extends AttendanceEvent {
   List<Object?> get props => [qrData];
 }
 
-class RemoveScannedStudent extends AttendanceEvent {
+// ✅ UPDATED: Manual attendance with isPresent parameter
+class ManualAttendance extends AttendanceEvent {
   final String studentCode;
+  final String studentName;
+  final bool isPresent; // ✅ NEW: Support absent marking
 
-  const RemoveScannedStudent(this.studentCode);
-
-  @override
-  List<Object?> get props => [studentCode];
-}
-
-class ClearAllScannedStudents extends AttendanceEvent {
-  const ClearAllScannedStudents();
-}
-
-class SubmitUniversalAttendance extends AttendanceEvent {
-  final List<String> studentCodes;
-  final DateTime attendanceDate;
-  final String attendanceType;
-  final String? note;
-
-  const SubmitUniversalAttendance({
-    required this.studentCodes,
-    required this.attendanceDate,
-    required this.attendanceType,
-    this.note,
+  const ManualAttendance({
+    required this.studentCode,
+    required this.studentName,
+    this.isPresent = true, // ✅ Default present
   });
 
   @override
-  List<Object?> get props =>
-      [studentCodes, attendanceDate, attendanceType, note];
+  List<Object?> get props => [studentCode, studentName, isPresent];
 }
 
 class ResetAttendanceState extends AttendanceEvent {

@@ -13,9 +13,18 @@ import '../bloc/students_bloc.dart';
 
 class StudentListScreen extends StatefulWidget {
   final String classId;
+  final String? className;
+  final String? department;
+  final String? returnTo;
 
-  const StudentListScreen({super.key, required this.classId});
-
+  const StudentListScreen({
+    super.key,
+    required this.classId,
+    this.className,
+    this.department,
+    this.returnTo,
+  });
+  
   @override
   State<StudentListScreen> createState() => _StudentListScreenState();
 }
@@ -188,12 +197,12 @@ class _StudentListScreenState extends State<StudentListScreen>
     return Scaffold(
       body: _buildBody(),
       floatingActionButton: hasPermission
-        ? FloatingActionButton(
-            heroTag: "add_student_fab",
-            onPressed: () => _showAddStudentDialog(),
-            child: const Icon(Icons.add),
-          )
-        : null,
+          ? FloatingActionButton(
+              heroTag: "add_student_fab",
+              onPressed: () => _showAddStudentDialog(),
+              child: const Icon(Icons.add),
+            )
+          : null,
     );
   }
 

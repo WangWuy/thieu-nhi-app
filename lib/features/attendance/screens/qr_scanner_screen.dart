@@ -1,4 +1,4 @@
-// lib/features/attendance/screens/qr_scanner_screen.dart - FIXED VERSION
+// lib/features/attendance/screens/qr_scanner_screen.dart - SIMPLIFIED VERSION
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -6,10 +6,7 @@ import 'package:thieu_nhi_app/core/services/qr_scanner_service.dart';
 import 'package:thieu_nhi_app/features/attendance/bloc/attendance_bloc.dart';
 import 'package:thieu_nhi_app/features/attendance/bloc/attendance_event.dart';
 import 'package:thieu_nhi_app/features/attendance/bloc/attendance_state.dart';
-import 'package:thieu_nhi_app/features/attendance/screens/manual_attendance_modal.dart';
 import 'package:thieu_nhi_app/features/attendance/screens/widgets/qr_camera_view.dart';
-import 'package:thieu_nhi_app/features/attendance/screens/widgets/scanned_students_list.dart';
-import 'package:thieu_nhi_app/features/attendance/screens/widgets/scanner_bottom_actions.dart';
 import 'package:thieu_nhi_app/theme/app_colors.dart';
 
 class QRScannerScreen extends StatefulWidget {
@@ -22,13 +19,12 @@ class QRScannerScreen extends StatefulWidget {
 class _QRScannerScreenState extends State<QRScannerScreen>
     with WidgetsBindingObserver {
   MobileScannerController? controller;
-  bool isProcessing = false;
   bool _torchEnabled = false;
 
-  // ✅ ANTI-SPAM MECHANISM
+  // Anti-spam mechanism
   String? lastDetectedCode;
   DateTime? lastDetectionTime;
-  static const Duration cooldownDuration = Duration(seconds: 2);
+  static const Duration cooldownDuration = Duration(seconds: 3);
 
   @override
   void initState() {
@@ -49,12 +45,11 @@ class _QRScannerScreenState extends State<QRScannerScreen>
 
     switch (state) {
       case AppLifecycleState.resumed:
-        // Chỉ start khi tab này đang active
         if (mounted) controller!.start();
         break;
       case AppLifecycleState.paused:
       case AppLifecycleState.inactive:
-      case AppLifecycleState.detached: // Thêm detached state
+      case AppLifecycleState.detached:
         controller!.stop();
         break;
       default:
@@ -64,7 +59,6 @@ class _QRScannerScreenState extends State<QRScannerScreen>
 
   @override
   void deactivate() {
-    // Dừng camera khi chuyển tab
     controller?.stop();
     super.deactivate();
   }
@@ -86,14 +80,6 @@ class _QRScannerScreenState extends State<QRScannerScreen>
           backgroundColor: Colors.black,
           appBar: _buildAppBar(state),
           body: _buildBody(state),
-          bottomNavigationBar: ScannerBottomActions(
-            scannedStudents: _getScannedStudents(state),
-            isSubmitting: state is AttendanceSubmitting,
-            onClearAll: () => context
-                .read<AttendanceBloc>()
-                .add(const ClearAllScannedStudents()),
-            onSubmit: _handleSubmitAttendance,
-          ),
         );
       },
     );
@@ -102,25 +88,10 @@ class _QRScannerScreenState extends State<QRScannerScreen>
   void _handleStateChanges(BuildContext context, AttendanceState state) {
     if (state is QRScannerError) {
       _showError(state.message);
-    } else if (state is AttendanceSubmitted) {
-      _showSuccess(state.message);
-
-      if (state.invalidCodes?.isNotEmpty == true) {
-        _showInvalidCodesDialog(state.invalidCodes!);
-      }
-
-      // Sửa navigation để tránh lỗi locked
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && Navigator.canPop(context)) {
-          Navigator.pop(context, true);
-        }
-      });
-    } else if (state is AttendanceSubmissionError) {
-      _showError(state.message);
-
-      if (state.invalidCodes?.isNotEmpty == true) {
-        _showInvalidCodesDialog(state.invalidCodes!);
-      }
+    } else if (state is AttendanceSuccess) {
+      _showSuccess('✅ ${state.studentName} - ${state.message}');
+    } else if (state is AttendanceError) {
+      _showError('❌ ${state.studentName} - ${state.error}');
     }
   }
 
@@ -134,11 +105,6 @@ class _QRScannerScreenState extends State<QRScannerScreen>
       ),
       automaticallyImplyLeading: false,
       actions: [
-        IconButton(
-          icon: const Icon(Icons.edit_note, color: Colors.white),
-          onPressed: () => _showManualAttendanceModal(),
-          tooltip: 'Điểm danh thủ công',
-        ),
         IconButton(
           icon: Icon(
             _torchEnabled ? Icons.flash_on : Icons.flash_off,
@@ -176,29 +142,24 @@ class _QRScannerScreenState extends State<QRScannerScreen>
       return _buildPermissionScreen();
     }
 
-    return Column(
+    return Stack(
       children: [
-        Expanded(
-          flex: 2, // ✅ Giảm từ 3 xuống 2 - camera nhỏ hơn
-          child: QRCameraView(
-            controller: controller,
-            isProcessing: isProcessing,
-            onQRDetected: _handleBarcodeDetection,
-          ),
+        // Camera view - Full screen
+        QRCameraView(
+          controller: controller,
+          isProcessing: state is AttendanceProcessing,
+          onQRDetected: _handleBarcodeDetection,
         ),
-        Expanded(
-          flex: 3, // ✅ Tăng từ 2 lên 3 - list lớn hơn
-          child: ScannedStudentsList(
-            scannedStudents: _getScannedStudents(state),
-            onRemoveStudent: (studentCode) =>
-                context.read<AttendanceBloc>().add(
-                      RemoveScannedStudent(studentCode),
-                    ),
-            onClearAll: () => context.read<AttendanceBloc>().add(
-                  const ClearAllScannedStudents(),
-                ),
-          ),
-        ),
+        
+        // Status overlay
+        if (state is AttendanceProcessing)
+          _buildProcessingOverlay(state),
+        
+        if (state is AttendanceSuccess)
+          _buildSuccessOverlay(state),
+          
+        if (state is AttendanceError)
+          _buildErrorOverlay(state),
       ],
     );
   }
@@ -243,69 +204,179 @@ class _QRScannerScreenState extends State<QRScannerScreen>
     );
   }
 
-  // ✅ FIXED - Anti-spam barcode detection with name extraction
-  void _handleBarcodeDetection(BarcodeCapture capture) async {
-    if (isProcessing) return;
+  Widget _buildProcessingOverlay(AttendanceProcessing state) {
+    return Container(
+      color: Colors.black54,
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          margin: const EdgeInsets.symmetric(horizontal: 32),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(
+                color: AppColors.secondary,
+                strokeWidth: 3,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Đang điểm danh...',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                state.studentName,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
+  Widget _buildSuccessOverlay(AttendanceSuccess state) {
+    return Container(
+      color: Colors.black54,
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          margin: const EdgeInsets.symmetric(horizontal: 32),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: AppColors.success,
+                  borderRadius: BorderRadius.circular(32),
+                ),
+                child: const Icon(
+                  Icons.check,
+                  color: Colors.white,
+                  size: 32,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Điểm danh thành công!',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.success,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                state.studentName,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorOverlay(AttendanceError state) {
+    return Container(
+      color: Colors.black54,
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          margin: const EdgeInsets.symmetric(horizontal: 32),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: AppColors.error,
+                  borderRadius: BorderRadius.circular(32),
+                ),
+                child: const Icon(
+                  Icons.close,
+                  color: Colors.white,
+                  size: 32,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Điểm danh thất bại',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.error,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                state.studentName,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                state.error,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Colors.red,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _handleBarcodeDetection(BarcodeCapture capture) async {
     final studentInfo = QRScannerService.processBarcodeCapture(capture);
     if (studentInfo == null) return;
 
     final qrData = studentInfo.studentCode;
-
     final now = DateTime.now();
 
-    // ✅ Check if same code detected recently (anti-spam)
+    // Anti-spam check
     if (lastDetectedCode == qrData &&
         lastDetectionTime != null &&
         now.difference(lastDetectionTime!) < cooldownDuration) {
-      print('🚫 Ignored duplicate QR: "$qrData" (cooldown active)');
       return;
     }
 
-    // Update tracking
     lastDetectedCode = qrData;
     lastDetectionTime = now;
 
-    setState(() => isProcessing = true);
-
-    try {
-      print('📱 QR detected: "${studentInfo.rawData}"');
-      print('👤 Name: ${studentInfo.studentName ?? "Unknown"}');
-      context.read<AttendanceBloc>().add(ScanQRCode(studentInfo.rawData));
-    } catch (e) {
-      print('💥 Detection error: $e');
-    }
-
-    // Short delay to show processing state
-    await Future.delayed(const Duration(milliseconds: 800));
-    setState(() => isProcessing = false);
-  }
-
-  void _handleSubmitAttendance() {
-    final scannedStudents =
-        _getScannedStudents(context.read<AttendanceBloc>().state);
-    final studentCodes = scannedStudents.map((s) => s.studentCode).toList();
-
-    context.read<AttendanceBloc>().add(
-          SubmitUniversalAttendance(
-            studentCodes: studentCodes,
-            attendanceDate: DateTime.now(),
-            attendanceType: _getAttendanceType(),
-            note: 'Universal QR Scan',
-          ),
-        );
-  }
-
-  // Helper methods
-  List<ScannedStudentInfo> _getScannedStudents(AttendanceState state) {
-    if (state is AttendanceScanning) return state.scannedStudents;
-    if (state is AttendanceSubmitting) return state.scannedStudents;
-    return [];
-  }
-
-  String _getAttendanceType() {
-    final now = DateTime.now();
-    return now.weekday == 7 ? 'sunday' : 'thursday';
+    context.read<AttendanceBloc>().add(ScanQRCode(studentInfo.rawData));
   }
 
   void _showSuccess(String message) {
@@ -330,42 +401,5 @@ class _QRScannerScreenState extends State<QRScannerScreen>
         duration: const Duration(seconds: 3),
       ),
     );
-  }
-
-  void _showInvalidCodesDialog(List<String> invalidCodes) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Một số thiếu nhi không tìm thấy'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Các mã thiếu nhi sau không tìm thấy trong hệ thống:'),
-            const SizedBox(height: 8),
-            ...invalidCodes.map((code) => Text('• $code')),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Đóng'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showManualAttendanceModal() async {
-    final result = await showModalBottomSheet<String>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => const ManualAttendanceModal(),
-    );
-
-    if (result != null && mounted) {
-      context.read<AttendanceBloc>().add(ScanQRCode(result));
-    }
   }
 }

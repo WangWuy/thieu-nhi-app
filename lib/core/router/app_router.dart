@@ -1,4 +1,4 @@
-// lib/core/router/app_router.dart - UPDATED VERSION
+// lib/core/router/app_router.dart - UPDATED WITH MANUAL ATTENDANCE ROUTE
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -17,6 +17,7 @@ import 'package:thieu_nhi_app/features/students/screens/edit_student_screen.dart
 import 'package:thieu_nhi_app/features/students/screens/student_detail_screen.dart';
 import 'package:thieu_nhi_app/features/students/screens/student_list_screen.dart';
 import 'package:thieu_nhi_app/features/attendance/screens/qr_scanner_screen.dart';
+import 'package:thieu_nhi_app/features/attendance/screens/manual_attendance_screen.dart';
 import 'package:thieu_nhi_app/features/attendance/bloc/attendance_bloc.dart';
 import 'package:thieu_nhi_app/core/services/attendance_service.dart';
 
@@ -30,12 +31,10 @@ class AppRouter {
       final authBloc = context.read<AuthBloc>();
       final authState = authBloc.state;
 
-      // Nếu đang ở login và đã authenticated → về dashboard
       if (state.uri.toString() == '/login' && authState is AuthAuthenticated) {
         return '/dashboard';
       }
 
-      // Nếu chưa authenticated và không ở login → về login
       if (authState is AuthUnauthenticated &&
           state.uri.toString() != '/login') {
         return '/login';
@@ -62,16 +61,27 @@ class AppRouter {
             builder: (context, state) => const MainLayoutScreen(),
           ),
 
-          // ==================== QR SCANNER ROUTE ====================
-          // ← THÊM route cho QR Scanner (standalone)
+          // ==================== ATTENDANCE ROUTES ====================
           GoRoute(
             path: '/qr-scanner',
-            name: 'qr-scanner',
+            name: 'qr-scanner-standalone',
             builder: (context, state) => BlocProvider(
               create: (context) => AttendanceBloc(
                 attendanceService: AttendanceService(),
               ),
               child: const QRScannerScreen(),
+            ),
+          ),
+
+          // ✅ NEW: Manual attendance standalone route
+          GoRoute(
+            path: '/manual-attendance',
+            name: 'manual-attendance-standalone',
+            builder: (context, state) => BlocProvider(
+              create: (context) => AttendanceBloc(
+                attendanceService: AttendanceService(),
+              ),
+              child: const ManualAttendanceScreen(),
             ),
           ),
 
@@ -105,7 +115,16 @@ class AppRouter {
             name: 'students',
             builder: (context, state) {
               final classId = state.pathParameters['classId']!;
-              return StudentListScreen(classId: classId);
+              final className = state.uri.queryParameters['className'] ?? '';
+              final department = state.uri.queryParameters['department'] ?? '';
+              final returnTo = state.uri.queryParameters['returnTo'];
+              
+              return StudentListScreen(
+                classId: classId,
+                className: className,
+                department: department,
+                returnTo: returnTo,
+              );
             },
           ),
 
@@ -272,10 +291,9 @@ class AppRouter {
   );
 }
 
-// Placeholder screens
+// Placeholder screens (giữ nguyên)
 class DepartmentStatsScreen extends StatelessWidget {
   final String department;
-
   const DepartmentStatsScreen({super.key, required this.department});
 
   @override
@@ -291,7 +309,6 @@ class DepartmentStatsScreen extends StatelessWidget {
 
 class TeacherClassScreen extends StatelessWidget {
   final String className;
-
   const TeacherClassScreen({super.key, required this.className});
 
   @override

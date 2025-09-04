@@ -23,7 +23,15 @@ class ClassManagementCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => context.push('/students/${classModel.id}'),
+      onTap: () => context.pushNamed(
+        'students',
+        pathParameters: {'classId': classModel.id},
+        queryParameters: {
+          'className': classModel.name,
+          'department': department,
+          'returnTo': 'classes', // Indicate where to return
+        },
+      ),
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(

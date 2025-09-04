@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:flutter/material.dart';
 
 // Thêm MarkerInfo class
 class MarkerInfo extends Equatable {
@@ -151,38 +152,33 @@ class BatchAttendanceResult {
   bool get isError => !isSuccess;
 }
 
-class AttendanceSummary {
-  final int totalStudents;
-  final int presentCount;
-  final int absentCount;
-  final double attendanceRate;
-  final String date;
-  final String type;
+class AttendanceSummary extends Equatable {
+  final int total;
+  final int attended;
+  final int absent;
+  final int notMarked;
 
-  AttendanceSummary({
-    required this.totalStudents,
-    required this.presentCount,
-    required this.absentCount,
-    required this.attendanceRate,
-    required this.date,
-    required this.type,
+  const AttendanceSummary({
+    required this.total,
+    required this.attended,
+    required this.absent,
+    required this.notMarked,
   });
 
-  factory AttendanceSummary.fromJson(Map<String, dynamic> json) {
-    final present = json['present'] ?? 0;
-    final absent = json['absent'] ?? 0;
-    final total = present + absent;
-    final rate = total > 0 ? (present / total) * 100 : 0.0;
+  @override
+  List<Object?> get props => [total, attended, absent, notMarked];
 
+  factory AttendanceSummary.fromJson(Map<String, dynamic> json) {
     return AttendanceSummary(
-      totalStudents: total,
-      presentCount: present,
-      absentCount: absent,
-      attendanceRate: rate,
-      date: json['date'] ?? '',
-      type: json['type'] ?? '',
+      total: json['total'] ?? 0,
+      attended: json['attended'] ?? 0,
+      absent: json['absent'] ?? 0,
+      notMarked: json['notMarked'] ?? 0,
     );
   }
+
+  double get attendanceRate => total > 0 ? (attended / total) * 100 : 0.0;
+  String get attendanceRateFormatted => '${attendanceRate.toStringAsFixed(1)}%';
 }
 
 class AttendanceResult extends Equatable {
@@ -236,12 +232,14 @@ class UniversalAttendanceRequest {
   final List<String> studentCodes;
   final String attendanceDate;
   final String attendanceType;
+  final bool isPresent; 
   final String? note;
 
   const UniversalAttendanceRequest({
     required this.studentCodes,
     required this.attendanceDate,
     required this.attendanceType,
+    this.isPresent = true,
     this.note,
   });
 
@@ -250,7 +248,112 @@ class UniversalAttendanceRequest {
       'studentCodes': studentCodes,
       'attendanceDate': attendanceDate,
       'attendanceType': attendanceType,
+      'isPresent': isPresent,
       if (note != null) 'note': note,
     };
   }
+}
+
+// ✅ NEW: Today's attendance status model
+class TodayAttendanceStatus extends Equatable {
+  final String date;
+  final String type;
+  final Map<String, StudentAttendanceStatus> attendanceStatus;
+  final AttendanceSummary summary;
+
+  const TodayAttendanceStatus({
+    required this.date,
+    required this.type,
+    required this.attendanceStatus,
+    required this.summary,
+  });
+
+  @override
+  List<Object?> get props => [date, type, attendanceStatus, summary];
+
+  factory TodayAttendanceStatus.fromJson(Map<String, dynamic> json) {
+    final statusMap = <String, StudentAttendanceStatus>{};
+    
+    if (json['attendanceStatus'] != null) {
+      (json['attendanceStatus'] as Map<String, dynamic>).forEach((key, value) {
+        statusMap[key] = StudentAttendanceStatus.fromJson(value);
+      });
+    }
+
+    return TodayAttendanceStatus(
+      date: json['date'] ?? '',
+      type: json['type'] ?? '',
+      attendanceStatus: statusMap,
+      summary: AttendanceSummary.fromJson(json['summary'] ?? {}),
+    );
+  }
+
+  // Helper methods
+  bool isStudentAttended(String studentCode) {
+    return attendanceStatus.containsKey(studentCode) && 
+           attendanceStatus[studentCode]!.isPresent;
+  }
+
+  bool isStudentAbsent(String studentCode) {
+    return attendanceStatus.containsKey(studentCode) && 
+           !attendanceStatus[studentCode]!.isPresent;
+  }
+
+  bool isStudentNotMarked(String studentCode) {
+    return !attendanceStatus.containsKey(studentCode);
+  }
+
+  StudentAttendanceStatus? getStudentStatus(String studentCode) {
+    return attendanceStatus[studentCode];
+  }
+}
+
+// ✅ NEW: Individual student attendance status
+class StudentAttendanceStatus extends Equatable {
+  final String studentCode;
+  final String studentName;
+  final String? className;
+  final String? department;
+  final bool isPresent;
+  final DateTime markedAt;
+  final String? markedBy;
+  final String? note;
+  final bool canToggle;
+
+  const StudentAttendanceStatus({
+    required this.studentCode,
+    required this.studentName,
+    this.className,
+    this.department,
+    required this.isPresent,
+    required this.markedAt,
+    this.markedBy,
+    this.note,
+    this.canToggle = true,
+  });
+
+  @override
+  List<Object?> get props => [
+    studentCode, studentName, className, department, 
+    isPresent, markedAt, markedBy, note, canToggle
+  ];
+
+  factory StudentAttendanceStatus.fromJson(Map<String, dynamic> json) {
+    return StudentAttendanceStatus(
+      studentCode: json['studentCode'] ?? '',
+      studentName: json['studentName'] ?? '',
+      className: json['className'],
+      department: json['department'],
+      isPresent: json['isPresent'] ?? false,
+      markedAt: DateTime.parse(json['markedAt'] ?? DateTime.now().toIso8601String()),
+      markedBy: json['markedBy'],
+      note: json['note'],
+      canToggle: json['canToggle'] ?? true,
+    );
+  }
+
+  // Helper getters
+  String get statusText => isPresent ? 'Có mặt' : 'Vắng mặt';
+  Color get statusColor => isPresent ? Colors.green : Colors.red;
+  IconData get statusIcon => isPresent ? Icons.check_circle : Icons.cancel;
 }

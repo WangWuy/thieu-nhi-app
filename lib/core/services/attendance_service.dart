@@ -205,6 +205,7 @@ class AttendanceService {
     required List<String> studentCodes,
     required DateTime attendanceDate,
     required String attendanceType,
+    bool isPresent = true, // Default present, can mark absent
     String? note,
   }) async {
     try {
@@ -217,10 +218,12 @@ class AttendanceService {
         studentCodes: studentCodes,
         attendanceDate: attendanceDate.toIso8601String().split('T')[0],
         attendanceType: attendanceType,
-        note: note ?? 'Universal QR Scan',
+        isPresent: isPresent,
+        note: note ?? (isPresent ? 'Universal QR Scan' : 'Manual Absent Mark'),
       );
 
-      print('🚀 Sending universal attendance: ${studentCodes.length} students');
+      print(
+          '🚀 Sending ${isPresent ? "present" : "absent"} attendance: ${studentCodes.length} students');
 
       final response = await _httpClient.post(
         '/attendance/universal', // ← Endpoint mới trên backend
@@ -239,6 +242,34 @@ class AttendanceService {
     } catch (e) {
       print('💥 Universal attendance exception: $e');
       return AttendanceResult.error('Lỗi kết nối: ${e.toString()}');
+    }
+  }
+
+  // ✅ NEW: Get today's attendance status for students
+  Future<TodayAttendanceStatus?> getTodayAttendanceStatus({
+    required List<String> studentCodes,
+    required DateTime date,
+    required String type,
+  }) async {
+    try {
+      if (studentCodes.isEmpty) return null;
+
+      final response = await _httpClient.post(
+        '/attendance/today-status',
+        body: {'studentCodes': studentCodes},
+        queryParams: {
+          'date': date.toIso8601String().split('T')[0],
+          'type': type,
+        },
+      );
+
+      if (response.isSuccess) {
+        return TodayAttendanceStatus.fromJson(response.data);
+      }
+      return null;
+    } catch (e) {
+      print('Get today attendance status error: $e');
+      return null;
     }
   }
 
@@ -279,6 +310,56 @@ class AttendanceService {
       print('Get student info error: $e');
       return {};
     }
+  }
+
+  // ✅ CONVENIENCE: Quick present marking
+  Future<AttendanceResult> markPresent({
+    required List<String> studentCodes,
+    required DateTime attendanceDate,
+    required String attendanceType,
+    String? note,
+  }) async {
+    return submitUniversalAttendance(
+      studentCodes: studentCodes,
+      attendanceDate: attendanceDate,
+      attendanceType: attendanceType,
+      isPresent: true,
+      note: note,
+    );
+  }
+
+  // ✅ CONVENIENCE: Quick absent marking
+  Future<AttendanceResult> markAbsent({
+    required List<String> studentCodes,
+    required DateTime attendanceDate,
+    required String attendanceType,
+    String? note,
+  }) async {
+    return submitUniversalAttendance(
+      studentCodes: studentCodes,
+      attendanceDate: attendanceDate,
+      attendanceType: attendanceType,
+      isPresent: false,
+      note: note ?? 'Manual Absent Mark',
+    );
+  }
+
+  // ✅ CONVENIENCE: Toggle attendance status
+  Future<AttendanceResult> toggleAttendanceStatus({
+    required List<String> studentCodes,
+    required DateTime attendanceDate,
+    required String attendanceType,
+    required bool newPresenceStatus,
+    String? note,
+  }) async {
+    return submitUniversalAttendance(
+      studentCodes: studentCodes,
+      attendanceDate: attendanceDate,
+      attendanceType: attendanceType,
+      isPresent: newPresenceStatus,
+      note: note ??
+          (newPresenceStatus ? 'Toggled to Present' : 'Toggled to Absent'),
+    );
   }
 
   String formatDateForAPI(DateTime date) {

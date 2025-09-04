@@ -1,4 +1,4 @@
-// lib/features/attendance/bloc/attendance_bloc.dart - UPDATED
+// lib/features/attendance/bloc/attendance_bloc.dart - IMMEDIATE ATTENDANCE
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:thieu_nhi_app/core/services/qr_scanner_service.dart';
 import 'package:thieu_nhi_app/core/services/attendance_service.dart';
@@ -7,7 +7,7 @@ import 'attendance_state.dart';
 
 class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
   final AttendanceService _attendanceService;
-  final Set<String> _scannedCodes = {};
+  final Set<String> _processedCodes = {}; // Track processed codes to avoid duplicates
 
   AttendanceBloc({
     required AttendanceService attendanceService,
@@ -15,9 +15,7 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
         super(const AttendanceInitial()) {
     on<InitializeQRScanner>(_onInitializeQRScanner);
     on<ScanQRCode>(_onScanQRCode);
-    on<RemoveScannedStudent>(_onRemoveScannedStudent);
-    on<ClearAllScannedStudents>(_onClearAllScannedStudents);
-    on<SubmitUniversalAttendance>(_onSubmitUniversalAttendance);
+    on<ManualAttendance>(_onManualAttendance); // ✅ NEW: Manual attendance
     on<ResetAttendanceState>(_onResetAttendanceState);
   }
 
@@ -31,10 +29,7 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
       final hasPermission = await QRScannerService.ensureCameraPermission();
 
       if (hasPermission) {
-        emit(const AttendanceScanning(
-          scannedStudents: [],
-          isScanning: true,
-        ));
+        emit(const QRScannerReady(hasPermission: true));
       } else {
         emit(const QRScannerReady(hasPermission: false));
       }
@@ -47,122 +42,128 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
     ScanQRCode event,
     Emitter<AttendanceState> emit,
   ) async {
-    final currentState = state;
-    if (currentState is! AttendanceScanning) return;
-
     try {
-      // ✅ UPDATED: Sử dụng parseStudentInfo thay vì parseStudentId
+      // ✅ Parse student info
       QRStudentInfo? studentInfo = QRScannerService.parseStudentInfo(event.qrData);
 
       if (studentInfo == null || studentInfo.studentCode.isEmpty) {
         emit(const QRScannerError('Mã QR không hợp lệ'));
         await Future.delayed(const Duration(seconds: 2));
-        emit(currentState);
+        emit(const QRScannerReady(hasPermission: true));
         return;
       }
 
       final studentCode = studentInfo.studentCode;
       
-      // Check duplicate
-      if (_scannedCodes.contains(studentCode)) {
-        emit(const QRScannerError('Thiếu nhi đã được quét'));
+      // ✅ Check if already processed recently (anti-spam)
+      if (_processedCodes.contains(studentCode)) {
+        emit(const QRScannerError('Thiếu nhi đã được điểm danh'));
         await Future.delayed(const Duration(seconds: 2));
-        emit(currentState);
+        emit(const QRScannerReady(hasPermission: true));
         return;
       }
 
-      // Add to scanned list
-      _scannedCodes.add(studentCode);
-
-      // ✅ UPDATED: Sử dụng tên thật thay vì tên generic
-      final displayName = studentInfo.studentName ?? 'Thiếu nhi $studentCode';
-      
-      final newStudent = ScannedStudentInfo(
+      // ✅ Show processing state
+      emit(AttendanceProcessing(
         studentCode: studentCode,
-        displayName: displayName,
-        scannedAt: DateTime.now(),
-        // Có thể thêm rawData để debug
-        rawQRData: studentInfo.rawData,
+        studentName: studentInfo.studentName ?? 'Thiếu nhi $studentCode',
+      ));
+
+      // ✅ IMMEDIATE ATTENDANCE - Call API right away
+      final result = await _attendanceService.submitUniversalAttendance(
+        studentCodes: [studentCode],
+        attendanceDate: DateTime.now(),
+        attendanceType: _getAttendanceType(),
+        note: 'QR Scan - ${studentInfo.studentName ?? studentCode}',
       );
 
-      final updatedStudents = [...currentState.scannedStudents, newStudent];
+      if (result.isSuccess) {
+        // ✅ Add to processed set
+        _processedCodes.add(studentCode);
+        
+        // ✅ Show success
+        emit(AttendanceSuccess(
+          studentCode: studentCode,
+          studentName: studentInfo.studentName ?? 'Thiếu nhi $studentCode',
+          message: 'Điểm danh thành công!',
+        ));
 
-      QRScannerService.successFeedback();
-
-      emit(currentState.copyWith(
-        scannedStudents: updatedStudents,
-      ));
-      
-      print('✅ Added student: $displayName ($studentCode)');
+        QRScannerService.successFeedback();
+        
+        // ✅ Auto return to scanning after 2 seconds
+        await Future.delayed(const Duration(seconds: 2));
+        emit(const QRScannerReady(hasPermission: true));
+        
+      } else {
+        emit(AttendanceError(
+          studentCode: studentCode,
+          studentName: studentInfo.studentName ?? 'Thiếu nhi $studentCode',
+          error: result.error ?? 'Lỗi điểm danh',
+        ));
+        
+        // ✅ Return to scanning after error
+        await Future.delayed(const Duration(seconds: 3));
+        emit(const QRScannerReady(hasPermission: true));
+      }
       
     } catch (e) {
       print('💥 QR processing error: $e');
       emit(QRScannerError('Lỗi xử lý QR: $e'));
 
       await Future.delayed(const Duration(seconds: 2));
-      emit(currentState);
+      emit(const QRScannerReady(hasPermission: true));
     }
   }
 
-  Future<void> _onRemoveScannedStudent(
-    RemoveScannedStudent event,
+  Future<void> _onManualAttendance(
+    ManualAttendance event,
     Emitter<AttendanceState> emit,
   ) async {
-    final currentState = state;
-    if (currentState is! AttendanceScanning) return;
-
-    _scannedCodes.remove(event.studentCode);
-
-    final updatedStudents = currentState.scannedStudents
-        .where((student) => student.studentCode != event.studentCode)
-        .toList();
-
-    emit(currentState.copyWith(scannedStudents: updatedStudents));
-  }
-
-  Future<void> _onClearAllScannedStudents(
-    ClearAllScannedStudents event,
-    Emitter<AttendanceState> emit,
-  ) async {
-    final currentState = state;
-    if (currentState is! AttendanceScanning) return;
-
-    _scannedCodes.clear();
-    emit(currentState.copyWith(scannedStudents: []));
-  }
-
-  Future<void> _onSubmitUniversalAttendance(
-    SubmitUniversalAttendance event,
-    Emitter<AttendanceState> emit,
-  ) async {
-    final currentState = state;
-    if (currentState is! AttendanceScanning) return;
-
-    emit(AttendanceSubmitting(scannedStudents: currentState.scannedStudents));
-
     try {
+      // Check duplicate
+      if (_processedCodes.contains(event.studentCode)) {
+        emit(const QRScannerError('Thiếu nhi đã được điểm danh'));
+        return;
+      }
+
+      emit(AttendanceProcessing(
+        studentCode: event.studentCode,
+        studentName: event.studentName,
+        isPresent: event.isPresent, // ✅ Include presence status
+      ));
+
       final result = await _attendanceService.submitUniversalAttendance(
-        studentCodes: event.studentCodes,
-        attendanceDate: event.attendanceDate,
-        attendanceType: event.attendanceType,
-        note: event.note,
+        studentCodes: [event.studentCode],
+        attendanceDate: DateTime.now(),
+        attendanceType: _getAttendanceType(),
+        isPresent: event.isPresent, // ✅ Pass presence status
+        note: event.isPresent 
+            ? 'Manual Present Entry - ${event.studentName}'
+            : 'Manual Absent Entry - ${event.studentName}',
       );
 
       if (result.isSuccess) {
-        emit(AttendanceSubmitted(
-          message: result.message ?? 'Điểm danh thành công',
-          successCount: result.count ?? 0,
-          invalidCodes: result.invalidStudentCodes,
+        _processedCodes.add(event.studentCode);
+        
+        emit(AttendanceSuccess(
+          studentCode: event.studentCode,
+          studentName: event.studentName,
+          message: event.isPresent ? 'Điểm danh có mặt thành công!' : 'Điểm danh vắng mặt thành công!',
+          isPresent: event.isPresent, // ✅ Include in success state
         ));
       } else {
-        emit(AttendanceSubmissionError(
-          message: result.error ?? 'Lỗi điểm danh',
-          invalidCodes: result.invalidStudentCodes,
+        emit(AttendanceError(
+          studentCode: event.studentCode,
+          studentName: event.studentName,
+          error: result.error ?? 'Lỗi điểm danh',
         ));
       }
+      
     } catch (e) {
-      emit(AttendanceSubmissionError(
-        message: 'Lỗi kết nối: $e',
+      emit(AttendanceError(
+        studentCode: event.studentCode,
+        studentName: event.studentName,
+        error: 'Lỗi kết nối: $e',
       ));
     }
   }
@@ -171,7 +172,12 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
     ResetAttendanceState event,
     Emitter<AttendanceState> emit,
   ) async {
-    _scannedCodes.clear();
+    _processedCodes.clear();
     emit(const AttendanceInitial());
+  }
+
+  String _getAttendanceType() {
+    final now = DateTime.now();
+    return now.weekday == 7 ? 'sunday' : 'thursday';
   }
 }

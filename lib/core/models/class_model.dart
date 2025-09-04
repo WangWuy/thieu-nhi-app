@@ -43,18 +43,39 @@ class ClassModel extends Equatable {
     return classTeachers.map((t) => t.displayName).toList();
   }
 
+  // FIXED: Hiển thị tên GLV đầy đủ thay vì (+1)
   String get teachersDisplay {
     if (classTeachers.isEmpty) return 'Chưa phân công';
-    if (classTeachers.length == 1) return classTeachers.first.displayName;
-
-    final primary = primaryTeacher;
-    if (primary != null) {
-      final others = classTeachers.where((t) => !t.isPrimary).toList();
-      if (others.isEmpty) return primary.displayName;
-      return '${primary.displayName} (+${others.length})';
+    
+    // Nếu chỉ có 1 GLV
+    if (classTeachers.length == 1) {
+      return classTeachers.first.displayName;
     }
-
+    
+    // Nếu có nhiều GLV, hiển thị tất cả tên, cách nhau bởi ", "
     return classTeachers.map((t) => t.displayName).join(', ');
+    
+    // Hoặc nếu muốn hiển thị trên nhiều dòng, dùng "\n":
+    // return classTeachers.map((t) => t.displayName).join('\n');
+  }
+
+  // Alternative: Nếu muốn giới hạn độ dài và vẫn hiển thị đầy đủ
+  String get teachersDisplayCompact {
+    if (classTeachers.isEmpty) return 'Chưa phân công';
+    
+    if (classTeachers.length == 1) {
+      return classTeachers.first.displayName;
+    }
+    
+    // Hiển thị tối đa 2 tên đầu, còn lại hiển thị số lượng
+    if (classTeachers.length <= 2) {
+      return classTeachers.map((t) => t.displayName).join(', ');
+    } else {
+      final first = classTeachers[0].displayName;
+      final second = classTeachers[1].displayName;
+      final remaining = classTeachers.length - 2;
+      return '$first, $second (+$remaining)';
+    }
   }
 
   ClassModel copyWith({
