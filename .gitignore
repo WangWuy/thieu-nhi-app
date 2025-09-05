@@ -1,0 +1,10 @@
+
+# FVM Version Cache
+.fvm/
+.env
+.dart_tool/
+.vscode/
+build/
+linux/
+macos/
+windows/

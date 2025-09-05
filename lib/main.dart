@@ -1,4 +1,5 @@
 // lib/main.dart - UPDATED FOR CUBIT ARCHITECTURE
+import 'package:app_tracking_transparency/app_tracking_transparency.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -34,16 +35,29 @@ void main() async {
   runApp(const ThieuNhiApp());
 }
 
-class ThieuNhiApp extends StatelessWidget {
+class ThieuNhiApp extends StatefulWidget {
   const ThieuNhiApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final authService = AuthService();
-    final studentService = StudentService();
-    final classService = ClassService();
-    final attendanceService = AttendanceService();
+  State<ThieuNhiApp> createState() => _ThieuNhiAppState();
+}
 
+class _ThieuNhiAppState extends State<ThieuNhiApp> {
+  final authService = AuthService();
+  final studentService = StudentService();
+  final classService = ClassService();
+  final attendanceService = AttendanceService();
+  @override
+  void initState() {
+    super.initState();
+    WidgetsFlutterBinding.ensureInitialized().addPostFrameCallback((_) async {
+      final status =
+          await AppTrackingTransparency.requestTrackingAuthorization();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
         // Auth BLoC - Keep as global
