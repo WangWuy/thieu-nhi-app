@@ -8,6 +8,8 @@ class ModernTextField extends StatelessWidget {
   final bool obscureText;
   final Widget? suffixIcon;
   final String? Function(String?)? validator;
+  final TextInputType? keyboardType;
+  final int? maxLines;
 
   const ModernTextField({
     super.key,
@@ -17,6 +19,8 @@ class ModernTextField extends StatelessWidget {
     this.obscureText = false,
     this.suffixIcon,
     this.validator,
+    this.keyboardType,
+    this.maxLines,
   });
 
   @override
@@ -34,6 +38,8 @@ class ModernTextField extends StatelessWidget {
         controller: controller,
         obscureText: obscureText,
         validator: validator,
+        keyboardType: keyboardType,
+        maxLines: maxLines ?? 1,
         style: const TextStyle(
           fontSize: 15,
           color: Color(0xFF2D3748),

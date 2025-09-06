@@ -22,6 +22,7 @@ import 'package:thieu_nhi_app/features/attendance/bloc/attendance_bloc.dart';
 import 'package:thieu_nhi_app/core/services/attendance_service.dart';
 
 import '../../features/auth/screens/login_screen.dart';
+import '../../features/auth/screens/register_screen.dart';
 import '../widgets/auth_wrapper.dart';
 
 class AppRouter {
@@ -36,7 +37,8 @@ class AppRouter {
       }
 
       if (authState is AuthUnauthenticated &&
-          state.uri.toString() != '/login') {
+          state.uri.toString() != '/login' &&
+          state.uri.toString() != '/register') {
         return '/login';
       }
 
@@ -48,6 +50,14 @@ class AppRouter {
         path: '/login',
         name: 'login',
         builder: (context, state) => const LoginScreen(),
+      ),
+
+      GoRoute(
+        path: '/register',
+        name: 'register',
+        builder: (context, state) {
+          return const RegisterScreen();
+        },
       ),
 
       // Protected routes
@@ -118,7 +128,7 @@ class AppRouter {
               final className = state.uri.queryParameters['className'] ?? '';
               final department = state.uri.queryParameters['department'] ?? '';
               final returnTo = state.uri.queryParameters['returnTo'];
-              
+
               return StudentListScreen(
                 classId: classId,
                 className: className,

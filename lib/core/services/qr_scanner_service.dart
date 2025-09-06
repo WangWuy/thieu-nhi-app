@@ -24,14 +24,35 @@ class QRScannerService {
   QRScannerService._internal();
 
   // ========== CAMERA PERMISSION ==========
-  
+
   static Future<bool> ensureCameraPermission() async {
     try {
       final status = await Permission.camera.status;
       if (status.isGranted) return true;
-      
+
       final result = await Permission.camera.request();
       return result.isGranted;
+    } catch (e) {
+      print('Permission request error: $e');
+      return false;
+    }
+  }
+
+  // ✅ NEW: Request permission with detailed status
+  static Future<PermissionStatus> requestCameraPermission() async {
+    try {
+      return await Permission.camera.request();
+    } catch (e) {
+      print('Permission request error: $e');
+      return PermissionStatus.denied;
+    }
+  }
+
+  // ✅ NEW: Check if permission is permanently denied
+  static Future<bool> isPermissionPermanentlyDenied() async {
+    try {
+      final status = await Permission.camera.status;
+      return status.isPermanentlyDenied;
     } catch (e) {
       return false;
     }
@@ -42,32 +63,32 @@ class QRScannerService {
   static QRStudentInfo? parseStudentInfo(String qrData) {
     try {
       if (qrData.isEmpty) return null;
-      
+
       // Clean và normalize
       final cleaned = qrData.trim();
-      final normalized = cleaned.toUpperCase()
-          .replaceAll('Ð', 'Đ')  // Eth -> D with Stroke
+      final normalized = cleaned
+          .toUpperCase()
+          .replaceAll('Ð', 'Đ') // Eth -> D with Stroke
           .replaceAll(RegExp(r'\s+'), ' ');
-      
+
       // Extract student code pattern
       final codePattern = RegExp(r'([A-ZĐ]{2}\d{1,6})');
       final codeMatch = codePattern.firstMatch(normalized);
-      
+
       if (codeMatch == null) {
         return null;
       }
-      
+
       final studentCode = codeMatch.group(1)!;
-      
+
       // Extract name từ QR data gốc
       String? studentName = _extractStudentName(cleaned, studentCode);
-      
+
       return QRStudentInfo(
         studentCode: studentCode,
         studentName: studentName,
         rawData: cleaned,
       );
-      
     } catch (e) {
       return null;
     }
@@ -83,25 +104,25 @@ class QRScannerService {
         if (namePart.isNotEmpty) {
           // Bỏ dấu và normalize thành chữ thường
           final cleanName = _removeVietnameseAccents(namePart);
-          
+
           if (cleanName.isNotEmpty && cleanName.length > 2) {
             return cleanName;
           }
         }
       }
-      
+
       // Fallback: tìm tên sau mã code
-      final afterCode = qrData.replaceFirst(RegExp(r'[A-ZĐ]{2}\d{1,6}'), '').trim();
+      final afterCode =
+          qrData.replaceFirst(RegExp(r'[A-ZĐ]{2}\d{1,6}'), '').trim();
       if (afterCode.isNotEmpty && afterCode.length > 2) {
         final cleanName = _removeVietnameseAccents(afterCode);
-        
+
         if (cleanName.isNotEmpty && cleanName.length > 2) {
           return cleanName;
         }
       }
-      
+
       return null;
-      
     } catch (e) {
       return null;
     }
@@ -110,17 +131,17 @@ class QRScannerService {
   // Vietnamese accent removal với smart ? replacement
   static String _removeVietnameseAccents(String text) {
     String result = text;
-    
+
     // FIRST: Replace ? with most common Vietnamese letters based on context
     result = result
-        .replaceAll('?n', 'en')    // Nguy?n -> Nguyen, Thi?n -> Thien  
-        .replaceAll('?ng', 'ang')  // H?ng -> Hang, L?ng -> Lang
-        .replaceAll('?c', 'ac')    // Tr?c -> Trac
-        .replaceAll('?i', 'ai')    // Tr?i -> Trai
-        .replaceAll('?o', 'ao')    // B?o -> Bao
-        .replaceAll('?u', 'au')    // C?u -> Cau
-        .replaceAll('?', 'e');     // Default fallback cho ? đơn lẻ
-    
+        .replaceAll('?n', 'en') // Nguy?n -> Nguyen, Thi?n -> Thien
+        .replaceAll('?ng', 'ang') // H?ng -> Hang, L?ng -> Lang
+        .replaceAll('?c', 'ac') // Tr?c -> Trac
+        .replaceAll('?i', 'ai') // Tr?i -> Trai
+        .replaceAll('?o', 'ao') // B?o -> Bao
+        .replaceAll('?u', 'au') // C?u -> Cau
+        .replaceAll('?', 'e'); // Default fallback cho ? đơn lẻ
+
     // Vietnamese to ASCII mapping
     const Map<String, String> accentMap = {
       // A variations
@@ -156,18 +177,18 @@ class QRScannerService {
       // D variations
       'đ': 'd', 'Đ': 'D',
     };
-    
+
     // Replace Vietnamese characters
     for (final entry in accentMap.entries) {
       result = result.replaceAll(entry.key, entry.value);
     }
-    
+
     // Final cleanup
     result = result
         .replaceAll(RegExp(r'[^a-zA-Z\s]'), '') // Keep only letters and spaces
         .replaceAll(RegExp(r'\s+'), ' ') // Normalize spaces
         .trim();
-    
+
     // Capitalize first letter of each word
     return result.split(' ').map((word) {
       if (word.isEmpty) return word;
@@ -176,7 +197,7 @@ class QRScannerService {
   }
 
   // ========== BACKWARD COMPATIBILITY ==========
-  
+
   // Giữ method cũ để không break existing code
   static String? parseStudentId(String qrData) {
     final info = parseStudentInfo(qrData);
@@ -187,11 +208,11 @@ class QRScannerService {
 
   static bool isValidStudentCode(String code) {
     if (code.length < 3 || code.length > 8) return false;
-    
+
     // Pattern: 2 letters + 1-6 numbers
     final pattern = RegExp(r'^[A-ZĐ]{2}\d{1,6}$');
     if (!pattern.hasMatch(code)) return false;
-    
+
     // Not all zeros
     final numbers = code.substring(2);
     return !RegExp(r'^0+$').hasMatch(numbers);
@@ -212,70 +233,58 @@ class QRScannerService {
     );
   }
 
-  // ✅ NEW: Safe camera initialization với delay và retry
+  // ✅ NEW: Safe camera initialization - chỉ tạo controller, không start
   static Future<MobileScannerController?> createSafeController() async {
     try {
       // Delay để system ổn định
       await Future.delayed(const Duration(milliseconds: 500));
-      
-      // Try back camera first với timeout
+
+      // Try back camera first
       var controller = MobileScannerController(
         detectionSpeed: DetectionSpeed.normal,
         facing: CameraFacing.back,
         formats: [BarcodeFormat.qrCode],
         returnImage: false,
       );
-      
+
+      return controller;
+    } catch (e) {
+      print('Back camera controller creation failed: $e');
+
       try {
-        await controller.start().timeout(
-          const Duration(seconds: 5),
-          onTimeout: () => throw TimeoutException('Camera start timeout'),
-        );
-        
-        return controller;
-        
-      } on TimeoutException {
-        await controller.dispose();
-        throw Exception('Camera timeout');
-        
-      } catch (e) {
-        await controller.dispose();
-        
-        // Delay trước khi thử front camera
-        await Future.delayed(const Duration(milliseconds: 300));
-        
         // Fallback to front camera
-        controller = MobileScannerController(
+        final frontController = MobileScannerController(
           detectionSpeed: DetectionSpeed.normal,
           facing: CameraFacing.front,
           formats: [BarcodeFormat.qrCode],
           returnImage: false,
         );
-        
-        await controller.start().timeout(
-          const Duration(seconds: 5),
-          onTimeout: () => throw TimeoutException('Front camera timeout'),
-        );
-        
-        return controller;
+
+        return frontController;
+      } catch (frontError) {
+        print('Front camera controller also failed: $frontError');
+        return null;
       }
-      
-    } catch (e) {
-      return null;
     }
   }
 
   // ✅ NEW: Check camera availability
   static Future<bool> isCameraAvailable() async {
     try {
+      // First check permission
+      final hasPermission = await ensureCameraPermission();
+      if (!hasPermission) return false;
+
+      // Try to create controller (without starting)
       final controller = await createSafeController();
       if (controller != null) {
-        await controller.stop();
+        // Just dispose the controller since we only tested creation
         await controller.dispose();
         return true;
       }
       return false;
     } catch (e) {
+      print('Camera availability check failed: $e');
       return false;
     }
   }
@@ -285,19 +294,18 @@ class QRScannerService {
   static QRStudentInfo? processBarcodeCapture(BarcodeCapture capture) {
     try {
       if (capture.barcodes.isEmpty) return null;
-      
+
       for (final barcode in capture.barcodes) {
         // Try display value first
         final displayResult = _tryParseBarcode(barcode.displayValue);
         if (displayResult != null) return displayResult;
-        
+
         // Fallback to raw value
         final rawResult = _tryParseBarcode(barcode.rawValue);
         if (rawResult != null) return rawResult;
       }
-      
+
       return null;
-      
     } catch (e) {
       return null;
     }
@@ -323,7 +331,7 @@ class QRScannerService {
     try {
       HapticFeedback.mediumImpact();
     } catch (e) {
-      // Silent fail  
+      // Silent fail
     }
   }
 
@@ -353,5 +361,4 @@ class QRScannerService {
     // print('✅ Valid: ${isValidQRFormat(qrData)}');
     // print('==================\n');
   }
-
 }

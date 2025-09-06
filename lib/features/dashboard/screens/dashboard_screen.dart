@@ -66,7 +66,7 @@ class DashboardScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  const Text(
                     'Xin chào,',
                     style: TextStyle(
                       fontSize: 16,
@@ -176,7 +176,7 @@ class DashboardScreen extends StatelessWidget {
                       Container(
                         width: 20,
                         height: 20,
-                        child: CircularProgressIndicator(
+                        child: const CircularProgressIndicator(
                           strokeWidth: 2,
                           valueColor:
                               AlwaysStoppedAnimation<Color>(Colors.white),
@@ -438,7 +438,7 @@ class DashboardScreen extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 '$teacherCount GLV',
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   color: AppColors.primary,
@@ -572,10 +572,10 @@ class DashboardScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.warning.withOpacity(0.3)),
       ),
-      child: Column(
+      child: const Column(
         children: [
           Icon(Icons.warning, color: AppColors.warning, size: 48),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Text(
             'Chưa được phân công lớp',
             style: TextStyle(
@@ -594,9 +594,9 @@ class DashboardScreen extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
-          Icon(Icons.error_outline, size: 64, color: AppColors.error),
+          const Icon(Icons.error_outline, size: 64, color: AppColors.error),
           const SizedBox(height: 16),
-          Text(
+          const Text(
             'Có lỗi xảy ra',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
@@ -610,7 +610,7 @@ class DashboardScreen extends StatelessWidget {
   Widget _buildLoadingContent() {
     return Container(
       height: 200,
-      child: Center(child: CircularProgressIndicator()),
+      child: const Center(child: CircularProgressIndicator()),
     );
   }
 
