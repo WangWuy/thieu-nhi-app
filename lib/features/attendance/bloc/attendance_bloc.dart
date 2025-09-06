@@ -7,7 +7,8 @@ import 'attendance_state.dart';
 
 class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
   final AttendanceService _attendanceService;
-  final Set<String> _processedCodes = {}; // Track processed codes to avoid duplicates
+  final Set<String> _processedCodes =
+      {}; // Track processed codes to avoid duplicates
 
   AttendanceBloc({
     required AttendanceService attendanceService,
@@ -26,6 +27,7 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
     emit(const QRScannerInitializing());
 
     try {
+      // Check if camera permission is granted
       final hasPermission = await QRScannerService.ensureCameraPermission();
 
       if (hasPermission) {
@@ -34,6 +36,7 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
         emit(const QRScannerReady(hasPermission: false));
       }
     } catch (e) {
+      print('QR Scanner initialization error: $e');
       emit(QRScannerError('Lỗi khởi tạo camera: $e'));
     }
   }
@@ -44,7 +47,8 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
   ) async {
     try {
       // ✅ Parse student info
-      QRStudentInfo? studentInfo = QRScannerService.parseStudentInfo(event.qrData);
+      QRStudentInfo? studentInfo =
+          QRScannerService.parseStudentInfo(event.qrData);
 
       if (studentInfo == null || studentInfo.studentCode.isEmpty) {
         emit(const QRScannerError('Mã QR không hợp lệ'));
@@ -54,7 +58,7 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
       }
 
       final studentCode = studentInfo.studentCode;
-      
+
       // ✅ Check if already processed recently (anti-spam)
       if (_processedCodes.contains(studentCode)) {
         emit(const QRScannerError('Thiếu nhi đã được điểm danh'));
@@ -80,7 +84,7 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
       if (result.isSuccess) {
         // ✅ Add to processed set
         _processedCodes.add(studentCode);
-        
+
         // ✅ Show success
         emit(AttendanceSuccess(
           studentCode: studentCode,
@@ -89,23 +93,21 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
         ));
 
         QRScannerService.successFeedback();
-        
+
         // ✅ Auto return to scanning after 2 seconds
         await Future.delayed(const Duration(seconds: 2));
         emit(const QRScannerReady(hasPermission: true));
-        
       } else {
         emit(AttendanceError(
           studentCode: studentCode,
           studentName: studentInfo.studentName ?? 'Thiếu nhi $studentCode',
           error: result.error ?? 'Lỗi điểm danh',
         ));
-        
+
         // ✅ Return to scanning after error
         await Future.delayed(const Duration(seconds: 3));
         emit(const QRScannerReady(hasPermission: true));
       }
-      
     } catch (e) {
       print('💥 QR processing error: $e');
       emit(QRScannerError('Lỗi xử lý QR: $e'));
@@ -137,18 +139,20 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
         attendanceDate: DateTime.now(),
         attendanceType: _getAttendanceType(),
         isPresent: event.isPresent, // ✅ Pass presence status
-        note: event.isPresent 
+        note: event.isPresent
             ? 'Manual Present Entry - ${event.studentName}'
             : 'Manual Absent Entry - ${event.studentName}',
       );
 
       if (result.isSuccess) {
         _processedCodes.add(event.studentCode);
-        
+
         emit(AttendanceSuccess(
           studentCode: event.studentCode,
           studentName: event.studentName,
-          message: event.isPresent ? 'Điểm danh có mặt thành công!' : 'Điểm danh vắng mặt thành công!',
+          message: event.isPresent
+              ? 'Điểm danh có mặt thành công!'
+              : 'Điểm danh vắng mặt thành công!',
           isPresent: event.isPresent, // ✅ Include in success state
         ));
       } else {
@@ -158,7 +162,6 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
           error: result.error ?? 'Lỗi điểm danh',
         ));
       }
-      
     } catch (e) {
       emit(AttendanceError(
         studentCode: event.studentCode,

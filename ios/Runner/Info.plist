@@ -51,5 +51,7 @@
 		<false/>
 		<key>NSCameraUsageDescription</key>
 		<string>Ứng dụng cần truy cập camera để quét mã QR điểm danh thiếu nhi</string>
+		<key>NSUserTrackingUsageDescription</key>
+		<string>We use tracking to improve your experience.</string>
 	</dict>
 </plist>

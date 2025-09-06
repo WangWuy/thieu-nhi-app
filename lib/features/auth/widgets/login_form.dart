@@ -1,6 +1,7 @@
 // lib/features/auth/widgets/login_form.dart
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'login_register_button.dart';
 import 'modern_text_field.dart';
 import 'remember_me_checkbox.dart';
 import 'login_button.dart';
@@ -170,6 +171,7 @@ class _LoginFormState extends State<LoginForm> {
             const SizedBox(height: 24),
 
             LoginButton(onPressed: _handleLogin),
+            const LoginRegisterButton(),
           ],
         ),
       ),

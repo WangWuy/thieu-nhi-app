@@ -1,7 +1,8 @@
-// lib/features/attendance/screens/qr_scanner_screen.dart - SIMPLIFIED VERSION
+// lib/features/attendance/screens/qr_scanner_screen.dart - FIXED CAMERA PERMISSION
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:thieu_nhi_app/core/services/qr_scanner_service.dart';
 import 'package:thieu_nhi_app/features/attendance/bloc/attendance_bloc.dart';
 import 'package:thieu_nhi_app/features/attendance/bloc/attendance_event.dart';
@@ -20,6 +21,7 @@ class _QRScannerScreenState extends State<QRScannerScreen>
     with WidgetsBindingObserver {
   MobileScannerController? controller;
   bool _torchEnabled = false;
+  bool _isInitializing = false;
 
   // Anti-spam mechanism
   String? lastDetectedCode;
@@ -30,27 +32,146 @@ class _QRScannerScreenState extends State<QRScannerScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-
-    context.read<AttendanceBloc>().add(const InitializeQRScanner());
-    _setupController();
+    _initializeCamera();
   }
 
-  void _setupController() {
-    controller = QRScannerService.createOptimalController();
+  Future<void> _initializeCamera() async {
+    if (_isInitializing) return;
+
+    setState(() {
+      _isInitializing = true;
+    });
+
+    try {
+      // Check permission first
+      final hasPermission = await Permission.camera.isGranted;
+
+      if (!hasPermission) {
+        // Check if permission is permanently denied
+        final isPermanentlyDenied =
+            await QRScannerService.isPermissionPermanentlyDenied();
+
+        if (isPermanentlyDenied) {
+          _showPermissionDeniedDialog();
+          setState(() {
+            _isInitializing = false;
+          });
+          return;
+        }
+
+        // Request permission
+        final status = await QRScannerService.requestCameraPermission();
+        if (!status.isGranted) {
+          setState(() {
+            _isInitializing = false;
+          });
+          return;
+        }
+      }
+
+      // Only create controller if we don't have one
+      if (controller == null) {
+        controller = await _createControllerWithRetry();
+      }
+
+      if (controller != null) {
+        context.read<AttendanceBloc>().add(const InitializeQRScanner());
+      } else {
+        _showCameraErrorDialog();
+      }
+    } catch (e) {
+      print('Camera initialization error: $e');
+      _showCameraErrorDialog();
+    } finally {
+      setState(() {
+        _isInitializing = false;
+      });
+    }
+  }
+
+  void _showPermissionDeniedDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Quyền camera bị từ chối'),
+        content: const Text(
+          'Ứng dụng cần quyền camera để quét mã QR. Vui lòng cấp quyền trong Cài đặt.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              openAppSettings();
+            },
+            child: const Text('Mở Cài đặt'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCameraErrorDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Lỗi camera'),
+        content: const Text(
+          'Không thể khởi tạo camera. Vui lòng thử lại hoặc kiểm tra quyền camera.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _initializeCamera();
+            },
+            child: const Text('Thử lại'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<MobileScannerController?> _createControllerWithRetry() async {
+    try {
+      print('Creating camera controller...');
+
+      // Use the service method to create controller
+      final controller = await QRScannerService.createSafeController();
+
+      if (controller != null) {
+        print('Camera controller created successfully');
+        return controller;
+      } else {
+        print('Failed to create camera controller');
+        return null;
+      }
+    } catch (e) {
+      print('Camera controller creation failed: $e');
+      return null;
+    }
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (controller == null || !controller!.value.isInitialized) return;
-
+    // MobileScanner widget handles lifecycle automatically
+    // We don't need to manually start/stop the controller
     switch (state) {
       case AppLifecycleState.resumed:
-        if (mounted) controller!.start();
+        // Camera will resume automatically when widget is rebuilt
         break;
       case AppLifecycleState.paused:
       case AppLifecycleState.inactive:
       case AppLifecycleState.detached:
-        controller!.stop();
+        // Camera will pause automatically
         break;
       default:
         break;
@@ -59,14 +180,14 @@ class _QRScannerScreenState extends State<QRScannerScreen>
 
   @override
   void deactivate() {
-    controller?.stop();
+    // MobileScanner widget handles deactivation automatically
     super.deactivate();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    controller?.stop();
+    // Only dispose, don't call stop() as it's handled by MobileScanner widget
     controller?.dispose();
     super.dispose();
   }
@@ -122,7 +243,8 @@ class _QRScannerScreenState extends State<QRScannerScreen>
   }
 
   Widget _buildBody(AttendanceState state) {
-    if (state is QRScannerInitializing) {
+    // Show loading if initializing
+    if (_isInitializing || state is QRScannerInitializing) {
       return const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -138,30 +260,41 @@ class _QRScannerScreenState extends State<QRScannerScreen>
       );
     }
 
-    if (state is QRScannerReady && !state.hasPermission) {
-      return _buildPermissionScreen();
+    // Show camera view if we have a controller and permission
+    if (controller != null && _hasCameraPermission()) {
+      return BlocBuilder<AttendanceBloc, AttendanceState>(
+        builder: (context, currentState) {
+          return Stack(
+            children: [
+              // Camera view - Full screen
+              QRCameraView(
+                controller: controller,
+                isProcessing: currentState is AttendanceProcessing,
+                onQRDetected: _handleBarcodeDetection,
+              ),
+
+              // Status overlay
+              if (currentState is AttendanceProcessing)
+                _buildProcessingOverlay(currentState),
+
+              if (currentState is AttendanceSuccess)
+                _buildSuccessOverlay(currentState),
+
+              if (currentState is AttendanceError)
+                _buildErrorOverlay(currentState),
+            ],
+          );
+        },
+      );
     }
 
-    return Stack(
-      children: [
-        // Camera view - Full screen
-        QRCameraView(
-          controller: controller,
-          isProcessing: state is AttendanceProcessing,
-          onQRDetected: _handleBarcodeDetection,
-        ),
-        
-        // Status overlay
-        if (state is AttendanceProcessing)
-          _buildProcessingOverlay(state),
-        
-        if (state is AttendanceSuccess)
-          _buildSuccessOverlay(state),
-          
-        if (state is AttendanceError)
-          _buildErrorOverlay(state),
-      ],
-    );
+    // Show permission screen if no controller or no permission
+    return _buildPermissionScreen();
+  }
+
+  bool _hasCameraPermission() {
+    // Check if we have permission based on state
+    return true; // We'll assume permission is granted if we have a controller
   }
 
   Widget _buildPermissionScreen() {
@@ -191,13 +324,43 @@ class _QRScannerScreenState extends State<QRScannerScreen>
               color: Colors.white,
             ),
           ),
+          const SizedBox(height: 16),
+          const Text(
+            'Ứng dụng cần quyền camera để quét mã QR điểm danh',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.white70,
+            ),
+            textAlign: TextAlign.center,
+          ),
           const SizedBox(height: 32),
           ElevatedButton.icon(
-            onPressed: () {
-              context.read<AttendanceBloc>().add(const InitializeQRScanner());
-            },
-            icon: const Icon(Icons.camera_alt),
-            label: const Text('Cấp quyền camera'),
+            onPressed: _isInitializing ? null : _initializeCamera,
+            icon: _isInitializing
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : const Icon(Icons.camera_alt),
+            label:
+                Text(_isInitializing ? 'Đang khởi tạo...' : 'Cấp quyền camera'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text(
+              'Quay lại',
+              style: TextStyle(color: Colors.white70),
+            ),
           ),
         ],
       ),
