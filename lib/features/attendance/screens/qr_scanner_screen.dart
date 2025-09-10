@@ -96,7 +96,7 @@ class _QRScannerScreenState extends State<QRScannerScreen>
       builder: (context) => AlertDialog(
         title: const Text('Quyền camera bị từ chối'),
         content: const Text(
-          'Ứng dụng cần quyền camera để quét mã QR. Vui lòng cấp quyền trong Cài đặt.',
+          'Ứng dụng cần quyền camera để quét mã QR.\n\nTrên iOS:\n- Vào Cài đặt > Quyền riêng tư & Bảo mật > Camera và bật cho ứng dụng,\n  hoặc Cài đặt > [Tên ứng dụng] > bật Camera (chỉ xuất hiện sau khi ứng dụng đã xin quyền ít nhất 1 lần).\n- Nếu không thấy mục Camera: bạn có thể đang dùng giả lập (không có camera),\n  hoặc Camera bị giới hạn bởi Screen Time: Cài đặt > Thời gian sử dụng > Nội dung & quyền riêng tư > Ứng dụng được phép > bật Camera.\n- Nếu vẫn không được, vào Cài đặt > Cài đặt chung > Chuyển hoặc đặt lại iPhone > Đặt lại > Đặt lại vị trí & quyền riêng tư.',
         ),
         actions: [
           TextButton(
@@ -335,7 +335,7 @@ class _QRScannerScreenState extends State<QRScannerScreen>
           ),
           const SizedBox(height: 32),
           ElevatedButton.icon(
-            onPressed: _isInitializing ? null : _initializeCamera,
+            onPressed: _isInitializing ? null : _handlePermissionButtonPressed,
             icon: _isInitializing
                 ? const SizedBox(
                     width: 20,
@@ -365,6 +365,31 @@ class _QRScannerScreenState extends State<QRScannerScreen>
         ],
       ),
     );
+  }
+
+  Future<void> _handlePermissionButtonPressed() async {
+    try {
+      final status = await Permission.camera.status;
+      if (status.isPermanentlyDenied) {
+        await openAppSettings();
+        return;
+      }
+
+      if (status.isDenied || status.isRestricted || status.isLimited) {
+        final request = await QRScannerService.requestCameraPermission();
+        if (!mounted) return;
+        if (request.isGranted) {
+          await _initializeCamera();
+        } else if (request.isPermanentlyDenied) {
+          await openAppSettings();
+        }
+        return;
+      }
+
+      await _initializeCamera();
+    } catch (_) {
+      await _initializeCamera();
+    }
   }
 
   Widget _buildProcessingOverlay(AttendanceProcessing state) {

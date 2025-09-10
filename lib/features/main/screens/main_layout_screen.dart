@@ -35,30 +35,34 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
         final user = state.user;
         final tabs = _getTabsForUser(user);
 
-        return Scaffold(
-          body: IndexedStack(
-            index: _currentIndex,
-            children: tabs.asMap().entries.map((entry) {
-              final index = entry.key;
-              final tab = entry.value;
+        return GestureDetector(
+            onTap: () {
+              FocusManager.instance.primaryFocus?.unfocus();
+            },
+            child: Scaffold(
+              body: IndexedStack(
+                index: _currentIndex,
+                children: tabs.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final tab = entry.value;
 
-              // Provide AttendanceBloc for attendance-related screens
-              if (tab.requiresAttendanceBloc) {
-                return _currentIndex == index
-                    ? BlocProvider(
-                        create: (context) => AttendanceBloc(
-                          attendanceService: AttendanceService(),
-                        ),
-                        child: tab.screen,
-                      )
-                    : Container();
-              }
+                  // Provide AttendanceBloc for attendance-related screens
+                  if (tab.requiresAttendanceBloc) {
+                    return _currentIndex == index
+                        ? BlocProvider(
+                            create: (context) => AttendanceBloc(
+                              attendanceService: AttendanceService(),
+                            ),
+                            child: tab.screen,
+                          )
+                        : Container();
+                  }
 
-              return _currentIndex == index ? tab.screen : Container();
-            }).toList(),
-          ),
-          bottomNavigationBar: _buildBottomNavigationBar(tabs, user),
-        );
+                  return _currentIndex == index ? tab.screen : Container();
+                }).toList(),
+              ),
+              bottomNavigationBar: _buildBottomNavigationBar(tabs, user),
+            ));
       },
     );
   }
@@ -73,7 +77,7 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
         screen: const DashboardScreen(),
         requiresAttendanceBloc: false,
       ),
-      
+
       // QR Scanner
       TabItem(
         icon: Icons.qr_code_scanner_outlined,
@@ -82,7 +86,7 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
         screen: const QRScannerScreen(),
         requiresAttendanceBloc: true,
       ),
-      
+
       // Manual Attendance ✅ NEW TAB
       TabItem(
         icon: Icons.edit_outlined,
@@ -91,7 +95,7 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
         screen: const ManualAttendanceScreen(),
         requiresAttendanceBloc: true,
       ),
-      
+
       // Profile
       TabItem(
         icon: Icons.person_outline,
