@@ -30,8 +30,8 @@ class ManualAttendanceStudentItem extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: hasAttendance 
-              ? (isPresent 
+          color: hasAttendance
+              ? (isPresent
                   ? AppColors.success.withOpacity(0.3)
                   : AppColors.error.withOpacity(0.3))
               : AppColors.grey200,
@@ -50,7 +50,7 @@ class ManualAttendanceStudentItem extends StatelessWidget {
         leading: _buildLeadingAvatar(hasAttendance, isPresent),
         title: _buildTitle(hasAttendance, isPresent),
         subtitle: _buildSubtitle(studentCode, hasAttendance),
-        trailing: _buildActionButtons(),
+        trailing: _buildActionButtons(context),
       ),
     );
   }
@@ -73,7 +73,7 @@ class ManualAttendanceStudentItem extends StatelessWidget {
             )
           : Icon(
               hasAttendance
-                  ? (isPresent ? Icons.check : Icons.close)
+                  ? (isPresent ? Icons.check : Icons.person)
                   : Icons.person,
               color: Colors.white,
               size: 20,
@@ -99,8 +99,7 @@ class ManualAttendanceStudentItem extends StatelessWidget {
       children: [
         Text('Mã: $studentCode'),
         Text('Lớp: ${student.className}'),
-        if (student.department.isNotEmpty)
-          Text('Ngành: ${student.department}'),
+        if (student.department.isNotEmpty) Text('Ngành: ${student.department}'),
         if (hasAttendance) ...[
           const SizedBox(height: 4),
           Text(
@@ -108,7 +107,9 @@ class ManualAttendanceStudentItem extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: attendanceStatus!.isPresent ? AppColors.success : AppColors.error,
+              color: attendanceStatus!.isPresent
+                  ? AppColors.success
+                  : AppColors.error,
             ),
           ),
         ],
@@ -116,11 +117,12 @@ class ManualAttendanceStudentItem extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButtons() {
+  Widget _buildActionButtons(BuildContext context) {
     if (isProcessing) {
       return const SizedBox(
         width: 60,
-        child: Center(child: Text('Đang xử lý...', style: TextStyle(fontSize: 12))),
+        child: Center(
+            child: Text('Đang xử lý...', style: TextStyle(fontSize: 12))),
       );
     }
 
@@ -128,32 +130,32 @@ class ManualAttendanceStudentItem extends StatelessWidget {
     final isPresent = attendanceStatus?.isPresent ?? false;
 
     if (!hasAttendance) {
-      // Not marked yet - show both buttons
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          IconButton(
-            onPressed: () => onMarkAttendance(student, true),
-            icon: const Icon(Icons.check_circle, color: AppColors.success),
-            tooltip: 'Có mặt',
-          ),
-          IconButton(
-            onPressed: () => onMarkAttendance(student, false),
-            icon: const Icon(Icons.cancel, color: AppColors.error),
-            tooltip: 'Vắng mặt',
-          ),
-        ],
+      // Chưa điểm danh - chỉ hiện nút check, không hiện nút X
+      return GestureDetector(
+        onDoubleTap: null, // Không làm gì khi double tap vì chưa có trạng thái
+        child: IconButton(
+          onPressed: () => onMarkAttendance(student, true),
+          icon: const Icon(Icons.check_circle, color: AppColors.success),
+          tooltip: 'Có mặt',
+        ),
       );
     } else {
-      // Already marked - show toggle button
-      return IconButton(
-        onPressed: () => onMarkAttendance(student, !isPresent),
-        icon: Icon(
-          isPresent ? Icons.cancel : Icons.check_circle,
-          color: isPresent ? AppColors.error : AppColors.success,
-        ),
-        tooltip: isPresent ? 'Đổi sang vắng mặt' : 'Đổi sang có mặt',
-      );
+      if (isPresent) {
+        return InkWell(
+          onDoubleTap: () => onMarkAttendance(student, false),
+          child: const IconButton(
+            onPressed: null, // Không cho nhấn single tap
+            icon: Icon(Icons.check_circle, color: AppColors.success),
+            tooltip: 'Double tap để chuyển sang vắng mặt',
+          ),
+        );
+      } else {
+        return IconButton(
+          onPressed: () => onMarkAttendance(student, true),
+          icon: const Icon(Icons.check_circle, color: AppColors.error),
+          tooltip: 'Chuyển sang có mặt',
+        );
+      }
     }
   }
 }

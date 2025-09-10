@@ -60,7 +60,7 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
 
     try {
       final results = await _studentService.searchStudents(query.trim());
-      
+
       if (mounted) {
         final classes = results
             .map((s) => s.className)
@@ -87,9 +87,7 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
   void _loadAttendanceStatusForResults() async {
     if (_searchResults.isEmpty) return;
 
-    final studentCodes = _searchResults
-        .map((s) => s.qrId ?? s.id)
-        .toList();
+    final studentCodes = _searchResults.map((s) => s.qrId ?? s.id).toList();
 
     final status = await _attendanceService.getTodayAttendanceStatus(
       studentCodes: studentCodes,
@@ -119,14 +117,14 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
 
   void onMarkAttendance(StudentModel student, bool isPresent) {
     final studentCode = student.qrId ?? student.id;
-    
+
     context.read<AttendanceBloc>().add(
-      ManualAttendance(
-        studentCode: studentCode,
-        studentName: student.name,
-        isPresent: isPresent,
-      ),
-    );
+          ManualAttendance(
+            studentCode: studentCode,
+            studentName: student.name,
+            isPresent: isPresent,
+          ),
+        );
   }
 
   void onClearSearch() {
@@ -144,7 +142,8 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
     return BlocConsumer<AttendanceBloc, AttendanceState>(
       listener: (context, state) {
         if (state is AttendanceSuccess) {
-          _showSuccess('✅ ${state.studentName} đã được ${state.isPresent ? "điểm danh có mặt" : "điểm danh vắng mặt"}');
+          _showSuccess(
+              '✅ ${state.studentName} đã được ${state.isPresent ? "điểm danh có mặt" : "điểm danh vắng mặt"}');
           _loadAttendanceStatusForResults();
         } else if (state is AttendanceError) {
           _showError('❌ ${state.error}');
