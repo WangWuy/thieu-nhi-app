@@ -423,7 +423,6 @@ class _RegisterScreenState extends State<RegisterScreen>
                           ),
                           const Spacer(),
                           const LoginFooter(),
-                    
                         ],
                       ),
                     ),

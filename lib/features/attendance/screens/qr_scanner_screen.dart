@@ -370,6 +370,7 @@ class _QRScannerScreenState extends State<QRScannerScreen>
   Future<void> _handlePermissionButtonPressed() async {
     try {
       final status = await Permission.camera.status;
+      _showInfo('Camera status trước request: ' + status.toString());
       if (status.isPermanentlyDenied) {
         await openAppSettings();
         return;
@@ -377,6 +378,7 @@ class _QRScannerScreenState extends State<QRScannerScreen>
 
       if (status.isDenied || status.isRestricted || status.isLimited) {
         final request = await QRScannerService.requestCameraPermission();
+        _showInfo('Kết quả request camera: ' + request.toString());
         if (!mounted) return;
         if (request.isGranted) {
           await _initializeCamera();
@@ -390,6 +392,18 @@ class _QRScannerScreenState extends State<QRScannerScreen>
     } catch (_) {
       await _initializeCamera();
     }
+  }
+
+  void _showInfo(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.blueGrey,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   Widget _buildProcessingOverlay(AttendanceProcessing state) {
