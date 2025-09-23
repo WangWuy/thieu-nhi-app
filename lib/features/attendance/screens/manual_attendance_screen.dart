@@ -216,9 +216,7 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
   void _loadAttendanceStatusForResults() async {
     if (_searchResults.isEmpty) return;
 
-    final studentCodes = _searchResults
-        .map((s) => s.qrId ?? s.id)
-        .toList();
+    final studentCodes = _searchResults.map((s) => s.qrId ?? s.id).toList();
 
     final status = await _attendanceService.getTodayAttendanceStatus(
       studentCodes: studentCodes,
@@ -286,7 +284,7 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
 
   void onMarkAttendance(StudentModel student) {
     final studentCode = student.qrId ?? student.id;
-    
+
     context.read<AttendanceBloc>().add(
       ManualAttendance(
         studentCode: studentCode,

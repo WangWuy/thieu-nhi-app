@@ -2,12 +2,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:collection/collection.dart';
 import 'package:thieu_nhi_app/features/auth/bloc/auth_bloc.dart';
 import 'package:thieu_nhi_app/features/auth/bloc/auth_state.dart';
 import 'package:thieu_nhi_app/features/students/bloc/students_event.dart';
 import 'package:thieu_nhi_app/features/students/bloc/students_state.dart';
 import 'package:thieu_nhi_app/theme/app_colors.dart';
 import 'package:thieu_nhi_app/core/models/user_model.dart';
+import '../../../core/models/student_model.dart';
 import '../../../core/widgets/custom_text_field.dart';
 import '../bloc/students_bloc.dart';
 
@@ -26,7 +28,7 @@ class StudentListScreen extends StatefulWidget {
     this.returnTo,
     this.isTeacherView = false, // NEW parameter
   });
-  
+
   @override
   State<StudentListScreen> createState() => _StudentListScreenState();
 }
@@ -428,6 +430,44 @@ class _StudentListScreenState extends State<StudentListScreen>
     );
   }
 
+  // Hàm so sánh tiếng Việt đơn giản, đúng thứ tự bảng chữ cái Việt Nam
+  int compareVietnamese(String a, String b) {
+    // Đưa về chữ thường và thay thế các ký tự đặc biệt về ký tự cơ bản
+    String normalize(String s) {
+      return s
+          .toLowerCase()
+          .replaceAll(RegExp(r'[àáạảãăằắặẳẵâầấậẩẫ]'), 'a')
+          .replaceAll(RegExp(r'[èéẹẻẽêềếệểễ]'), 'e')
+          .replaceAll(RegExp(r'[ìíịỉĩ]'), 'i')
+          .replaceAll(RegExp(r'[òóọỏõôồốộổỗơờớợởỡ]'), 'o')
+          .replaceAll(RegExp(r'[ùúụủũưừứựửữ]'), 'u')
+          .replaceAll(RegExp(r'[ỳýỵỷỹ]'), 'y')
+          .replaceAll(RegExp(r'[đ]'), 'd');
+    }
+
+    // Bảng chữ cái tiếng Việt chuẩn
+    const vietnameseOrder = 'aăâbcdđeêghiklmnoôơpqrstuưvxy';
+
+    int charOrder(String c) {
+      c = normalize(c);
+      if (c.isEmpty) return -1;
+      return vietnameseOrder.indexOf(c[0]);
+    }
+
+    int minLen = a.length < b.length ? a.length : b.length;
+    for (int i = 0; i < minLen; i++) {
+      int orderA = charOrder(a[i]);
+      int orderB = charOrder(b[i]);
+      if (orderA != orderB) return orderA - orderB;
+      // Nếu ký tự không thuộc bảng chữ cái, so sánh unicode
+      if (orderA == -1 && orderB == -1) {
+        int cmp = a[i].compareTo(b[i]);
+        if (cmp != 0) return cmp;
+      }
+    }
+    return a.length - b.length;
+  }
+
   Widget _buildStudentsList(StudentsState state) {
     if (state is StudentsLoading || isLoading) {
       return const SliverFillRemaining(
@@ -469,7 +509,23 @@ class _StudentListScreenState extends State<StudentListScreen>
     }
 
     if (state is StudentsLoaded) {
-      final students = state.filteredStudents;
+      final students = List<StudentModel>.from(state.filteredStudents)
+        ..sort((a, b) {
+          // Sắp xếp theo tên (tức là từ cuối cùng trong tên đầy đủ)
+          String getLastName(String fullName) {
+            final parts = fullName.trim().split(RegExp(r'\s+'));
+            return parts.isNotEmpty ? parts.last : '';
+          }
+
+          final lastNameA = getLastName(a.name);
+          final lastNameB = getLastName(b.name);
+
+          final cmp = compareVietnamese(lastNameA, lastNameB);
+          if (cmp != 0) return cmp;
+
+          // Nếu trùng tên, so sánh cả tên đầy đủ
+          return compareVietnamese(a.name, b.name);
+        });
 
       if (students.isEmpty) {
         return SliverFillRemaining(

@@ -122,12 +122,6 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
     Emitter<AttendanceState> emit,
   ) async {
     try {
-      // Check duplicate
-      if (_processedCodes.contains(event.studentCode)) {
-        emit(const QRScannerError('Thiếu nhi đã được điểm danh'));
-        return;
-      }
-
       emit(AttendanceProcessing(
         studentCode: event.studentCode,
         studentName: event.studentName,
@@ -142,8 +136,6 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
       );
 
       if (result.isSuccess) {
-        _processedCodes.add(event.studentCode);
-
         emit(AttendanceSuccess(
           studentCode: event.studentCode,
           studentName: event.studentName,

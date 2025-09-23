@@ -8,3 +8,5 @@ build/
 linux/
 macos/
 windows/
+android/
+ios/
