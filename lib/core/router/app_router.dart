@@ -1,8 +1,7 @@
-// lib/core/router/app_router.dart - UPDATED WITH MANUAL ATTENDANCE ROUTE
+// lib/core/router/app_router.dart - UPDATED WITH ENHANCED CLASSES ROUTE
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:thieu_nhi_app/core/models/department_model.dart';
 import 'package:thieu_nhi_app/core/models/student_model.dart';
 import 'package:thieu_nhi_app/core/models/user_model.dart';
 import 'package:thieu_nhi_app/core/widgets/protected_route_wrapper.dart';
@@ -10,7 +9,7 @@ import 'package:thieu_nhi_app/features/admin/screens/account_management_screen.d
 import 'package:thieu_nhi_app/features/admin/screens/add_account_screen.dart';
 import 'package:thieu_nhi_app/features/auth/bloc/auth_bloc.dart';
 import 'package:thieu_nhi_app/features/auth/bloc/auth_state.dart';
-import 'package:thieu_nhi_app/features/classes/screens/classes_screen.dart';
+import 'package:thieu_nhi_app/features/classes/screens/all_classes_screen.dart'; // NEW IMPORT
 import 'package:thieu_nhi_app/features/main/screens/main_layout_screen.dart';
 import 'package:thieu_nhi_app/features/students/screens/add_student_screen.dart';
 import 'package:thieu_nhi_app/features/students/screens/edit_student_screen.dart';
@@ -83,7 +82,6 @@ class AppRouter {
             ),
           ),
 
-          // ✅ NEW: Manual attendance standalone route
           GoRoute(
             path: '/manual-attendance',
             name: 'manual-attendance-standalone',
@@ -95,26 +93,16 @@ class AppRouter {
             ),
           ),
 
-          // ==================== DEPARTMENT CLASSES ====================
+          // 🆕 NEW: All Classes Route for Admin & Department
           GoRoute(
-            path: '/classes/:departmentId',
-            name: 'classes',
+            path: '/classes/:filter',
+            name: 'all-classes',
             builder: (context, state) {
-              final departmentId = state.pathParameters['departmentId']!;
-              final department = state.extra as DepartmentModel?;
-
-              if (department == null) {
-                return Scaffold(
-                  appBar: AppBar(title: const Text('Lỗi')),
-                  body: const Center(
-                      child: Text('Không tìm thấy thông tin ngành')),
-                );
-              }
-
+              final filter = state.pathParameters['filter']!; // 'all' or department name
+              
               return ProtectedRouteWrapper(
                 allowedRoles: [UserRole.admin, UserRole.department],
-                requiredDepartment: department.name,
-                child: ClassesScreen(department: department),
+                child: AllClassesScreen(initialFilter: filter),
               );
             },
           ),
@@ -128,12 +116,15 @@ class AppRouter {
               final className = state.uri.queryParameters['className'] ?? '';
               final department = state.uri.queryParameters['department'] ?? '';
               final returnTo = state.uri.queryParameters['returnTo'];
+              final isTeacherView = state.extra != null && 
+                  (state.extra as Map<String, dynamic>)['isTeacherView'] == true;
 
               return StudentListScreen(
                 classId: classId,
                 className: className,
                 department: department,
                 returnTo: returnTo,
+                isTeacherView: isTeacherView, // NEW parameter
               );
             },
           ),

@@ -7,8 +7,7 @@ import 'attendance_state.dart';
 
 class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
   final AttendanceService _attendanceService;
-  final Set<String> _processedCodes =
-      {}; // Track processed codes to avoid duplicates
+  final Set<String> _processedCodes = {};
 
   AttendanceBloc({
     required AttendanceService attendanceService,
@@ -16,7 +15,8 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
         super(const AttendanceInitial()) {
     on<InitializeQRScanner>(_onInitializeQRScanner);
     on<ScanQRCode>(_onScanQRCode);
-    on<ManualAttendance>(_onManualAttendance); // ✅ NEW: Manual attendance
+    on<ManualAttendance>(_onManualAttendance); // ✅ SIMPLIFIED
+    on<UndoAttendance>(_onUndoAttendance); // ✅ NEW
     on<ResetAttendanceState>(_onResetAttendanceState);
   }
 
@@ -131,17 +131,14 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
       emit(AttendanceProcessing(
         studentCode: event.studentCode,
         studentName: event.studentName,
-        isPresent: event.isPresent, // ✅ Include presence status
+        isUndo: false,
       ));
 
       final result = await _attendanceService.submitUniversalAttendance(
         studentCodes: [event.studentCode],
         attendanceDate: DateTime.now(),
         attendanceType: _getAttendanceType(),
-        isPresent: event.isPresent, // ✅ Pass presence status
-        note: event.isPresent
-            ? 'Manual Present Entry - ${event.studentName}'
-            : 'Manual Absent Entry - ${event.studentName}',
+        note: 'Manual Present Entry - ${event.studentName}',
       );
 
       if (result.isSuccess) {
@@ -150,10 +147,8 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
         emit(AttendanceSuccess(
           studentCode: event.studentCode,
           studentName: event.studentName,
-          message: event.isPresent
-              ? 'Điểm danh có mặt thành công!'
-              : 'Điểm danh vắng mặt thành công!',
-          isPresent: event.isPresent, // ✅ Include in success state
+          message: 'Điểm danh thành công!',
+          isUndo: false,
         ));
       } else {
         emit(AttendanceError(
@@ -163,6 +158,56 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
         ));
       }
     } catch (e) {
+      emit(AttendanceError(
+        studentCode: event.studentCode,
+        studentName: event.studentName,
+        error: 'Lỗi kết nối: $e',
+      ));
+    }
+  }
+
+   // ✅ NEW: Handle undo attendance
+  Future<void> _onUndoAttendance(
+    UndoAttendance event,
+    Emitter<AttendanceState> emit,
+  ) async {
+    try {
+      emit(AttendanceProcessing(
+        studentCode: event.studentCode,
+        studentName: event.studentName,
+        isUndo: true,
+      ));
+
+      final result = await _attendanceService.undoAttendance(
+        studentCodes: [event.studentCode],
+        attendanceDate: DateTime.now(),
+        attendanceType: _getAttendanceType(),
+        note: 'Undo attendance - ${event.studentName}',
+      );
+
+      print('🔍 Undo result: isSuccess=${result.isSuccess}, error=${result.error}');
+
+      if (result.isSuccess) {
+        // Remove from processed codes to allow re-attendance
+        _processedCodes.remove(event.studentCode);
+
+        print('✅ Emitting AttendanceSuccess with isUndo=true');
+        emit(AttendanceSuccess(
+          studentCode: event.studentCode,
+          studentName: event.studentName,
+          message: 'Đã hủy điểm danh thành công!',
+          isUndo: true,
+        ));
+      } else {
+        print('❌ Emitting AttendanceError');
+        emit(AttendanceError(
+          studentCode: event.studentCode,
+          studentName: event.studentName,
+          error: result.error ?? 'Lỗi hủy điểm danh',
+        ));
+      }
+    } catch (e) {
+      print('💥 Exception in _onUndoAttendance: $e');
       emit(AttendanceError(
         studentCode: event.studentCode,
         studentName: event.studentName,

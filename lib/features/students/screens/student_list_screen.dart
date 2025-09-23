@@ -1,4 +1,4 @@
-// lib/features/students/screens/student_list_screen.dart - CLEAN VERSION
+// lib/features/students/screens/student_list_screen.dart - UPDATED WITH TEACHER FILTERS
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -16,6 +16,7 @@ class StudentListScreen extends StatefulWidget {
   final String? className;
   final String? department;
   final String? returnTo;
+  final bool isTeacherView; // NEW parameter
 
   const StudentListScreen({
     super.key,
@@ -23,6 +24,7 @@ class StudentListScreen extends StatefulWidget {
     this.className,
     this.department,
     this.returnTo,
+    this.isTeacherView = false, // NEW parameter
   });
   
   @override
@@ -40,6 +42,9 @@ class _StudentListScreenState extends State<StudentListScreen>
   bool hasPermission = false;
   UserModel? currentUser;
   String? errorMessage;
+  
+  // NEW: Teacher view mode
+  String teacherViewMode = 'myClass'; // 'myClass' or 'all'
 
   @override
   bool get wantKeepAlive => true;
@@ -126,35 +131,55 @@ class _StudentListScreenState extends State<StudentListScreen>
       final bloc = context.read<StudentsBloc>();
       final currentState = bloc.state;
 
-      // ✅ Kiểm tra state hiện tại trước
+      // Check current state first
       if (currentState is StudentsLoaded &&
           currentState.currentClassId == widget.classId &&
           currentState.students.isNotEmpty) {
-        // Đã có data cho class này, không cần reload
         setState(() {
           isLoading = false;
         });
         return;
       }
 
-      // ✅ Kiểm tra cache local
+      // Check local cache
       if (_studentsCache.containsKey(widget.classId)) {
         setState(() {
           isLoading = false;
         });
-        // Sử dụng cache và refresh background (optional)
         bloc.add(LoadStudents(widget.classId));
         return;
       }
 
-      // ✅ Chỉ gọi API khi thực sự cần
-      bloc.add(LoadStudents(widget.classId));
+      // Load initial data based on teacher view mode
+      _loadDataBasedOnViewMode();
     } catch (e) {
       setState(() {
         isLoading = false;
         hasPermission = false;
         errorMessage = 'Lỗi khởi tạo: $e';
       });
+    }
+  }
+
+  // NEW: Load data based on teacher view mode
+  void _loadDataBasedOnViewMode() {
+    if (widget.isTeacherView && teacherViewMode == 'all') {
+      // Load all students for search
+      context.read<StudentsBloc>().add(LoadAllStudentsEvent());
+    } else {
+      // Load students by class (default)
+      context.read<StudentsBloc>().add(LoadStudents(widget.classId));
+    }
+  }
+
+  // NEW: Switch teacher view mode
+  void _switchTeacherViewMode(String mode) {
+    if (teacherViewMode != mode) {
+      setState(() {
+        teacherViewMode = mode;
+        isLoading = true;
+      });
+      _loadDataBasedOnViewMode();
     }
   }
 
@@ -167,7 +192,7 @@ class _StudentListScreenState extends State<StudentListScreen>
   Future<void> _onRefresh() async {
     if (!hasPermission) return;
 
-    context.read<StudentsBloc>().add(LoadStudents(widget.classId));
+    _loadDataBasedOnViewMode();
 
     try {
       await Future.any([
@@ -196,7 +221,7 @@ class _StudentListScreenState extends State<StudentListScreen>
 
     return Scaffold(
       body: _buildBody(),
-      floatingActionButton: hasPermission
+      floatingActionButton: hasPermission && _shouldShowFAB()
           ? FloatingActionButton(
               heroTag: "add_student_fab",
               onPressed: () => _showAddStudentDialog(),
@@ -206,10 +231,15 @@ class _StudentListScreenState extends State<StudentListScreen>
     );
   }
 
+  bool _shouldShowFAB() {
+    if (widget.isTeacherView && teacherViewMode == 'all') return false;
+    return true;
+  }
+
   Widget _buildBody() {
     return BlocConsumer<StudentsBloc, StudentsState>(
       listener: (context, state) {
-        // ✅ Cache successful data
+        // Cache successful data
         if (state is StudentsLoaded && state.currentClassId == widget.classId) {
           _studentsCache[widget.classId] = state.students;
         }
@@ -230,8 +260,14 @@ class _StudentListScreenState extends State<StudentListScreen>
               backgroundColor: AppColors.success,
             ),
           );
-          // ✅ Refresh data after operation
-          context.read<StudentsBloc>().add(LoadStudents(widget.classId));
+          _loadDataBasedOnViewMode();
+        }
+
+        // Update loading state
+        if (state is StudentsLoaded) {
+          setState(() {
+            isLoading = false;
+          });
         }
       },
       builder: (context, state) {
@@ -243,6 +279,7 @@ class _StudentListScreenState extends State<StudentListScreen>
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
               _buildSliverAppBar(state),
+              if (widget.isTeacherView) _buildTeacherFilters(),
               _buildSearchBar(),
               _buildStudentsList(state),
             ],
@@ -258,7 +295,7 @@ class _StudentListScreenState extends State<StudentListScreen>
       pinned: true,
       backgroundColor: AppColors.primary,
       title: Text(
-        _getClassDisplayName(),
+        _getAppBarTitle(),
         style: const TextStyle(
           color: Colors.white,
           fontSize: 20,
@@ -285,6 +322,97 @@ class _StudentListScreenState extends State<StudentListScreen>
     );
   }
 
+  // NEW: Teacher filters widget
+  Widget _buildTeacherFilters() {
+    return SliverToBoxAdapter(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Bộ lọc xem',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppColors.grey800,
+              ),
+            ),
+            const SizedBox(height: 12),
+            
+            // Filter buttons
+            Row(
+              children: [
+                Expanded(
+                  child: _buildFilterButton(
+                    'Lớp của tôi',
+                    Icons.school,
+                    teacherViewMode == 'myClass',
+                    () => _switchTeacherViewMode('myClass'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildFilterButton(
+                    'Tất cả thiếu nhi',
+                    Icons.groups,
+                    teacherViewMode == 'all',
+                    () => _switchTeacherViewMode('all'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterButton(String text, IconData icon, bool isSelected, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary : AppColors.grey50,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? AppColors.primary : AppColors.grey200,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 18,
+              color: isSelected ? Colors.white : AppColors.grey600,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              text,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: isSelected ? Colors.white : AppColors.grey600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildSearchBar() {
     return SliverToBoxAdapter(
       child: Container(
@@ -301,7 +429,7 @@ class _StudentListScreenState extends State<StudentListScreen>
   }
 
   Widget _buildStudentsList(StudentsState state) {
-    if (state is StudentsLoading) {
+    if (state is StudentsLoading || isLoading) {
       return const SliverFillRemaining(
         child: Center(child: CircularProgressIndicator()),
       );
@@ -331,11 +459,7 @@ class _StudentListScreenState extends State<StudentListScreen>
               ),
               const SizedBox(height: 24),
               ElevatedButton(
-                onPressed: () {
-                  context
-                      .read<StudentsBloc>()
-                      .add(LoadStudents(widget.classId));
-                },
+                onPressed: _onRefresh,
                 child: const Text('Thử lại'),
               ),
             ],
@@ -362,18 +486,18 @@ class _StudentListScreenState extends State<StudentListScreen>
                 Text(
                   _searchController.text.isNotEmpty
                       ? 'Không tìm thấy thiếu nhi'
-                      : 'Chưa có thiếu nhi',
+                      : _getEmptyStateTitle(),
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
                 const SizedBox(height: 8),
                 Text(
                   _searchController.text.isNotEmpty
                       ? 'Thử từ khóa khác'
-                      : 'Thêm thiếu nhi vào lớp này',
+                      : _getEmptyStateSubtitle(),
                   style: TextStyle(color: AppColors.grey600),
                 ),
                 const SizedBox(height: 24),
-                if (_searchController.text.isEmpty && _canManageStudents())
+                if (_searchController.text.isEmpty && _shouldShowAddButton())
                   ElevatedButton.icon(
                     onPressed: () => _showAddStudentDialog(),
                     icon: const Icon(Icons.person_add),
@@ -466,12 +590,28 @@ class _StudentListScreenState extends State<StudentListScreen>
                     ),
                   ),
                   const SizedBox(height: 6),
-                  Text(
-                    '${student.qrId}',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppColors.grey600,
-                    ),
+                  Row(
+                    children: [
+                      Text(
+                        '${student.qrId}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppColors.grey600,
+                        ),
+                      ),
+                      // Show class name if viewing all students
+                      if (widget.isTeacherView && teacherViewMode == 'all') ...[
+                        Text(' • ', style: TextStyle(color: AppColors.grey600)),
+                        Text(
+                          student.className,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ],
               ),
@@ -508,15 +648,16 @@ class _StudentListScreenState extends State<StudentListScreen>
     }
   }
 
-  bool _canManageStudents() {
+  bool _shouldShowAddButton() {
     if (currentUser == null) return false;
-
+    if (widget.isTeacherView && teacherViewMode == 'all') return false;
+    
     switch (currentUser!.role) {
       case UserRole.admin:
       case UserRole.department:
         return true;
       case UserRole.teacher:
-        return true;
+        return teacherViewMode == 'myClass';
     }
   }
 
@@ -525,6 +666,27 @@ class _StudentListScreenState extends State<StudentListScreen>
     if (currentState is StudentsLoaded && currentState.students.isNotEmpty) {
       return currentState.students.first.className;
     }
-    return 'Danh sách thiếu nhi';
+    return widget.className ?? 'Danh sách thiếu nhi';
+  }
+
+  String _getAppBarTitle() {
+    if (widget.isTeacherView && teacherViewMode == 'all') {
+      return 'Tất cả thiếu nhi';
+    }
+    return _getClassDisplayName();
+  }
+
+  String _getEmptyStateTitle() {
+    if (widget.isTeacherView && teacherViewMode == 'all') {
+      return 'Chưa có thiếu nhi nào';
+    }
+    return 'Chưa có thiếu nhi';
+  }
+
+  String _getEmptyStateSubtitle() {
+    if (widget.isTeacherView && teacherViewMode == 'all') {
+      return 'Hệ thống chưa có thiếu nhi nào';
+    }
+    return 'Thêm thiếu nhi vào lớp này';
   }
 }

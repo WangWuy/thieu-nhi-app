@@ -19,6 +19,32 @@ class LoadStudents extends StudentsEvent {
   List<Object?> get props => [classId];
 }
 
+class LoadStudentsByClassEvent extends StudentsEvent {
+  final String classId;
+
+  const LoadStudentsByClassEvent({required this.classId});
+
+  @override
+  List<Object?> get props => [classId];
+}
+
+class LoadAllStudentsEvent extends StudentsEvent {
+  const LoadAllStudentsEvent();
+}
+
+class RefreshStudentsEvent extends StudentsEvent {
+  const RefreshStudentsEvent();
+}
+
+class SearchStudentsEvent extends StudentsEvent {
+  final String searchTerm;
+
+  const SearchStudentsEvent({required this.searchTerm});
+
+  @override
+  List<Object?> get props => [searchTerm];
+}
+
 class LoadStudentsByDepartment extends StudentsEvent {
   final String department;
 
@@ -177,7 +203,6 @@ class BackToStudentsList extends StudentsEvent {
   List<Object?> get props => [classId, previousState];
 }
 
-// 🆕 ADD: Event để force refresh (khác với RefreshStudents hiện tại)
 class ForceRefreshStudents extends StudentsEvent {
   final String? classId;
   final String? department;
@@ -191,7 +216,6 @@ class ForceRefreshStudents extends StudentsEvent {
   List<Object?> get props => [classId, department];
 }
 
-// 🆕 ADD: Event để maintain navigation state
 class SaveNavigationState extends StudentsEvent {
   final StudentsLoaded state;
 

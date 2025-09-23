@@ -19,7 +19,7 @@ class StudentService {
     int page = 1,
     int limit = 20,
     String? search,
-    String? classFilter,
+    String? classFilter, // This will be classId as string
   }) async {
     try {
       final queryParams = <String, String>{
@@ -32,8 +32,10 @@ class StudentService {
       }
 
       if (classFilter != null && classFilter.isNotEmpty) {
-        queryParams['classFilter'] = classFilter;
+        queryParams['classFilter'] = classFilter; // Send classId to backend
       }
+
+      print('📡 API call: /students with params: $queryParams');
 
       final response =
           await _httpClient.get('/students', queryParams: queryParams);
@@ -56,6 +58,7 @@ class StudentService {
       return StudentListResult.error(
           response.error ?? 'Lỗi tải danh sách thiếu nhi');
     } catch (e) {
+      print('❌ StudentService.getStudents error: $e');
       return StudentListResult.error('Lỗi kết nối: ${e.toString()}');
     }
   }
@@ -441,7 +444,7 @@ class StudentService {
   Future<Map<String, dynamic>> getAttendanceSummary(String studentId) async {
     try {
       final stats = await getStudentAttendanceStats(studentId);
-      
+
       if (stats != null) {
         return {
           'thursdayCount': stats.student.thursdayCount ?? 0,

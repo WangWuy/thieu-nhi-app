@@ -1,4 +1,4 @@
-// lib/features/attendance/screens/widgets/manual_attendance_student_item.dart
+// lib/features/attendance/screens/widgets/manual_attendance_student_item.dart - SIMPLIFIED
 import 'package:flutter/material.dart';
 import 'package:thieu_nhi_app/core/models/student_model.dart';
 import 'package:thieu_nhi_app/core/models/attendance_models.dart';
@@ -8,7 +8,8 @@ class ManualAttendanceStudentItem extends StatelessWidget {
   final StudentModel student;
   final StudentAttendanceStatus? attendanceStatus;
   final bool isProcessing;
-  final Function(StudentModel, bool) onMarkAttendance;
+  final Function(StudentModel) onMarkAttendance;
+  final Function(StudentModel) onUndoAttendance;
 
   const ManualAttendanceStudentItem({
     super.key,
@@ -16,13 +17,13 @@ class ManualAttendanceStudentItem extends StatelessWidget {
     required this.attendanceStatus,
     required this.isProcessing,
     required this.onMarkAttendance,
+    required this.onUndoAttendance,
   });
 
   @override
   Widget build(BuildContext context) {
     final studentCode = student.qrId ?? student.id;
     final hasAttendance = attendanceStatus != null;
-    final isPresent = attendanceStatus?.isPresent ?? false;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -30,10 +31,8 @@ class ManualAttendanceStudentItem extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: hasAttendance 
-              ? (isPresent 
-                  ? AppColors.success.withOpacity(0.3)
-                  : AppColors.error.withOpacity(0.3))
+          color: hasAttendance
+              ? AppColors.success.withOpacity(0.3)
               : AppColors.grey200,
           width: hasAttendance ? 2 : 1,
         ),
@@ -47,18 +46,18 @@ class ManualAttendanceStudentItem extends StatelessWidget {
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: _buildLeadingAvatar(hasAttendance, isPresent),
-        title: _buildTitle(hasAttendance, isPresent),
+        leading: _buildLeadingAvatar(hasAttendance),
+        title: _buildTitle(hasAttendance),
         subtitle: _buildSubtitle(studentCode, hasAttendance),
-        trailing: _buildActionButtons(),
+        trailing: _buildActionButton(hasAttendance),
       ),
     );
   }
 
-  Widget _buildLeadingAvatar(bool hasAttendance, bool isPresent) {
+  Widget _buildLeadingAvatar(bool hasAttendance) {
     return CircleAvatar(
       backgroundColor: hasAttendance
-          ? (isPresent ? AppColors.success : AppColors.error)
+          ? AppColors.success
           : isProcessing
               ? AppColors.secondary
               : AppColors.grey300,
@@ -72,23 +71,19 @@ class ManualAttendanceStudentItem extends StatelessWidget {
               ),
             )
           : Icon(
-              hasAttendance
-                  ? (isPresent ? Icons.check : Icons.close)
-                  : Icons.person,
+              hasAttendance ? Icons.check : Icons.person,
               color: Colors.white,
               size: 20,
             ),
     );
   }
 
-  Widget _buildTitle(bool hasAttendance, bool isPresent) {
+  Widget _buildTitle(bool hasAttendance) {
     return Text(
       student.name,
       style: TextStyle(
         fontWeight: FontWeight.bold,
-        color: hasAttendance
-            ? (isPresent ? AppColors.success : AppColors.error)
-            : AppColors.grey800,
+        color: hasAttendance ? AppColors.success : AppColors.grey800,
       ),
     );
   }
@@ -98,17 +93,14 @@ class ManualAttendanceStudentItem extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Mã: $studentCode'),
-        Text('Lớp: ${student.className}'),
-        if (student.department.isNotEmpty)
-          Text('Ngành: ${student.department}'),
-        if (hasAttendance) ...[
+        if (hasAttendance && attendanceStatus?.markedAt != null) ...[
           const SizedBox(height: 4),
           Text(
-            'Đã điểm danh: ${attendanceStatus!.statusText}',
+            'Đã điểm danh lúc: ${_formatTime(attendanceStatus!.markedAt)}',
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: attendanceStatus!.isPresent ? AppColors.success : AppColors.error,
+              color: AppColors.success,
             ),
           ),
         ],
@@ -116,44 +108,90 @@ class ManualAttendanceStudentItem extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButtons() {
+  Widget _buildActionButton(bool hasAttendance) {
     if (isProcessing) {
       return const SizedBox(
-        width: 60,
-        child: Center(child: Text('Đang xử lý...', style: TextStyle(fontSize: 12))),
+        width: 80,
+        child: Center(
+          child: Text(
+            'Đang xử lý...',
+            style: TextStyle(fontSize: 12),
+          ),
+        ),
       );
     }
-
-    final hasAttendance = attendanceStatus != null;
-    final isPresent = attendanceStatus?.isPresent ?? false;
 
     if (!hasAttendance) {
-      // Not marked yet - show both buttons
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          IconButton(
-            onPressed: () => onMarkAttendance(student, true),
-            icon: const Icon(Icons.check_circle, color: AppColors.success),
-            tooltip: 'Có mặt',
+      // Chưa điểm danh - hiện nút "Có mặt"
+      return Container(
+        decoration: BoxDecoration(
+          color: AppColors.success,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: () => onMarkAttendance(student),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.check, color: Colors.white, size: 16),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Có mặt',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-          IconButton(
-            onPressed: () => onMarkAttendance(student, false),
-            icon: const Icon(Icons.cancel, color: AppColors.error),
-            tooltip: 'Vắng mặt',
-          ),
-        ],
+        ),
       );
     } else {
-      // Already marked - show toggle button
-      return IconButton(
-        onPressed: () => onMarkAttendance(student, !isPresent),
-        icon: Icon(
-          isPresent ? Icons.cancel : Icons.check_circle,
-          color: isPresent ? AppColors.error : AppColors.success,
+      // Đã điểm danh - chỉ hiện nút "Hủy"
+      return Container(
+        decoration: BoxDecoration(
+          color: AppColors.error.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppColors.error.withOpacity(0.3)),
         ),
-        tooltip: isPresent ? 'Đổi sang vắng mặt' : 'Đổi sang có mặt',
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: () => onUndoAttendance(student),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.undo, color: AppColors.error, size: 16),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Hủy',
+                    style: TextStyle(
+                      color: AppColors.error,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       );
     }
+  }
+
+  String _formatTime(DateTime dateTime) {
+    return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
   }
 }

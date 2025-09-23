@@ -1,4 +1,4 @@
-// lib/features/students/bloc/students_bloc.dart - IMPROVED VERSION
+// lib/features/students/bloc/students_bloc.dart - UPDATED WITH LoadAllStudentsEvent
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:thieu_nhi_app/core/models/attendance_models.dart';
 import 'package:thieu_nhi_app/core/services/backend_adapters.dart';
@@ -29,6 +29,7 @@ class StudentsBloc extends Bloc<StudentsEvent, StudentsState> {
         _attendanceService = attendanceService,
         super(const StudentsInitial()) {
     on<LoadStudents>(_onLoadStudents);
+    on<LoadAllStudentsEvent>(_onLoadAllStudents);
     on<LoadStudentsByDepartment>(_onLoadStudentsByDepartment);
     on<LoadStudentDetail>(_onLoadStudentDetail);
     on<AddStudent>(_onAddStudent);
@@ -110,6 +111,45 @@ class StudentsBloc extends Bloc<StudentsEvent, StudentsState> {
       emit(StudentsError(
         message: 'Không thể tải danh sách thiếu nhi: ${_formatError(e)}',
         errorCode: 'LOAD_STUDENTS_ERROR',
+      ));
+    }
+  }
+
+  Future<void> _onLoadAllStudents(
+    LoadAllStudentsEvent event,
+    Emitter<StudentsState> emit,
+  ) async {
+    emit(const StudentsLoading());
+
+    try {
+      // Load all students using search with large limit
+      final result = await _studentService.getStudents(
+        limit: 1000, // Large limit to get all students
+      );
+
+      final students = result.students ?? [];
+
+      // Update cache
+      for (final student in students) {
+        _studentCache[student.id] = student;
+      }
+
+      final filteredStudents =
+          _applyFilters(students, '', const StudentFilter());
+
+      emit(StudentsLoaded(
+        students: students,
+        filteredStudents: filteredStudents,
+        currentClassId: null,
+        currentDepartment: null,
+        searchQuery: '',
+        filter: const StudentFilter(),
+        lastUpdated: DateTime.now(),
+      ));
+    } catch (e) {
+      emit(StudentsError(
+        message: 'Không thể tải danh sách tất cả thiếu nhi: ${_formatError(e)}',
+        errorCode: 'LOAD_ALL_STUDENTS_ERROR',
       ));
     }
   }
