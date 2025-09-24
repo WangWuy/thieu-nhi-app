@@ -101,14 +101,8 @@ class AppRouter {
               final filter = state.pathParameters['filter']!; // 'all' or department name
               
               return ProtectedRouteWrapper(
-<<<<<<< HEAD
                 allowedRoles: const [UserRole.admin, UserRole.department],
-                requiredDepartment: department.name,
-                child: ClassesScreen(department: department),
-=======
-                allowedRoles: [UserRole.admin, UserRole.department],
                 child: AllClassesScreen(initialFilter: filter),
->>>>>>> main
               );
             },
           ),
