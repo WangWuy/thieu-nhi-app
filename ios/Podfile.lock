@@ -54,7 +54,7 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   app_tracking_transparency: 3d84f147f67ca82d3c15355c36b1fa6b66ca7c92
-  Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
+  Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
   flutter_native_splash: 6cad9122ea0fad137d23137dd14b937f3e90b145
   image_picker_ios: 7fe1ff8e34c1790d6fff70a32484959f563a928a
   mobile_scanner: 9157936403f5a0644ca3779a38ff8404c5434a93
