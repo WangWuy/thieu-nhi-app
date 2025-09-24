@@ -27,9 +27,7 @@
 		<key>LSRequiresIPhoneOS</key>
 		<true/>
 		<key>NSCameraUsageDescription</key>
-		<string>The app needs camera access to take photos and record videos.</string>
-		<key>NSMicrophoneUsageDescription</key>
-		<string>The app needs microphone access to record audio or video.</string>
+		<string>Ứng dụng cần quyền Camera để quét mã QR điểm danh và chụp ảnh hồ sơ học sinh. Ví dụ: giáo lý viên quét mã QR của học sinh để ghi nhận tham dự buổi học. Ảnh/chụp khung hình không được lưu hoặc chia sẻ nếu không có hành động của bạn.</string>
 		<key>UIApplicationSupportsIndirectInputEvents</key>
 		<true/>
 		<key>UILaunchStoryboardName</key>
