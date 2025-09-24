@@ -32,8 +32,6 @@
 		<string>The app needs microphone access to record audio or video.</string>
 		<key>UIApplicationSupportsIndirectInputEvents</key>
 		<true/>
-		<key>NSUserTrackingUsageDescription</key>
-		<string>This identifier will be used to deliver personalized experience and measure performance.</string>
 		<key>UILaunchStoryboardName</key>
 		<string>LaunchScreen</string>
 		<key>UIMainStoryboardFile</key>

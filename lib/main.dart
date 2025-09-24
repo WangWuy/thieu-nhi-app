@@ -1,5 +1,4 @@
 // lib/main.dart - UPDATED FOR CUBIT ARCHITECTURE
-import 'package:app_tracking_transparency/app_tracking_transparency.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -50,10 +49,10 @@ class _ThieuNhiAppState extends State<ThieuNhiApp> {
   @override
   void initState() {
     super.initState();
-    WidgetsFlutterBinding.ensureInitialized().addPostFrameCallback((_) async {
-      final status =
-          await AppTrackingTransparency.requestTrackingAuthorization();
-    });
+    // WidgetsFlutterBinding.ensureInitialized().addPostFrameCallback((_) async {
+    //   final status =
+    //       await AppTrackingTransparency.requestTrackingAuthorization();
+    // });
   }
 
   @override
