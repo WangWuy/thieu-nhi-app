@@ -81,7 +81,7 @@ class DashboardCubit extends Cubit<DashboardState> {
 
   // Auto refresh every 5 minutes
   void _startPeriodicRefresh() {
-    _refreshTimer = Timer.periodic(Duration(minutes: 5), (timer) {
+    _refreshTimer = Timer.periodic(const Duration(minutes: 5), (timer) {
       if (!isClosed && state is DashboardLoaded) {
         refreshDashboard();
       } else {

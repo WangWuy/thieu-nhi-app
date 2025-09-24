@@ -64,7 +64,7 @@ class _ThieuNhiAppState extends State<ThieuNhiApp> {
         BlocProvider<AuthBloc>(
           create: (context) => AuthBloc(
             authService: authService,
-          )..add(AuthCheckRequested()),
+          )..add(const AuthCheckRequested()),
         ),
 
         // Classes BLoC - Keep as global for navigation

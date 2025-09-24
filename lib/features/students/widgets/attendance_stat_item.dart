@@ -34,7 +34,7 @@ class AttendanceStatItem extends StatelessWidget {
           ),
           Text(
             label,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 10,
               color: AppColors.grey600,
             ),

@@ -79,7 +79,7 @@ class MiniClassCard extends StatelessWidget {
                         ),
                         Text(
                           '$totalStudents thiếu nhi',
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 12,
                             color: AppColors.grey600,
                           ),

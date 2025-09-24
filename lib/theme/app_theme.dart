@@ -295,9 +295,9 @@ class AppTheme {
           fontSize: 14,
           fontWeight: FontWeight.w500,
         ),
-        indicator: UnderlineTabIndicator(
-          borderSide: const BorderSide(color: AppColors.primary, width: 3),
-          insets: const EdgeInsets.symmetric(horizontal: 16),
+        indicator: const UnderlineTabIndicator(
+          borderSide: BorderSide(color: AppColors.primary, width: 3),
+          insets: EdgeInsets.symmetric(horizontal: 16),
         ),
         indicatorSize: TabBarIndicatorSize.label,
       ),

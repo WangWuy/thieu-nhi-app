@@ -70,9 +70,7 @@ class _QRScannerScreenState extends State<QRScannerScreen>
       }
 
       // Only create controller if we don't have one
-      if (controller == null) {
-        controller = await _createControllerWithRetry();
-      }
+      controller ??= await _createControllerWithRetry();
 
       if (controller != null) {
         context.read<AttendanceBloc>().add(const InitializeQRScanner());
@@ -370,7 +368,7 @@ class _QRScannerScreenState extends State<QRScannerScreen>
   Future<void> _handlePermissionButtonPressed() async {
     try {
       final status = await Permission.camera.status;
-      _showInfo('Camera status trước request: ' + status.toString());
+      _showInfo('Camera status trước request: $status');
       if (status.isPermanentlyDenied) {
         await openAppSettings();
         return;
@@ -378,7 +376,7 @@ class _QRScannerScreenState extends State<QRScannerScreen>
 
       if (status.isDenied || status.isRestricted || status.isLimited) {
         final request = await QRScannerService.requestCameraPermission();
-        _showInfo('Kết quả request camera: ' + request.toString());
+        _showInfo('Kết quả request camera: $request');
         if (!mounted) return;
         if (request.isGranted) {
           await _initializeCamera();
@@ -425,9 +423,9 @@ class _QRScannerScreenState extends State<QRScannerScreen>
                 strokeWidth: 3,
               ),
               const SizedBox(height: 16),
-              Text(
+              const Text(
                 'Đang điểm danh...',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),

@@ -1,5 +1,4 @@
 // lib/features/auth/screens/register_screen.dart
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../widgets/register_header.dart';

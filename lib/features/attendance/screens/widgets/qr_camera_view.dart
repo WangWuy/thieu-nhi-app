@@ -177,7 +177,7 @@ class _QRCameraViewState extends State<QRCameraView>
         child: Container(
           width: cornerSize,
           height: cornerSize,
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             border: Border(
               top: BorderSide(
                   color: AppColors.secondary, width: cornerThickness),
@@ -194,7 +194,7 @@ class _QRCameraViewState extends State<QRCameraView>
         child: Container(
           width: cornerSize,
           height: cornerSize,
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             border: Border(
               top: BorderSide(
                   color: AppColors.secondary, width: cornerThickness),
@@ -211,7 +211,7 @@ class _QRCameraViewState extends State<QRCameraView>
         child: Container(
           width: cornerSize,
           height: cornerSize,
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             border: Border(
               bottom: BorderSide(
                   color: AppColors.secondary, width: cornerThickness),
@@ -228,7 +228,7 @@ class _QRCameraViewState extends State<QRCameraView>
         child: Container(
           width: cornerSize,
           height: cornerSize,
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             border: Border(
               bottom: BorderSide(
                   color: AppColors.secondary, width: cornerThickness),

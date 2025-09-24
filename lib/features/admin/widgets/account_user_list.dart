@@ -59,7 +59,7 @@ class AccountUserList extends StatelessWidget {
             Text((state as AdminError).message),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () => context.read<AdminBloc>().add(LoadAllUsers()),
+              onPressed: () => context.read<AdminBloc>().add(const LoadAllUsers()),
               child: const Text('Thử lại'),
             ),
           ],
@@ -69,15 +69,15 @@ class AccountUserList extends StatelessWidget {
   }
 
   Widget _buildEmptyState() {
-    return SliverFillRemaining(
+    return const SliverFillRemaining(
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.search_off, size: 64, color: AppColors.grey400),
-            const SizedBox(height: 16),
-            const Text('Không tìm thấy tài khoản nào'),
-            const SizedBox(height: 8),
+            Icon(Icons.search_off, size: 64, color: AppColors.grey400),
+            SizedBox(height: 16),
+            Text('Không tìm thấy tài khoản nào'),
+            SizedBox(height: 8),
             Text(
               'Thử thay đổi từ khóa tìm kiếm hoặc bộ lọc',
               style: TextStyle(color: AppColors.grey600),
@@ -341,7 +341,7 @@ class UserInfo extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           '@${user.username}',
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 14,
             color: AppColors.grey600,
           ),
@@ -472,7 +472,7 @@ class UserDetailRow extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             '$label: ',
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 14,
               color: AppColors.grey600,
             ),

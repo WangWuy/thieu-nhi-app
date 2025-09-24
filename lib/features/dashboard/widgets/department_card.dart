@@ -200,7 +200,7 @@ class _DepartmentCardState extends State<DepartmentCard>
 
                       // Department name
                       Text(
-                        '${widget.name}',
+                        widget.name,
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -260,7 +260,7 @@ class _DepartmentCardState extends State<DepartmentCard>
                               width: 1,
                             ),
                           ),
-                          child: Row(
+                          child: const Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
@@ -268,7 +268,7 @@ class _DepartmentCardState extends State<DepartmentCard>
                                 size: 12,
                                 color: AppColors.grey500,
                               ),
-                              const SizedBox(width: 4),
+                              SizedBox(width: 4),
                               Flexible(
                                 child: Text(
                                   'Không có quyền',

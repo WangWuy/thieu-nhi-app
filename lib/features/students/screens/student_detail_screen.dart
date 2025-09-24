@@ -182,7 +182,7 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
                     child: Text(
                       message, 
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: AppColors.grey600),
+                      style: const TextStyle(color: AppColors.grey600),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -225,7 +225,7 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.person_search, size: 64, color: AppColors.grey400),
+                  const Icon(Icons.person_search, size: 64, color: AppColors.grey400),
                   const SizedBox(height: 16),
                   Text(
                     'Không tìm thấy thiếu nhi', 
@@ -234,7 +234,7 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
                   const SizedBox(height: 8),
                   Text(
                     'ID: ${widget.studentId}', 
-                    style: TextStyle(color: AppColors.grey600),
+                    style: const TextStyle(color: AppColors.grey600),
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton.icon(
@@ -304,7 +304,7 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.primary.withOpacity(0.3)),
       ),
-      child: Row(
+      child: const Row(
         children: [
           SizedBox(
             width: 16,
@@ -314,7 +314,7 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
               valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
             ),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
           Text(
             'Đang cập nhật dữ liệu...',
             style: TextStyle(
@@ -344,13 +344,13 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
       ),
       child: Column(
         children: [
-          Icon(
+          const Icon(
             Icons.warning_amber_rounded,
             size: 48,
             color: AppColors.warning,
           ),
           const SizedBox(height: 16),
-          Text(
+          const Text(
             'Chưa có thông tin năm học',
             style: TextStyle(
               fontSize: 18,
@@ -359,7 +359,7 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          Text(
+          const Text(
             'thiếu nhi chưa được gán vào năm học nào. Liên hệ quản trị viên để cập nhật.',
             textAlign: TextAlign.center,
             style: TextStyle(
@@ -418,7 +418,7 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
         if (isRefreshing)
           Container(
             margin: const EdgeInsets.only(right: 8),
-            child: SizedBox(
+            child: const SizedBox(
               width: 20,
               height: 20,
               child: CircularProgressIndicator(
@@ -493,8 +493,8 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
           heroTag: "refresh",
           onPressed: _onRefresh,
           backgroundColor: AppColors.secondary,
-          child: const Icon(Icons.refresh, color: Colors.white),
           tooltip: 'Làm mới',
+          child: const Icon(Icons.refresh, color: Colors.white),
         ),
         const SizedBox(height: 12),
         FloatingActionButton.extended(

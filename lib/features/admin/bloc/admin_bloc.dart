@@ -41,7 +41,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     // Refresh users every 10 minutes
     _refreshTimer = Timer.periodic(const Duration(minutes: 10), (timer) {
       if (!isClosed && state is AdminLoaded) {
-        add(RefreshUsers());
+        add(const RefreshUsers());
       } else {
         timer.cancel();
       }
@@ -155,7 +155,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
         ));
         
         // Refresh users list
-        add(RefreshUsers());
+        add(const RefreshUsers());
       } else {
         emit(const AdminError(
           message: 'Không thể tạo tài khoản',
@@ -230,13 +230,13 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
       final success = await _authService.deactivateUser(event.userId);
 
       if (success) {
-        emit(UserOperationSuccess(
+        emit(const UserOperationSuccess(
           message: 'Đã vô hiệu hóa tài khoản',
           operationType: UserOperationType.delete,
         ));
         
         // Refresh users list
-        add(RefreshUsers());
+        add(const RefreshUsers());
       } else {
         emit(const AdminError(
           message: 'Không thể xóa tài khoản',
@@ -264,7 +264,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
       );
 
       if (updatedUser != null) {
-        emit(UserOperationSuccess(
+        emit(const UserOperationSuccess(
           message: 'Đã kích hoạt tài khoản',
           operationType: UserOperationType.activate,
         ));
@@ -305,7 +305,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
       );
 
       if (updatedUser != null) {
-        emit(UserOperationSuccess(
+        emit(const UserOperationSuccess(
           message: 'Đã vô hiệu hóa tài khoản',
           operationType: UserOperationType.deactivate,
         ));
@@ -344,7 +344,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
       );
 
       if (success) {
-        emit(UserOperationSuccess(
+        emit(const UserOperationSuccess(
           message: 'Đã đặt lại mật khẩu thành công',
           operationType: UserOperationType.resetPassword,
         ));
@@ -401,7 +401,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
       ));
       
       // Refresh users list
-      add(RefreshUsers());
+      add(const RefreshUsers());
     } catch (e) {
       emit(AdminError(
         message: 'Lỗi khi thực hiện thao tác hàng loạt: ${e.toString()}',

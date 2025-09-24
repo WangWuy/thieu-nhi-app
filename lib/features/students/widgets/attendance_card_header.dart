@@ -19,7 +19,7 @@ class AttendanceCardHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(Icons.event_available, color: AppColors.primary, size: 24),
+        const Icon(Icons.event_available, color: AppColors.primary, size: 24),
         const SizedBox(width: 8),
         const Text(
           'Lịch sử điểm danh',

@@ -211,12 +211,12 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 64, color: AppColors.error),
+            const Icon(Icons.error_outline, size: 64, color: AppColors.error),
             const SizedBox(height: 16),
             Text(
               _error!,
               textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.error),
+              style: const TextStyle(color: AppColors.error),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
@@ -369,15 +369,15 @@ class AttendanceRecordListTile extends StatelessWidget {
               const SizedBox(width: 4),
               Text(
                 record.attendanceType == 'thursday' ? 'Thứ 5' : 'Chủ nhật',
-                style: TextStyle(color: AppColors.grey600),
+                style: const TextStyle(color: AppColors.grey600),
               ),
               if (record.markedAt != null) ...[
                 const SizedBox(width: 12),
-                Icon(Icons.schedule, size: 14, color: AppColors.grey600),
+                const Icon(Icons.schedule, size: 14, color: AppColors.grey600),
                 const SizedBox(width: 4),
                 Text(
                   _formatTime(record.markedAt!),
-                  style: TextStyle(color: AppColors.grey600),
+                  style: const TextStyle(color: AppColors.grey600),
                 ),
               ],
             ],
@@ -386,12 +386,12 @@ class AttendanceRecordListTile extends StatelessWidget {
             const SizedBox(height: 4),
             Row(
               children: [
-                Icon(Icons.note, size: 14, color: AppColors.grey500),
+                const Icon(Icons.note, size: 14, color: AppColors.grey500),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
                     record.note!,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: AppColors.grey500,
                       fontStyle: FontStyle.italic,
                     ),
@@ -404,11 +404,11 @@ class AttendanceRecordListTile extends StatelessWidget {
             const SizedBox(height: 4),
             Row(
               children: [
-                Icon(Icons.person, size: 14, color: AppColors.grey500),
+                const Icon(Icons.person, size: 14, color: AppColors.grey500),
                 const SizedBox(width: 4),
                 Text(
                   'Điểm danh bởi: ${record.marker!.fullName}',
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 12,
                     color: AppColors.grey500,
                   ),
@@ -466,7 +466,7 @@ class AttendanceRecordListTile extends StatelessWidget {
             if (record.note?.isNotEmpty ?? false)
               _buildDetailRow('Ghi chú', record.note!),
             if (record.marker?.fullName != null)
-              _buildDetailRow('Người điểm danh', record.marker!.fullName!),
+              _buildDetailRow('Người điểm danh', record.marker!.fullName),
             if (record.markedAt != null)
               _buildDetailRow('Thời gian', _formatDateTime(record.markedAt!)),
           ],

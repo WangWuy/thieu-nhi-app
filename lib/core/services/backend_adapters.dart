@@ -19,7 +19,7 @@ class BackendStudentAdapter {
         classId: json['classId'].toString(),
         className: json['class']?['name'] ?? 'Unknown',
         department: json['class']?['department']?['displayName'] ?? 'Unknown',
-        attendance: {},
+        attendance: const {},
         grades: _parseGrades(json),
         createdAt: _parseDate(json['createdAt']) ?? DateTime.now(),
         updatedAt: _parseDate(json['updatedAt']) ?? DateTime.now(),
@@ -76,8 +76,8 @@ class BackendStudentAdapter {
       classId: '0',
       className: 'Unknown',
       department: 'Unknown',
-      attendance: {},
-      grades: [0.0],
+      attendance: const {},
+      grades: const [0.0],
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
@@ -103,8 +103,9 @@ class BackendStudentAdapter {
     final data = <String, dynamic>{};
 
     if (student.name.isNotEmpty) data['fullName'] = student.name;
-    if (student.saintName?.isNotEmpty ?? false)
+    if (student.saintName?.isNotEmpty ?? false) {
       data['saintName'] = student.saintName;
+    }
     if (student.phone.isNotEmpty) data['phoneNumber'] = student.phone;
     if (student.address.isNotEmpty) data['address'] = student.address;
 

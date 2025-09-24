@@ -43,7 +43,7 @@ class ClassesBloc extends Bloc<ClassesEvent, ClassesState> {
       final classes = await _classService.getClassesByDepartment(currentState.departmentId);
       emit(currentState.copyWith(classes: classes));
     } catch (e) {
-      emit(ClassesError(message: 'Không thể làm mới dữ liệu'));
+      emit(const ClassesError(message: 'Không thể làm mới dữ liệu'));
     }
   }
 }

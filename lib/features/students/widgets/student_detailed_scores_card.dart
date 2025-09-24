@@ -129,7 +129,7 @@ class StudentDetailedScoresCard extends StatelessWidget {
         children: [
           Text(
             label,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 10,
               color: AppColors.grey600,
               fontWeight: FontWeight.w600,
@@ -162,7 +162,7 @@ class StudentDetailedScoresCard extends StatelessWidget {
         children: [
           Text(
             title,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: AppColors.grey700,
@@ -184,7 +184,7 @@ class StudentDetailedScoresCard extends StatelessWidget {
               const SizedBox(width: 4),
               Text(
                 unit,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 12,
                   color: AppColors.grey600,
                 ),
@@ -204,13 +204,13 @@ class StudentDetailedScoresCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.grey200),
       ),
-      child: Column(
+      child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Icon(Icons.info_outline, size: 16, color: AppColors.grey600),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Text(
                 'Cách tính điểm',
                 style: TextStyle(
@@ -221,7 +221,7 @@ class StudentDetailedScoresCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Text(
             '• Học tập: (45\'HK1 + 45\'HK2 + ThiHK1×2 + ThiHK2×2) ÷ 6',
             style: TextStyle(
@@ -229,7 +229,7 @@ class StudentDetailedScoresCard extends StatelessWidget {
               color: AppColors.grey600,
             ),
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: 4),
           Text(
             '• Điểm danh: (Thứ5×0.4 + CN×0.6) × (10÷tổng tuần)',
             style: TextStyle(
@@ -237,7 +237,7 @@ class StudentDetailedScoresCard extends StatelessWidget {
               color: AppColors.grey600,
             ),
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: 4),
           Text(
             '• Tổng kết: Học tập×0.6 + Điểm danh×0.4',
             style: TextStyle(

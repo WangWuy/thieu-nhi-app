@@ -63,7 +63,7 @@ class AccountStatsCards extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: AppColors.info.withOpacity(0.3)),
             ),
-            child: Row(
+            child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 SizedBox(
@@ -74,7 +74,7 @@ class AccountStatsCards extends StatelessWidget {
                     valueColor: AlwaysStoppedAnimation<Color>(AppColors.info),
                   ),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Text(
                   'Đang cập nhật...',
                   style: TextStyle(
@@ -153,13 +153,13 @@ class AccountStatsCards extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(Icons.error_outline, color: AppColors.error, size: 24),
+          const Icon(Icons.error_outline, color: AppColors.error, size: 24),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'Không thể tải thống kê',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
@@ -181,7 +181,7 @@ class AccountStatsCards extends StatelessWidget {
             onPressed: () {
               context.read<AdminBloc>().add(const LoadAllUsers());
             },
-            icon: Icon(Icons.refresh, color: AppColors.error),
+            icon: const Icon(Icons.refresh, color: AppColors.error),
             tooltip: 'Thử lại',
           ),
         ],

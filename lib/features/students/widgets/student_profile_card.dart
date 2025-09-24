@@ -59,7 +59,7 @@ class StudentProfileCard extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         'Tên Thánh: ${student.saintName}',
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 14,
                           color: AppColors.grey600,
                         ),
@@ -68,7 +68,7 @@ class StudentProfileCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       'Mã TN: ${student.qrId ?? 'N/A'}',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 14,
                         color: AppColors.grey600,
                       ),
@@ -101,11 +101,11 @@ class StudentProfileCard extends StatelessWidget {
           const SizedBox(height: 8),
           Row(
             children: [
-              Icon(Icons.schedule, size: 16, color: AppColors.grey600),
+              const Icon(Icons.schedule, size: 16, color: AppColors.grey600),
               const SizedBox(width: 8),
               Text(
                 'Cập nhật: ${_formatDateTime(student.updatedAt)}',
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 12,
                   color: AppColors.grey600,
                 ),
@@ -132,7 +132,7 @@ class StudentProfileCard extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 14,
                     color: AppColors.grey600,
                   ),
