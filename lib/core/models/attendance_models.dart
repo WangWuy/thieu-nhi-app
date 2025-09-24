@@ -232,14 +232,12 @@ class UniversalAttendanceRequest {
   final List<String> studentCodes;
   final String attendanceDate;
   final String attendanceType;
-  final bool isPresent; 
   final String? note;
 
   const UniversalAttendanceRequest({
     required this.studentCodes,
     required this.attendanceDate,
     required this.attendanceType,
-    this.isPresent = true,
     this.note,
   });
 
@@ -248,7 +246,6 @@ class UniversalAttendanceRequest {
       'studentCodes': studentCodes,
       'attendanceDate': attendanceDate,
       'attendanceType': attendanceType,
-      'isPresent': isPresent,
       if (note != null) 'note': note,
     };
   }
@@ -273,7 +270,7 @@ class TodayAttendanceStatus extends Equatable {
 
   factory TodayAttendanceStatus.fromJson(Map<String, dynamic> json) {
     final statusMap = <String, StudentAttendanceStatus>{};
-    
+
     if (json['attendanceStatus'] != null) {
       (json['attendanceStatus'] as Map<String, dynamic>).forEach((key, value) {
         statusMap[key] = StudentAttendanceStatus.fromJson(value);
@@ -290,13 +287,13 @@ class TodayAttendanceStatus extends Equatable {
 
   // Helper methods
   bool isStudentAttended(String studentCode) {
-    return attendanceStatus.containsKey(studentCode) && 
-           attendanceStatus[studentCode]!.isPresent;
+    return attendanceStatus.containsKey(studentCode) &&
+        attendanceStatus[studentCode]!.isPresent;
   }
 
   bool isStudentAbsent(String studentCode) {
-    return attendanceStatus.containsKey(studentCode) && 
-           !attendanceStatus[studentCode]!.isPresent;
+    return attendanceStatus.containsKey(studentCode) &&
+        !attendanceStatus[studentCode]!.isPresent;
   }
 
   bool isStudentNotMarked(String studentCode) {
@@ -334,9 +331,16 @@ class StudentAttendanceStatus extends Equatable {
 
   @override
   List<Object?> get props => [
-    studentCode, studentName, className, department, 
-    isPresent, markedAt, markedBy, note, canToggle
-  ];
+        studentCode,
+        studentName,
+        className,
+        department,
+        isPresent,
+        markedAt,
+        markedBy,
+        note,
+        canToggle
+      ];
 
   factory StudentAttendanceStatus.fromJson(Map<String, dynamic> json) {
     return StudentAttendanceStatus(
@@ -345,7 +349,8 @@ class StudentAttendanceStatus extends Equatable {
       className: json['className'],
       department: json['department'],
       isPresent: json['isPresent'] ?? false,
-      markedAt: DateTime.parse(json['markedAt'] ?? DateTime.now().toIso8601String()),
+      markedAt:
+          DateTime.parse(json['markedAt'] ?? DateTime.now().toIso8601String()),
       markedBy: json['markedBy'],
       note: json['note'],
       canToggle: json['canToggle'] ?? true,
@@ -356,4 +361,27 @@ class StudentAttendanceStatus extends Equatable {
   String get statusText => isPresent ? 'Có mặt' : 'Vắng mặt';
   Color get statusColor => isPresent ? Colors.green : Colors.red;
   IconData get statusIcon => isPresent ? Icons.check_circle : Icons.cancel;
+}
+
+class UndoAttendanceRequest {
+  final List<String> studentCodes;
+  final String attendanceDate;
+  final String attendanceType;
+  final String? note;
+
+  const UndoAttendanceRequest({
+    required this.studentCodes,
+    required this.attendanceDate,
+    required this.attendanceType,
+    this.note,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'studentCodes': studentCodes,
+      'attendanceDate': attendanceDate,
+      'attendanceType': attendanceType,
+      if (note != null) 'note': note,
+    };
+  }
 }

@@ -15,7 +15,7 @@ class HttpClient {
 
   // ✅ Environment configuration from .env
   String get apiBaseUrl =>
-      dotenv.env['API_BASE_URL'] ?? 'http://localhost:3000/api';
+      dotenv.env['API_BASE_URL'] ?? 'http://localhost:3000';
   int get apiTimeout =>
       int.tryParse(dotenv.env['API_TIMEOUT'] ?? '30000') ?? 30000;
   bool get debugMode => dotenv.env['DEBUG_MODE']?.toLowerCase() == 'true';
@@ -31,7 +31,7 @@ class HttpClient {
 
     if (debugMode) {
       print('🌐 HttpClient initialized');
-      print('🔗 Base URL: $apiBaseUrl');
+      print('🔗 Base URL: $apiBaseUrl/api');
       print('⏱️ Timeout: ${apiTimeout}ms');
       print('🔧 Debug Mode: ON');
     }
@@ -94,8 +94,8 @@ class HttpClient {
   // ✅ URL builder
   String _buildUrl(String endpoint, Map<String, String>? queryParams) {
     final url = endpoint.startsWith('/')
-        ? '$apiBaseUrl$endpoint'
-        : '$apiBaseUrl/$endpoint';
+        ? '$apiBaseUrl/api$endpoint'
+        : '$apiBaseUrl/api/$endpoint';
 
     if (queryParams != null && queryParams.isNotEmpty) {
       final uri = Uri.parse(url);

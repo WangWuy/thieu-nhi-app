@@ -11,7 +11,8 @@ class ManualAttendanceResults extends StatelessWidget {
   final String? selectedClassFilter;
   final TodayAttendanceStatus? todayStatus;
   final AttendanceState attendanceState;
-  final Function(StudentModel, bool) onMarkAttendance;
+  final Function(StudentModel) onMarkAttendance; // ✅ SIMPLIFIED
+  final Function(StudentModel) onUndoAttendance; // ✅ NEW
   final VoidCallback onClearClassFilter;
 
   const ManualAttendanceResults({
@@ -22,17 +23,20 @@ class ManualAttendanceResults extends StatelessWidget {
     required this.todayStatus,
     required this.attendanceState,
     required this.onMarkAttendance,
+    required this.onUndoAttendance,
     required this.onClearClassFilter,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (searchController.text.trim().isEmpty) {
-      return _buildEmptySearchState();
-    }
-
     if (filteredResults.isEmpty) {
-      return _buildNoResultsState();
+      // Nếu có search text thì hiện "không tìm thấy"
+      // Nếu không có search text thì hiện "chưa có dữ liệu"
+      if (searchController.text.trim().isNotEmpty) {
+        return _buildNoResultsState();
+      } else {
+        return _buildNoDataState(); // Trạng thái chưa load data
+      }
     }
 
     return ListView.builder(
@@ -42,45 +46,31 @@ class ManualAttendanceResults extends StatelessWidget {
         final student = filteredResults[index];
         final studentCode = student.qrId ?? student.id;
         final attendanceStatus = todayStatus?.getStudentStatus(studentCode);
-        final isProcessing = attendanceState is AttendanceProcessing && 
-                           (attendanceState as AttendanceProcessing).studentCode == studentCode;
+        final isProcessing = attendanceState is AttendanceProcessing &&
+            (attendanceState as AttendanceProcessing).studentCode ==
+                studentCode;
 
         return ManualAttendanceStudentItem(
           student: student,
           attendanceStatus: attendanceStatus,
           isProcessing: isProcessing,
           onMarkAttendance: onMarkAttendance,
+          onUndoAttendance: onUndoAttendance, // ✅ NEW
         );
       },
     );
   }
 
-  Widget _buildEmptySearchState() {
+  Widget _buildNoDataState() {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.search,
-            size: 64,
-            color: Colors.grey[400],
-          ),
+          Icon(Icons.people_outline, size: 64, color: Colors.grey[400]),
           const SizedBox(height: 16),
           Text(
-            'Nhập tên để tìm kiếm thiếu nhi',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Có thể tìm theo tên thiếu nhi hoặc tên lớp',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[500],
-            ),
+            'Đang tải dữ liệu...',
+            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
           ),
         ],
       ),
@@ -99,7 +89,7 @@ class ManualAttendanceResults extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            selectedClassFilter != null 
+            selectedClassFilter != null
                 ? 'Không tìm thấy thiếu nhi nào trong lớp "$selectedClassFilter"'
                 : 'Không tìm thấy thiếu nhi nào',
             style: TextStyle(

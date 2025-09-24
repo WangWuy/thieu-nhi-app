@@ -205,11 +205,9 @@ class AttendanceService {
     required List<String> studentCodes,
     required DateTime attendanceDate,
     required String attendanceType,
-    bool isPresent = true, // Default present, can mark absent
     String? note,
   }) async {
     try {
-      // Validate input
       if (studentCodes.isEmpty) {
         return const AttendanceResult.error('Danh sách thiếu nhi trống');
       }
@@ -218,15 +216,13 @@ class AttendanceService {
         studentCodes: studentCodes,
         attendanceDate: attendanceDate.toIso8601String().split('T')[0],
         attendanceType: attendanceType,
-        isPresent: isPresent,
-        note: note ?? (isPresent ? 'Universal QR Scan' : 'Manual Absent Mark'),
+        note: note ?? 'Universal attendance',
       );
 
-      print(
-          '🚀 Sending ${isPresent ? "present" : "absent"} attendance: ${studentCodes.length} students');
+      print('🚀 Sending attendance: ${studentCodes.length} students');
 
       final response = await _httpClient.post(
-        '/attendance/universal', // ← Endpoint mới trên backend
+        '/attendance/universal',
         body: request.toJson(),
       );
 
@@ -312,54 +308,45 @@ class AttendanceService {
     }
   }
 
-  // ✅ CONVENIENCE: Quick present marking
-  Future<AttendanceResult> markPresent({
+  // ✅ NEW: Undo attendance
+  Future<AttendanceResult> undoAttendance({
     required List<String> studentCodes,
     required DateTime attendanceDate,
     required String attendanceType,
     String? note,
   }) async {
-    return submitUniversalAttendance(
-      studentCodes: studentCodes,
-      attendanceDate: attendanceDate,
-      attendanceType: attendanceType,
-      isPresent: true,
-      note: note,
-    );
-  }
+    try {
+      if (studentCodes.isEmpty) {
+        return AttendanceResult.error('Danh sách thiếu nhi trống');
+      }
 
-  // ✅ CONVENIENCE: Quick absent marking
-  Future<AttendanceResult> markAbsent({
-    required List<String> studentCodes,
-    required DateTime attendanceDate,
-    required String attendanceType,
-    String? note,
-  }) async {
-    return submitUniversalAttendance(
-      studentCodes: studentCodes,
-      attendanceDate: attendanceDate,
-      attendanceType: attendanceType,
-      isPresent: false,
-      note: note ?? 'Manual Absent Mark',
-    );
-  }
+      final request = UndoAttendanceRequest(
+        studentCodes: studentCodes,
+        attendanceDate: attendanceDate.toIso8601String().split('T')[0],
+        attendanceType: attendanceType,
+        note: note ?? 'Undo attendance request',
+      );
 
-  // ✅ CONVENIENCE: Toggle attendance status
-  Future<AttendanceResult> toggleAttendanceStatus({
-    required List<String> studentCodes,
-    required DateTime attendanceDate,
-    required String attendanceType,
-    required bool newPresenceStatus,
-    String? note,
-  }) async {
-    return submitUniversalAttendance(
-      studentCodes: studentCodes,
-      attendanceDate: attendanceDate,
-      attendanceType: attendanceType,
-      isPresent: newPresenceStatus,
-      note: note ??
-          (newPresenceStatus ? 'Toggled to Present' : 'Toggled to Absent'),
-    );
+      print('🔄 Undoing attendance: ${studentCodes.length} students');
+
+      final response = await _httpClient.post(
+        '/attendance/undo',
+        body: request.toJson(),
+      );
+
+      if (response.isSuccess) {
+        print('✅ Undo attendance success: ${response.data}');
+        return AttendanceResult.fromJson(response.data);
+      } else {
+        print('❌ Undo attendance failed: ${response.error}');
+        return AttendanceResult.error(
+          response.error ?? 'Lỗi hủy điểm danh',
+        );
+      }
+    } catch (e) {
+      print('💥 Undo attendance exception: $e');
+      return AttendanceResult.error('Lỗi kết nối: ${e.toString()}');
+    }
   }
 
   String formatDateForAPI(DateTime date) {

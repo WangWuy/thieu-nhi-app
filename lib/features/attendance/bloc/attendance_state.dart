@@ -34,38 +34,38 @@ class QRScannerError extends AttendanceState {
   List<Object?> get props => [message];
 }
 
-// ✅ UPDATED: Processing individual attendance with presence status
+// ✅ SIMPLIFIED: Processing individual attendance
 class AttendanceProcessing extends AttendanceState {
   final String studentCode;
   final String studentName;
-  final bool isPresent; // ✅ NEW: Track if marking present or absent
+  final bool isUndo; // Track if this is undo operation
 
   const AttendanceProcessing({
     required this.studentCode,
     required this.studentName,
-    this.isPresent = true, // ✅ Default present
+    this.isUndo = false,
   });
 
   @override
-  List<Object?> get props => [studentCode, studentName, isPresent];
+  List<Object?> get props => [studentCode, studentName, isUndo];
 }
 
-// ✅ UPDATED: Individual attendance success with presence status
+// ✅ SIMPLIFIED: Individual attendance success
 class AttendanceSuccess extends AttendanceState {
   final String studentCode;
   final String studentName;
   final String message;
-  final bool isPresent; // ✅ NEW: Track final presence status
+  final bool isUndo; // Track if this was undo operation
 
   const AttendanceSuccess({
     required this.studentCode,
     required this.studentName,
     required this.message,
-    this.isPresent = true, // ✅ Default present
+    this.isUndo = false,
   });
 
   @override
-  List<Object?> get props => [studentCode, studentName, message, isPresent];
+  List<Object?> get props => [studentCode, studentName, message, isUndo];
 }
 
 // Keep AttendanceError unchanged

@@ -109,7 +109,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     try {
       // Load all users and filter by department on client side
       // TODO: Implement department filter in API
-      final users = await _authService.getUsers(limit: 200);
+      final users = await _authService.getUsers(limit: 50);
       
       final filteredUsers = users.where((user) => 
           user.department.toLowerCase() == event.department.toLowerCase()

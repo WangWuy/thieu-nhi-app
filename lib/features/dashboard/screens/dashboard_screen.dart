@@ -1,14 +1,12 @@
-// lib/features/dashboard/dashboard_screen.dart
+// lib/features/dashboard/dashboard_screen.dart - UPDATED WITH SIMPLIFIED CARDS
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:thieu_nhi_app/core/models/department_model.dart';
 import 'package:thieu_nhi_app/core/models/user_model.dart';
 import 'package:thieu_nhi_app/core/services/dashboard_service.dart';
 import 'package:thieu_nhi_app/features/auth/bloc/auth_bloc.dart';
 import 'package:thieu_nhi_app/features/auth/bloc/auth_state.dart';
 import 'package:thieu_nhi_app/features/dashboard/cubit/dashboard_cubit.dart';
-import 'package:thieu_nhi_app/features/dashboard/widgets/department_card.dart';
 import 'package:thieu_nhi_app/theme/app_colors.dart';
 
 class DashboardScreen extends StatelessWidget {
@@ -338,119 +336,47 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
+  // 🔄 UPDATED: Simplified admin content - only 2 cards
   Widget _buildAdminContent(BuildContext context, data) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader('Quản lý ngành', Icons.business),
+        _buildSectionHeader('Quản lý hệ thống', Icons.admin_panel_settings),
         const SizedBox(height: 16),
-
-        // Convert data.departments to DepartmentModels for compatibility
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            childAspectRatio: 0.9,
-          ),
-          itemCount: data.departments.length + 1, // +1 for Account Management
-          itemBuilder: (context, index) {
-            if (index == data.departments.length) {
-              return _buildAccountManagementCard(
-                  context, data.usersByRole['giao_ly_vien'] ?? 0);
-            }
-
-            final dept = data.departments[index];
-            // Convert DepartmentSummary to DepartmentModel
-            final departmentModel = DepartmentModel(
-              id: int.tryParse(dept.id) ?? 0,
-              name: dept.name,
-              displayName: dept.displayName,
-              description: null,
-              classIds: const [],
-              totalClasses: dept.totalClasses,
-              totalStudents: dept.totalStudents,
-              totalTeachers: dept.totalTeachers,
-              isActive: true,
-              createdAt: DateTime.now(),
-              updatedAt: DateTime.now(),
-            );
-
-            return DepartmentCard(
-              name: dept.displayName,
-              totalClasses: dept.totalClasses,
-              isAccessible: true,
-              onTap: () =>
-                  context.push('/classes/${dept.id}', extra: departmentModel),
-            );
-          },
+        
+        // 2 cards in a row
+        Row(
+          children: [
+            // Card 1: Giáo lý viên
+            Expanded(
+              child: _buildManagementCard(
+                context: context,
+                title: 'Giáo lý viên',
+                subtitle: '${data.usersByRole['giao_ly_vien'] ?? 0} GLV',
+                icon: Icons.school,
+                color: AppColors.error,
+                onTap: () => context.push('/admin/accounts'),
+              ),
+            ),
+            const SizedBox(width: 16),
+            // Card 2: Quản lý lớp  
+            Expanded(
+              child: _buildManagementCard(
+                context: context,
+                title: 'Quản lý lớp',
+                subtitle: 'Tất cả ngành',
+                icon: Icons.class_,
+                color: AppColors.primary,
+                onTap: () => context.push('/classes/all'), // Filter all departments
+              ),
+            ),
+          ],
         ),
       ],
     );
   }
 
-  Widget _buildAccountManagementCard(BuildContext context, int teacherCount) {
-    return GestureDetector(
-      onTap: () => context.push('/admin/accounts'),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.grey200),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 12,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  gradient:
-                      const LinearGradient(colors: AppColors.errorGradient),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Icon(
-                  Icons.school,
-                  color: Colors.white,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                'Giáo lý viên',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.grey800,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '$teacherCount GLV',
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
+  // 🔄 UPDATED: Simplified department content - only 1 card
   Widget _buildDepartmentContent(BuildContext context, UserModel user) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -462,11 +388,11 @@ class DashboardScreen extends StatelessWidget {
             width: MediaQuery.of(context).size.width * 0.7,
             child: _buildManagementCard(
               context: context,
-              title: 'Danh sách lớp',
-              subtitle: 'Quản lý lớp và thiếu nhi',
+              title: 'Quản lý lớp',
+              subtitle: 'Ngành ${user.department}',
               icon: Icons.school,
               color: AppColors.primary,
-              onTap: () => context.push('/classes/${user.department}'),
+              onTap: () => context.push('/classes/THIEU'), // Filter user's department
             ),
           ),
         ),
@@ -488,9 +414,9 @@ class DashboardScreen extends StatelessWidget {
                 context: context,
                 title: user.className!,
                 subtitle: 'Quản lý thiếu nhi',
-                icon: Icons.school,
+                icon: Icons.groups,
                 color: AppColors.success,
-                onTap: () => context.push('/students/${user.classId}'),
+                onTap: () => context.push('/students/${user.classId}?isTeacherView=true'),
               ),
             ),
           )
@@ -631,7 +557,7 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  // Helper methods
+  // Helper methods remain the same
   Color _getRoleColor(UserRole role) {
     switch (role) {
       case UserRole.admin:

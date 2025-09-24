@@ -2,15 +2,21 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+<<<<<<< HEAD
 <<<<<<< Updated upstream
+=======
+>>>>>>> main
       <module fileurl="file://$PROJECT_DIR$/thieu_nhi_app.iml" filepath="$PROJECT_DIR$/thieu_nhi_app.iml" />
       <module fileurl="file://$PROJECT_DIR$/android/thieu_nhi_app_android.iml" filepath="$PROJECT_DIR$/android/thieu_nhi_app_android.iml" />
     </modules>
   </component>
 </project>
+<<<<<<< HEAD
 =======
       <module fileurl="file://$PROJECT_DIR$/.idea/thieu-nhi-app.iml" filepath="$PROJECT_DIR$/.idea/thieu-nhi-app.iml" />
     </modules>
   </component>
 </project>
 >>>>>>> Stashed changes
+=======
+>>>>>>> main
