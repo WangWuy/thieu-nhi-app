@@ -1,11 +1,11 @@
 // This is a generated file; do not edit or check into version control.
-FLUTTER_ROOT=/Users/hoangnam/fvm/versions/stable
+FLUTTER_ROOT=/Users/hoangnam/fvm/versions/3.29.0
 FLUTTER_APPLICATION_PATH=/Users/hoangnam/Developer/thieu-nhi-app
 COCOAPODS_PARALLEL_CODE_SIGN=true
 FLUTTER_TARGET=/Users/hoangnam/Developer/thieu-nhi-app/lib/main.dart
 FLUTTER_BUILD_DIR=build
 FLUTTER_BUILD_NAME=1.0.0
-FLUTTER_BUILD_NUMBER=1
+FLUTTER_BUILD_NUMBER=2
 EXCLUDED_ARCHS[sdk=iphonesimulator*]=i386
 EXCLUDED_ARCHS[sdk=iphoneos*]=armv7
 DART_DEFINES=RkxVVFRFUl9WRVJTSU9OPTMuMzUuNA==,RkxVVFRFUl9DSEFOTkVMPXN0YWJsZQ==,RkxVVFRFUl9HSVRfVVJMPWh0dHBzOi8vZ2l0aHViLmNvbS9mbHV0dGVyL2ZsdXR0ZXIuZ2l0,RkxVVFRFUl9GUkFNRVdPUktfUkVWSVNJT049ZDY5M2I0YjlkYg==,RkxVVFRFUl9FTkdJTkVfUkVWSVNJT049YzI5ODA5MTM1MQ==,RkxVVFRFUl9EQVJUX1ZFUlNJT049My45LjI=
