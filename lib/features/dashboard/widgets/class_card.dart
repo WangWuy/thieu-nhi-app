@@ -240,7 +240,7 @@ class _ClassCardState extends State<ClassCard>
                               const SizedBox(height: 6),
                               Row(
                                 children: [
-                                  Icon(
+                                  const Icon(
                                     Icons.people_outline,
                                     size: 16,
                                     color: AppColors.grey600,
@@ -248,7 +248,7 @@ class _ClassCardState extends State<ClassCard>
                                   const SizedBox(width: 4),
                                   Text(
                                     '${widget.totalStudents} thiếu nhi',
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       fontSize: 14,
                                       color: AppColors.grey600,
                                       fontWeight: FontWeight.w500,
@@ -260,7 +260,7 @@ class _ClassCardState extends State<ClassCard>
                                 const SizedBox(height: 4),
                                 Row(
                                   children: [
-                                    Icon(
+                                    const Icon(
                                       Icons.person_outline,
                                       size: 16,
                                       color: AppColors.grey600,
@@ -269,7 +269,7 @@ class _ClassCardState extends State<ClassCard>
                                     Expanded(
                                       child: Text(
                                         widget.teacherName!,
-                                        style: TextStyle(
+                                        style: const TextStyle(
                                           fontSize: 14,
                                           color: AppColors.grey600,
                                           fontWeight: FontWeight.w500,
@@ -335,7 +335,7 @@ class _ClassCardState extends State<ClassCard>
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(
+                                    const Icon(
                                       Icons.check_circle,
                                       size: 20,
                                       color: AppColors.success,
@@ -384,7 +384,7 @@ class _ClassCardState extends State<ClassCard>
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(
+                                    const Icon(
                                       Icons.schedule,
                                       size: 20,
                                       color: AppColors.error,
@@ -425,7 +425,7 @@ class _ClassCardState extends State<ClassCard>
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
+                            const Text(
                               'Tỷ lệ tham gia',
                               style: TextStyle(
                                 fontSize: 14,

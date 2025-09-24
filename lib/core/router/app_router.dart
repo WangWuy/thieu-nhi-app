@@ -101,7 +101,7 @@ class AppRouter {
               final filter = state.pathParameters['filter']!; // 'all' or department name
               
               return ProtectedRouteWrapper(
-                allowedRoles: [UserRole.admin, UserRole.department],
+                allowedRoles: const [UserRole.admin, UserRole.department],
                 child: AllClassesScreen(initialFilter: filter),
               );
             },
@@ -185,18 +185,18 @@ class AppRouter {
           GoRoute(
             path: '/admin/accounts',
             name: 'account-management',
-            builder: (context, state) => ProtectedRouteWrapper(
+            builder: (context, state) => const ProtectedRouteWrapper(
               allowedRoles: [UserRole.admin],
-              child: const AccountManagementScreen(),
+              child: AccountManagementScreen(),
             ),
           ),
 
           GoRoute(
             path: '/admin/accounts/add',
             name: 'add-account',
-            builder: (context, state) => ProtectedRouteWrapper(
+            builder: (context, state) => const ProtectedRouteWrapper(
               allowedRoles: [UserRole.admin],
-              child: const AddAccountScreen(),
+              child: AddAccountScreen(),
             ),
           ),
 
@@ -208,7 +208,7 @@ class AppRouter {
               final accountData = state.extra as UserModel?;
 
               return ProtectedRouteWrapper(
-                allowedRoles: [UserRole.admin],
+                allowedRoles: const [UserRole.admin],
                 child: AddAccountScreen(accountData: accountData),
               );
             },
@@ -221,7 +221,7 @@ class AppRouter {
             builder: (context, state) {
               final department = state.pathParameters['department']!;
               return ProtectedRouteWrapper(
-                allowedRoles: [UserRole.admin, UserRole.department],
+                allowedRoles: const [UserRole.admin, UserRole.department],
                 requiredDepartment: department,
                 child: DepartmentStatsScreen(department: department),
               );
@@ -234,7 +234,7 @@ class AppRouter {
             builder: (context, state) {
               final className = state.pathParameters['className']!;
               return ProtectedRouteWrapper(
-                allowedRoles: [UserRole.teacher],
+                allowedRoles: const [UserRole.teacher],
                 requiredClass: className,
                 child: TeacherClassScreen(className: className),
               );

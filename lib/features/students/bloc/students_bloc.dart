@@ -60,7 +60,7 @@ class StudentsBloc extends Bloc<StudentsEvent, StudentsState> {
     // Refresh students every 5 minutes if loaded
     _refreshTimer = Timer.periodic(const Duration(minutes: 5), (timer) {
       if (!isClosed && state is StudentsLoaded) {
-        add(RefreshStudents());
+        add(const RefreshStudents());
       } else {
         timer.cancel();
       }
@@ -324,8 +324,8 @@ class StudentsBloc extends Bloc<StudentsEvent, StudentsState> {
           previousState: state is StudentsLoaded
               ? state as StudentsLoaded
               : StudentsLoaded(
-                  students: [],
-                  filteredStudents: [],
+                  students: const [],
+                  filteredStudents: const [],
                   searchQuery: '',
                   filter: const StudentFilter(),
                   lastUpdated: DateTime.now(),
@@ -434,7 +434,7 @@ class StudentsBloc extends Bloc<StudentsEvent, StudentsState> {
           ));
 
           // Refresh the students list
-          add(RefreshStudents(forceReload: true));
+          add(const RefreshStudents(forceReload: true));
         }
       } else {
         emit(const StudentsError(

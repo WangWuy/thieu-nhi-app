@@ -171,10 +171,10 @@ class DashboardScreen extends StatelessWidget {
                     ),
                     // Refresh indicator
                     if (state is DashboardRefreshing)
-                      Container(
+                      const SizedBox(
                         width: 20,
                         height: 20,
-                        child: const CircularProgressIndicator(
+                        child: CircularProgressIndicator(
                           strokeWidth: 2,
                           valueColor:
                               AlwaysStoppedAnimation<Color>(Colors.white),
@@ -534,9 +534,9 @@ class DashboardScreen extends StatelessWidget {
   }
 
   Widget _buildLoadingContent() {
-    return Container(
+    return const SizedBox(
       height: 200,
-      child: const Center(child: CircularProgressIndicator()),
+      child: Center(child: CircularProgressIndicator()),
     );
   }
 

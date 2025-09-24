@@ -64,14 +64,14 @@ class AttendanceRecordItem extends StatelessWidget {
                   children: [
                     Text(
                       record.attendanceType == 'thursday' ? 'Thứ 5' : 'Chủ nhật',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 12,
                         color: AppColors.grey600,
                       ),
                     ),
                     if (record.note?.isNotEmpty ?? false) ...[
                       const SizedBox(width: 8),
-                      Icon(Icons.note, size: 12, color: AppColors.grey500),
+                      const Icon(Icons.note, size: 12, color: AppColors.grey500),
                     ],
                   ],
                 ),
@@ -79,7 +79,7 @@ class AttendanceRecordItem extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     record.note!,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 11,
                       color: AppColors.grey500,
                       fontStyle: FontStyle.italic,
@@ -104,7 +104,7 @@ class AttendanceRecordItem extends StatelessWidget {
               if (record.markedAt != null) ...[
                 Text(
                   _formatTime(record.markedAt!),
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 10,
                     color: AppColors.grey500,
                   ),

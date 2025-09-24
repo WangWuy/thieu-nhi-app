@@ -201,7 +201,7 @@ class AttendanceResult extends Equatable {
       [isSuccess, message, count, error, invalidStudentCodes];
 
   // Success constructor
-  AttendanceResult.success({
+  const AttendanceResult.success({
     required this.message,
     required this.count,
   })  : isSuccess = true,
@@ -209,7 +209,7 @@ class AttendanceResult extends Equatable {
         invalidStudentCodes = null;
 
   // Error constructor
-  AttendanceResult.error(this.error, {this.invalidStudentCodes})
+  const AttendanceResult.error(this.error, {this.invalidStudentCodes})
       : isSuccess = false,
         message = null,
         count = null;

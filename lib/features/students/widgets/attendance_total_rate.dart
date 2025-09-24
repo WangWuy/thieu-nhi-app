@@ -39,7 +39,7 @@ class AttendanceTotalRate extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'Tỷ lệ điểm danh tổng',
                   style: TextStyle(
                     fontSize: 14,

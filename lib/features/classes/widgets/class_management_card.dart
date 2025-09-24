@@ -60,7 +60,7 @@ class ClassManagementCard extends StatelessWidget {
                 color: AppColors.grey100,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.arrow_forward_ios,
                 color: AppColors.grey600,
                 size: 16,
@@ -121,7 +121,7 @@ class ClassManagementCard extends StatelessWidget {
               ),
               child: Text(
                 '${classModel.totalStudents} thiếu nhi',
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   color: AppColors.grey600,
@@ -134,7 +134,7 @@ class ClassManagementCard extends StatelessWidget {
         // GLV hiển thị đầy đủ
         Text(
           'GLV: ${classModel.teachersDisplay}',
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 14,
             color: AppColors.grey600,
           ),

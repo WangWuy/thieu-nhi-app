@@ -39,16 +39,16 @@ class RegisterButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Row(
+            child: const Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
+                Icon(
                   Icons.person_add_outlined,
                   color: Colors.white,
                   size: 24,
                 ),
-                const SizedBox(width: 12),
-                const Text(
+                SizedBox(width: 12),
+                Text(
                   'Đăng ký tài khoản',
                   style: TextStyle(
                     color: Colors.white,

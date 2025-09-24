@@ -23,11 +23,11 @@ class AttendanceErrorState extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Icon(Icons.error_outline, color: AppColors.error),
+          const Icon(Icons.error_outline, color: AppColors.error),
           const SizedBox(height: 8),
           Text(
             error,
-            style: TextStyle(color: AppColors.error),
+            style: const TextStyle(color: AppColors.error),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 12),

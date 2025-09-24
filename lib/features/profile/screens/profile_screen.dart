@@ -142,7 +142,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(label,
-                    style: TextStyle(fontSize: 12, color: AppColors.grey500)),
+                    style: const TextStyle(fontSize: 12, color: AppColors.grey500)),
                 const SizedBox(height: 4),
                 Text(value,
                     style: const TextStyle(
@@ -261,7 +261,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             final item = entry.value;
             return Column(
               children: [
-                if (index > 0) Divider(color: AppColors.grey200, height: 1),
+                if (index > 0) const Divider(color: AppColors.grey200, height: 1),
                 ListTile(
                   contentPadding:
                       const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -279,10 +279,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       style: const TextStyle(
                           fontSize: 16, fontWeight: FontWeight.w600)),
                   subtitle: Text(item.subtitle,
-                      style: TextStyle(fontSize: 14, color: AppColors.grey600)),
+                      style: const TextStyle(fontSize: 14, color: AppColors.grey600)),
                   trailing: item.trailing ??
                       (item.onTap != null
-                          ? Icon(Icons.arrow_forward_ios,
+                          ? const Icon(Icons.arrow_forward_ios,
                               size: 16, color: AppColors.grey400)
                           : null),
                   onTap: item.onTap,

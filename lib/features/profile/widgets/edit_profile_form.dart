@@ -146,7 +146,7 @@ class EditProfileForm extends StatelessWidget {
           maxLines: maxLines,
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: TextStyle(
+            hintStyle: const TextStyle(
               color: AppColors.grey400,
               fontSize: 14,
             ),
@@ -165,23 +165,23 @@ class EditProfileForm extends StatelessWidget {
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: AppColors.grey300),
+              borderSide: const BorderSide(color: AppColors.grey300),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: AppColors.grey300),
+              borderSide: const BorderSide(color: AppColors.grey300),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: AppColors.primary, width: 2),
+              borderSide: const BorderSide(color: AppColors.primary, width: 2),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: AppColors.error),
+              borderSide: const BorderSide(color: AppColors.error),
             ),
             focusedErrorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: AppColors.error, width: 2),
+              borderSide: const BorderSide(color: AppColors.error, width: 2),
             ),
             filled: true,
             fillColor: Colors.white,
@@ -227,7 +227,7 @@ class EditProfileForm extends StatelessWidget {
                     color: AppColors.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(
+                  child: const Icon(
                     Icons.cake,
                     size: 20,
                     color: AppColors.primary,
@@ -246,7 +246,7 @@ class EditProfileForm extends StatelessWidget {
                     ),
                   ),
                 ),
-                Icon(
+                const Icon(
                   Icons.calendar_today,
                   size: 20,
                   color: AppColors.grey400,
@@ -270,15 +270,15 @@ class EditProfileForm extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
               Icon(
                 Icons.info_outline,
                 size: 20,
                 color: AppColors.primary,
               ),
-              const SizedBox(width: 8),
-              const Text(
+              SizedBox(width: 8),
+              Text(
                 'Thông tin không thể thay đổi',
                 style: TextStyle(
                   fontSize: 16,
@@ -317,7 +317,7 @@ class EditProfileForm extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             '$label: ',
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 14,
               color: AppColors.grey600,
             ),
@@ -348,13 +348,12 @@ class EditProfileForm extends StatelessWidget {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
+            colorScheme: const ColorScheme.light(
               primary: AppColors.primary,
               onPrimary: Colors.white,
               surface: Colors.white,
               onSurface: AppColors.grey800,
-            ),
-            dialogBackgroundColor: Colors.white,
+            ), dialogTheme: const DialogThemeData(backgroundColor: Colors.white),
           ),
           child: child!,
         );

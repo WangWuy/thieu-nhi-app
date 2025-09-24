@@ -209,7 +209,7 @@ class AttendanceService {
   }) async {
     try {
       if (studentCodes.isEmpty) {
-        return AttendanceResult.error('Danh sách thiếu nhi trống');
+        return const AttendanceResult.error('Danh sách thiếu nhi trống');
       }
 
       final request = UniversalAttendanceRequest(

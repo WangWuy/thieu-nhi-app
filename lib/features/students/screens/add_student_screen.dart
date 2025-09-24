@@ -1,6 +1,5 @@
 // lib/features/students/screens/add_student_screen.dart
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:thieu_nhi_app/core/models/student_model.dart';
 import 'package:thieu_nhi_app/core/widgets/custom_button.dart';
@@ -305,13 +304,13 @@ class _AddStudentScreenState extends State<AddStudentScreen>
         ),
         child: Row(
           children: [
-            Icon(Icons.cake, color: AppColors.primary),
+            const Icon(Icons.cake, color: AppColors.primary),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  const Text(
                     'Ngày sinh *',
                     style: TextStyle(
                       fontSize: 12,
@@ -334,7 +333,7 @@ class _AddStudentScreenState extends State<AddStudentScreen>
                 ],
               ),
             ),
-            Icon(
+            const Icon(
               Icons.calendar_today,
               color: AppColors.grey400,
               size: 20,
@@ -441,8 +440,8 @@ class _AddStudentScreenState extends State<AddStudentScreen>
         classId: widget.classId,
         className: widget.className,
         department: widget.department,
-        attendance: {}, // Empty attendance initially
-        grades: [], // Empty grades initially
+        attendance: const {}, // Empty attendance initially
+        grades: const [], // Empty grades initially
         photoUrl: null,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),

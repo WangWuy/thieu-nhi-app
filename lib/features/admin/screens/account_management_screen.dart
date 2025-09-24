@@ -223,15 +223,15 @@ class _AccountManagementScreenState extends State<AccountManagementScreen>
                       : null,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(20),
-                    borderSide: BorderSide(color: AppColors.grey300),
+                    borderSide: const BorderSide(color: AppColors.grey300),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(20),
-                    borderSide: BorderSide(color: AppColors.grey300),
+                    borderSide: const BorderSide(color: AppColors.grey300),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(20),
-                    borderSide: BorderSide(color: AppColors.primary),
+                    borderSide: const BorderSide(color: AppColors.primary),
                   ),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 ),
@@ -434,7 +434,7 @@ class _AccountManagementScreenState extends State<AccountManagementScreen>
                   ),
                 ),
                 const SizedBox(width: 8),
-                Text('${user.department}', style: const TextStyle(fontSize: 12)),
+                Text(user.department, style: const TextStyle(fontSize: 12)),
               ],
             ),
           ],

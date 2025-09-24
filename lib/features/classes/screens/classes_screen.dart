@@ -116,9 +116,9 @@ class _ClassesScreenState extends State<ClassesScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.school_outlined, size: 80, color: AppColors.grey400),
+            const Icon(Icons.school_outlined, size: 80, color: AppColors.grey400),
             const SizedBox(height: 24),
-            Text(
+            const Text(
               'Chưa có lớp học',
               style: TextStyle(
                   fontSize: 24,
@@ -130,7 +130,7 @@ class _ClassesScreenState extends State<ClassesScreen> {
               _manager.canManage
                   ? 'Tạo lớp học đầu tiên cho ngành ${_manager.departmentName}'
                   : 'Ngành ${_manager.departmentName} chưa có lớp học',
-              style: TextStyle(fontSize: 16, color: AppColors.grey500),
+              style: const TextStyle(fontSize: 16, color: AppColors.grey500),
               textAlign: TextAlign.center,
             ),
           ],

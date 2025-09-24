@@ -7,9 +7,9 @@ class AttendanceLoadingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return const SizedBox(
       height: 120,
-      child: const Center(
+      child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [

@@ -258,14 +258,14 @@ class _EditStudentScreenState extends State<EditStudentScreen>
                     const SizedBox(height: 4),
                     Text(
                       'ID: ${widget.student.id}',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 14,
                         color: AppColors.grey600,
                       ),
                     ),
                     Text(
                       '${widget.student.className} - ${widget.student.department}',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 14,
                         color: AppColors.grey600,
                       ),
@@ -432,13 +432,13 @@ class _EditStudentScreenState extends State<EditStudentScreen>
         ),
         child: Row(
           children: [
-            Icon(Icons.cake, color: AppColors.primary),
+            const Icon(Icons.cake, color: AppColors.primary),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  const Text(
                     'Ngày sinh *',
                     style: TextStyle(
                       fontSize: 12,
@@ -461,7 +461,7 @@ class _EditStudentScreenState extends State<EditStudentScreen>
                 ],
               ),
             ),
-            Icon(
+            const Icon(
               Icons.calendar_today,
               color: AppColors.grey400,
               size: 20,

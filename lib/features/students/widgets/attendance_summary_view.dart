@@ -29,10 +29,10 @@ class AttendanceSummaryView extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: AppColors.info.withOpacity(0.3)),
           ),
-          child: Row(
+          child: const Row(
             children: [
               Icon(Icons.info_outline, color: AppColors.info, size: 16),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Expanded(
                 child: Text(
                   'Chỉ hiển thị tổng kết điểm danh. Chi tiết từng buổi đang tải...',

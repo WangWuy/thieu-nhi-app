@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:collection/collection.dart';
 import 'package:thieu_nhi_app/features/auth/bloc/auth_bloc.dart';
 import 'package:thieu_nhi_app/features/auth/bloc/auth_state.dart';
 import 'package:thieu_nhi_app/features/students/bloc/students_event.dart';
@@ -495,7 +494,7 @@ class _StudentListScreenState extends State<StudentListScreen>
               Text(
                 state.message,
                 textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.grey600),
+                style: const TextStyle(color: AppColors.grey600),
               ),
               const SizedBox(height: 24),
               ElevatedButton(
@@ -679,7 +678,7 @@ class _StudentListScreenState extends State<StudentListScreen>
                 color: AppColors.grey100,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.remove_red_eye,
                 color: AppColors.grey600,
                 size: 16,

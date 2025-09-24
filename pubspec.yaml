@@ -59,7 +59,8 @@ flutter_icons:
 
 flutter:
   uses-material-design: true
-  disable-swift-package-manager: true
+  config:
+    enable-swift-package-manager: false
   
   assets:
     - .env
@@ -77,7 +78,7 @@ flutter_native_splash:
   image: assets/images/logo.png
   
   # Background color - neutral để logo colorful nổi bật
-  color: "F8F9FA"  # Trắng xám rất nhạt
+  color: "#F8F9FA"  # Trắng xám rất nhạt
   
   # Tự động tạo splash cho Android và iOS
   android: true
@@ -94,5 +95,5 @@ flutter_native_splash:
   # Adaptive cho Android 12+
   android_12:
     image: assets/images/logo.png
-    color: "F8F9FA"
-    icon_background_color: "FFFFFF"
+    color: "#F8F9FA"
+    icon_background_color: "#FFFFFF"

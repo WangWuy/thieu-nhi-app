@@ -161,9 +161,9 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
   Widget _buildActions() {
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: AppColors.grey50,
-        borderRadius: const BorderRadius.only(
+        borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(20),
           bottomRight: Radius.circular(20),
         ),
@@ -175,7 +175,7 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
               onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                side: BorderSide(color: AppColors.grey300),
+                side: const BorderSide(color: AppColors.grey300),
               ),
               child: const Text(
                 'Hủy',
