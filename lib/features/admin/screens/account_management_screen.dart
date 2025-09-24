@@ -159,6 +159,10 @@ class _AccountManagementScreenState extends State<AccountManagementScreen>
       floating: false,
       backgroundColor: AppColors.primary,
       elevation: 2,
+      leading: IconButton(
+        onPressed: () => context.pop(),
+        icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+      ),
       title: const Text(
         'Quản lý tài khoản',
         style: TextStyle(
