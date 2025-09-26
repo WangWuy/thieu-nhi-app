@@ -7,6 +7,7 @@ import 'package:thieu_nhi_app/core/models/user_model.dart';
 import 'package:thieu_nhi_app/core/widgets/protected_route_wrapper.dart';
 import 'package:thieu_nhi_app/features/admin/screens/account_management_screen.dart';
 import 'package:thieu_nhi_app/features/admin/screens/add_account_screen.dart';
+import 'package:thieu_nhi_app/features/admin/screens/pending_users_screen.dart';
 import 'package:thieu_nhi_app/features/auth/bloc/auth_bloc.dart';
 import 'package:thieu_nhi_app/features/auth/bloc/auth_state.dart';
 import 'package:thieu_nhi_app/features/classes/screens/all_classes_screen.dart'; // NEW IMPORT
@@ -212,6 +213,15 @@ class AppRouter {
                 child: AddAccountScreen(accountData: accountData),
               );
             },
+          ),
+
+          GoRoute(
+            path: '/admin/pending-users',
+            name: 'pending-users',
+            builder: (context, state) => const ProtectedRouteWrapper(
+              allowedRoles: [UserRole.admin],
+              child: PendingUsersScreen(),
+            ),
           ),
 
           // ==================== STATS ROUTES ====================

@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:thieu_nhi_app/core/models/user_model.dart';
 import 'package:thieu_nhi_app/core/services/permission_service.dart';
+import 'package:thieu_nhi_app/core/services/auth_service.dart';
 import 'package:thieu_nhi_app/features/auth/bloc/auth_bloc.dart';
 import 'package:thieu_nhi_app/features/auth/bloc/auth_state.dart';
 import 'package:thieu_nhi_app/features/admin/bloc/admin_bloc.dart';
@@ -284,7 +285,7 @@ class _AccountManagementScreenState extends State<AccountManagementScreen>
                   label: const Text('Bị khóa', style: TextStyle(fontSize: 12)),
                   selected: _showInactiveOnly,
                   onSelected: (value) {
-                    setState(() => _showInactiveOnly = value ?? false);
+                    setState(() => _showInactiveOnly = value);
                     _applyFilters();
                   },
                   selectedColor: AppColors.error.withOpacity(0.2),
@@ -469,11 +470,16 @@ class _AccountManagementScreenState extends State<AccountManagementScreen>
                   value: user.isActive ? 'deactivate' : 'activate',
                   child: Text(user.isActive ? 'Khóa' : 'Mở khóa'),
                 ),
-                if (currentUser.id != user.id)
+                if (currentUser.id != user.id) ...[
                   const PopupMenuItem(
                     value: 'delete',
                     child: Text('Xóa', style: TextStyle(color: Colors.red)),
                   ),
+                  const PopupMenuItem(
+                    value: 'delete_permanently',
+                    child: Text('Xóa vĩnh viễn', style: TextStyle(color: Colors.red)),
+                  ),
+                ],
               ],
             ),
           ],
@@ -586,6 +592,9 @@ class _AccountManagementScreenState extends State<AccountManagementScreen>
         break;
       case 'delete':
         _showDeleteUserDialog(user);
+        break;
+      case 'delete_permanently':
+        _showPermanentDeleteDialog(user);
         break;
     }
   }
@@ -709,6 +718,126 @@ class _AccountManagementScreenState extends State<AccountManagementScreen>
         ],
       ),
     );
+  }
+
+  void _showPermanentDeleteDialog(UserModel user) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.warning, color: AppColors.error, size: 28),
+            const SizedBox(width: 8),
+            const Text('Xóa vĩnh viễn'),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Bạn có chắc muốn xóa vĩnh viễn tài khoản ${user.displayName}?',
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 16),
+              
+              // Cảnh báo về hậu quả
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.error.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.error.withOpacity(0.3)),
+                ),
+                child: const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '⚠️ CẢNH BÁO: Hành động này không thể hoàn tác!',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.error,
+                        fontSize: 14,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Khi xóa vĩnh viễn, tất cả dữ liệu sẽ bị xóa:',
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      '• Thông tin cá nhân\n'
+                      '• Lịch sử điểm danh\n'
+                      '• Dữ liệu học tập\n'
+                      '• Tất cả hoạt động liên quan',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _permanentlyDeleteUser(user);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Xóa vĩnh viễn'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _permanentlyDeleteUser(UserModel user) async {
+    // Hiển thị dialog loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    final success = await AuthService().deleteUserAccount(user.id);
+
+    // Đóng dialog loading
+    if (mounted) Navigator.pop(context);
+
+    if (!mounted) return;
+
+    if (success) {
+      // Thông báo thành công
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Đã xóa vĩnh viễn tài khoản ${user.displayName}'),
+          backgroundColor: AppColors.success,
+        ),
+      );
+      
+      // Refresh danh sách
+      context.read<AdminBloc>().add(const RefreshUsers());
+    } else {
+      // Thông báo lỗi
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Không thể xóa tài khoản. Vui lòng thử lại.'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
   }
 
   Color _getRoleColor(UserRole role) {

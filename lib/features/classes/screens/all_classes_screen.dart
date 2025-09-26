@@ -125,12 +125,12 @@ class _AllClassesScreenState extends State<AllClassesScreen> {
               ),
               child: TextField(
                 onChanged: _manager.updateSearchTerm,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   hintText: 'Tìm kiếm tên lớp...',
                   hintStyle: TextStyle(color: AppColors.grey500),
                   prefixIcon: Icon(Icons.search, color: AppColors.grey500),
                   border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(
+                  contentPadding: EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 12,
                   ),
@@ -151,14 +151,14 @@ class _AllClassesScreenState extends State<AllClassesScreen> {
               child: DropdownButtonHideUnderline(
                 child: DropdownButton<String>(
                   value: _manager.selectedDepartment,
-                  hint: Text('Chọn ngành', style: TextStyle(color: AppColors.grey500)),
+                  hint: const Text('Chọn ngành', style: TextStyle(color: AppColors.grey500)),
                   isExpanded: true,
                   items: _manager.departmentOptions.map((option) {
                     return DropdownMenuItem<String>(
                       value: option.value,
                       child: Text(
                         option.label,
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: AppColors.grey800,
                           fontWeight: FontWeight.w500,
                         ),
@@ -238,13 +238,13 @@ class _AllClassesScreenState extends State<AllClassesScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.school_outlined, size: 80, color: AppColors.grey400),
+            const Icon(Icons.school_outlined, size: 80, color: AppColors.grey400),
             const SizedBox(height: 24),
             Text(
               _manager.searchTerm.isNotEmpty || _manager.selectedDepartment != 'all'
                   ? 'Không tìm thấy lớp phù hợp'
                   : 'Chưa có lớp học',
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
                 color: AppColors.grey600,
@@ -255,7 +255,7 @@ class _AllClassesScreenState extends State<AllClassesScreen> {
               _manager.searchTerm.isNotEmpty || _manager.selectedDepartment != 'all'
                   ? 'Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm'
                   : 'Tạo lớp học đầu tiên',
-              style: TextStyle(fontSize: 16, color: AppColors.grey500),
+              style: const TextStyle(fontSize: 16, color: AppColors.grey500),
               textAlign: TextAlign.center,
             ),
           ],
