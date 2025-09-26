@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import '../widgets/register_header.dart';
 import '../widgets/register_form.dart';
 import '../widgets/login_footer.dart';
+import 'package:thieu_nhi_app/core/services/auth_service.dart';
+import 'package:thieu_nhi_app/core/models/user_model.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -91,9 +93,40 @@ class _RegisterScreenState extends State<RegisterScreen>
     super.dispose();
   }
 
-  void _onRegister() {
-    // Simulate registration process
-    _showRegistrationSuccessDialog();
+  Future<void> _onRegister({
+    required UserRole role,
+    required DateTime birthDate,
+  }) async {
+    FocusManager.instance.primaryFocus?.unfocus();
+
+    // Loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    final success = await AuthService().submitRegistration(
+      username: _usernameController.text.trim(),
+      email: _emailController.text.trim(),
+      password: _passwordController.text,
+      role: role,
+      fullName: _fullNameController.text.trim(),
+      saintName: _saintNameController.text.trim(),
+      phoneNumber: _phoneController.text.trim(),
+      address: _addressController.text.trim(),
+      birthDate: birthDate,
+    );
+
+    if (mounted) Navigator.pop(context); // close loading
+
+    if (!mounted) return;
+
+    if (success) {
+      _showRegistrationSuccessDialog();
+    } else {
+      _showRegistrationFailedDialog();
+    }
   }
 
   void _showRegistrationSuccessDialog() {
@@ -315,6 +348,26 @@ class _RegisterScreenState extends State<RegisterScreen>
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _showRegistrationFailedDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: const Text('Đăng ký thất bại'),
+        content: const Text(
+            'Không thể gửi đăng ký. Vui lòng kiểm tra thông tin và thử lại.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Đóng'),
+          ),
+        ],
       ),
     );
   }

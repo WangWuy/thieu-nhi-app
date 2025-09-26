@@ -97,7 +97,7 @@ class ManualAttendanceStudentItem extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             'Đã điểm danh lúc: ${_formatTime(attendanceStatus!.markedAt)}',
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
               color: AppColors.success,
@@ -133,13 +133,13 @@ class ManualAttendanceStudentItem extends StatelessWidget {
           child: InkWell(
             borderRadius: BorderRadius.circular(8),
             onTap: () => onMarkAttendance(student),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(Icons.check, color: Colors.white, size: 16),
-                  const SizedBox(width: 4),
+                  SizedBox(width: 4),
                   Text(
                     'Có mặt',
                     style: TextStyle(
@@ -167,13 +167,13 @@ class ManualAttendanceStudentItem extends StatelessWidget {
           child: InkWell(
             borderRadius: BorderRadius.circular(8),
             onTap: () => onUndoAttendance(student),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(Icons.undo, color: AppColors.error, size: 16),
-                  const SizedBox(width: 4),
+                  SizedBox(width: 4),
                   Text(
                     'Hủy',
                     style: TextStyle(

@@ -73,7 +73,7 @@ class ManualAttendanceClassFilter extends StatelessWidget {
           children: [
             const Icon(Icons.select_all, size: 16, color: AppColors.primary),
             const SizedBox(width: 8),
-            Text('Tất cả'),
+            const Text('Tất cả'),
             const Spacer(),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -83,7 +83,7 @@ class ManualAttendanceClassFilter extends StatelessWidget {
               ),
               child: Text(
                 '$totalStudents',
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 12,
                   color: AppColors.primary,
                   fontWeight: FontWeight.w600,
@@ -110,7 +110,7 @@ class ManualAttendanceClassFilter extends StatelessWidget {
                 ),
                 child: Text(
                   '$count',
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 12,
                     color: AppColors.secondary,
                     fontWeight: FontWeight.w600,

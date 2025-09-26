@@ -17,7 +17,10 @@ class RegisterForm extends StatefulWidget {
   final TextEditingController phoneController;
   final TextEditingController addressController;
   final TextEditingController birthDateController;
-  final VoidCallback onRegister;
+  final void Function({
+    required UserRole role,
+    required DateTime birthDate,
+  }) onRegister;
 
   const RegisterForm({
     super.key,
@@ -92,7 +95,10 @@ class _RegisterFormState extends State<RegisterForm> {
 
   void _handleRegister() {
     if (widget.formKey.currentState!.validate()) {
-      widget.onRegister();
+      widget.onRegister(
+        role: _selectedRole,
+        birthDate: _selectedDate!,
+      );
     }
   }
 

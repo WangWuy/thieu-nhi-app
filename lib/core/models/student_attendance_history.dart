@@ -34,6 +34,22 @@ class StudentAttendanceHistory extends Equatable {
       filters: AttendanceFilters.fromJson(json['filters']),
     );
   }
+
+  StudentAttendanceHistory copyWith({
+    StudentBasicInfo? student,
+    List<AttendanceRecord>? records,
+    List<MonthlyAttendanceGroup>? groupedByMonth,
+    AttendancePagination? pagination,
+    AttendanceFilters? filters,
+  }) {
+    return StudentAttendanceHistory(
+      student: student ?? this.student,
+      records: records ?? this.records,
+      groupedByMonth: groupedByMonth ?? this.groupedByMonth,
+      pagination: pagination ?? this.pagination,
+      filters: filters ?? this.filters,
+    );
+  }
 }
 
 class StudentBasicInfo extends Equatable {
