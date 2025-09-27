@@ -438,7 +438,7 @@ class _AccountManagementScreenState extends State<AccountManagementScreen>
                   ),
                 ),
                 const SizedBox(width: 8),
-                Text(user.department, style: const TextStyle(fontSize: 12)),
+                Text(user.department?.displayName ?? '', style: const TextStyle(fontSize: 12)),
               ],
             ),
           ],

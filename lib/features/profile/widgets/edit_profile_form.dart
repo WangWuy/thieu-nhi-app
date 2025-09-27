@@ -289,7 +289,7 @@ class EditProfileForm extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          _buildReadOnlyRow('Email', user.email, Icons.email),
+          _buildReadOnlyRow('Email', user.email ?? '', Icons.email),
           _buildReadOnlyRow(
               'Tên đăng nhập', user.username, Icons.account_circle),
           _buildReadOnlyRow('Chức vụ', user.role.displayName, Icons.work),

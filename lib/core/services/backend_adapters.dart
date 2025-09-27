@@ -119,30 +119,60 @@ class BackendStudentAdapter {
 
 // Extension for other adapters (keeping existing ones)
 class BackendUserAdapter {
-  // ... existing code remains the same
   static UserModel fromBackendJson(Map<String, dynamic> json) {
     return UserModel(
       id: json['id'].toString(),
       username: json['username'] ?? '',
       email: json['email'] ?? '${json['username']}@temp.com',
       role: _parseUserRole(json['role']),
-      department: _getDepartmentName(json),
-      className: _getClassName(json),
-      classId: _getClassId(json),
+      departmentId: json['departmentId'],
+      department: _getDepartmentModel(json),
+      classTeachers: _getClassTeachers(json),
       saintName: json['saintName'],
       fullName: json['fullName'],
-      birthDate:
-          json['birthDate'] != null ? DateTime.parse(json['birthDate']) : null,
+      birthDate: json['birthDate'] != null ? DateTime.parse(json['birthDate']) : null,
       phoneNumber: json['phoneNumber'],
       address: json['address'],
       isActive: json['isActive'] ?? true,
-      lastLogin:
-          json['lastLogin'] != null ? DateTime.parse(json['lastLogin']) : null,
-      createdAt:
-          DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
-      updatedAt:
-          DateTime.parse(json['updatedAt'] ?? DateTime.now().toIso8601String()),
+      lastLogin: json['lastLogin'] != null ? DateTime.parse(json['lastLogin']) : null,
+      createdAt: DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
+      updatedAt: DateTime.parse(json['updatedAt'] ?? DateTime.now().toIso8601String()),
     );
+  }
+
+  static List<ClassTeacher> _getClassTeachers(Map<String, dynamic> json) {
+    if (json['classTeachers'] != null && json['classTeachers'] is List) {
+      return (json['classTeachers'] as List).map((ct) {
+        final classData = ct['class'];
+        return ClassTeacher(
+          id: ct['id'].toString(),
+          fullName: classData?['name'] ?? 'Unknown', // Use class name as fullName
+          saintName: null,
+          isPrimary: ct['isPrimary'] ?? false,
+        );
+      }).toList();
+    }
+    return [];
+  }
+
+  static DepartmentModel? _getDepartmentModel(Map<String, dynamic> json) {
+    if (json['department'] != null && json['department'] is Map) {
+      final dept = json['department'] as Map<String, dynamic>;
+      return DepartmentModel(
+        id: dept['id'],
+        name: dept['name'] ?? '',
+        displayName: dept['displayName'] ?? dept['name'] ?? '',
+        description: dept['description'],
+        classIds: [], // Empty for now
+        totalClasses: 0,
+        totalStudents: 0,
+        totalTeachers: 0,
+        isActive: dept['isActive'] ?? true,
+        createdAt: DateTime.parse(dept['createdAt'] ?? DateTime.now().toIso8601String()),
+        updatedAt: DateTime.parse(dept['updatedAt'] ?? DateTime.now().toIso8601String()),
+      );
+    }
+    return null;
   }
 
   static UserRole _parseUserRole(dynamic role) {
@@ -163,43 +193,25 @@ class BackendUserAdapter {
     }
   }
 
-  static String _getDepartmentName(Map<String, dynamic> json) {
-    if (json['department'] != null) {
-      if (json['department'] is Map) {
-        return json['department']['displayName'] ??
-            json['department']['name'] ??
-            'Unknown';
-      } else {
-        return json['department'].toString();
-      }
-    }
-    return 'Unknown';
-  }
-
-  static String? _getClassName(Map<String, dynamic> json) {
+  // NEW: Get all classes for teacher (not just primary)
+  static List<Map<String, dynamic>> getAllClasses(Map<String, dynamic> json) {
+    final classes = <Map<String, dynamic>>[];
+    
     if (json['classTeachers'] != null && json['classTeachers'] is List) {
       final classTeachers = json['classTeachers'] as List;
-      if (classTeachers.isNotEmpty) {
-        final firstClass = classTeachers[0];
-        if (firstClass['class'] != null) {
-          return firstClass['class']['name'];
+      
+      for (final ct in classTeachers) {
+        if (ct['class'] != null) {
+          classes.add({
+            'id': ct['class']['id'],
+            'name': ct['class']['name'],
+            'isPrimary': ct['isPrimary'] ?? false,
+          });
         }
       }
     }
-    return null;
-  }
-
-  static String? _getClassId(Map<String, dynamic> json) {
-    if (json['classTeachers'] != null && json['classTeachers'] is List) {
-      final classTeachers = json['classTeachers'] as List;
-      if (classTeachers.isNotEmpty) {
-        final firstClass = classTeachers[0];
-        if (firstClass['class'] != null) {
-          return firstClass['class']['id'].toString();
-        }
-      }
-    }
-    return null;
+    
+    return classes;
   }
 
   static Map<String, dynamic> toBackendJson(UserModel user) {

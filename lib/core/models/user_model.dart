@@ -1,35 +1,38 @@
 import 'package:equatable/equatable.dart';
+import 'package:thieu_nhi_app/core/models/class_model.dart';
+import 'package:thieu_nhi_app/core/models/department_model.dart';
+import 'package:thieu_nhi_app/core/services/backend_adapters.dart';
 
 class UserModel extends Equatable {
   final String id;
   final String username;
-  final String email;
+  final String? email;
   final UserRole role;
-  final String department;
-  final String? className;
-  final String? classId;
-  
+  final int? departmentId;
+  final DepartmentModel? department;
+  final List<ClassTeacher> classTeachers;
+
   // Personal info từ backend
   final String? saintName;
   final String? fullName;
   final DateTime? birthDate;
   final String? phoneNumber;
   final String? address;
-  
+
   // Status fields
   final bool isActive;
   final DateTime? lastLogin;
   final DateTime createdAt;
-  final DateTime updatedAt;
+  final DateTime? updatedAt;
 
   const UserModel({
     required this.id,
     required this.username,
-    required this.email,
+    this.email,
     required this.role,
-    required this.department,
-    this.className,
-    this.classId,
+    this.departmentId,
+    this.department,
+    this.classTeachers = const [],
     this.saintName,
     this.fullName,
     this.birthDate,
@@ -38,7 +41,7 @@ class UserModel extends Equatable {
     this.isActive = true,
     this.lastLogin,
     required this.createdAt,
-    required this.updatedAt,
+    this.updatedAt,
   });
 
   // Helper getters
@@ -47,18 +50,47 @@ class UserModel extends Equatable {
     if (fullName != null) return fullName!;
     return username;
   }
-  
+
   bool get canManageAll => role == UserRole.admin;
-  bool get canManageDepartment => role == UserRole.admin || role == UserRole.department;
+  bool get canManageDepartment =>
+      role == UserRole.admin || role == UserRole.department;
+
+  // NEW: Lấy primary class của teacher
+  ClassTeacher? get primaryClass {
+    try {
+      return classTeachers.firstWhere((ct) => ct.isPrimary);
+    } catch (e) {
+      return classTeachers.isNotEmpty ? classTeachers.first : null;
+    }
+  }
+
+  // NEW: Lấy className cho backward compatibility
+  String? get className {
+    // Lấy tên class, không phải fullName của teacher
+    final primary = primaryClass;
+    if (primary != null) {
+      // Cần thêm field className vào ClassTeacher
+      // Hoặc tìm cách khác để lấy class name
+      return null; // Tạm thời return null
+    }
+    return null;
+  }
+
+  // NEW: Lấy classId cho backward compatibility
+  String? get classId {
+    // Lấy classId thông qua một cách khác
+    // Vì ClassTeacher không có classId
+    return null; // Tạm thời return null
+  }
 
   UserModel copyWith({
     String? id,
     String? username,
     String? email,
     UserRole? role,
-    String? department,
-    String? className,
-    String? classId,
+    int? departmentId,
+    DepartmentModel? department,
+    List<ClassTeacher>? classTeachers,
     String? saintName,
     String? fullName,
     DateTime? birthDate,
@@ -74,9 +106,9 @@ class UserModel extends Equatable {
       username: username ?? this.username,
       email: email ?? this.email,
       role: role ?? this.role,
+      departmentId: departmentId ?? this.departmentId,
       department: department ?? this.department,
-      className: className ?? this.className,
-      classId: classId ?? this.classId,
+      classTeachers: classTeachers ?? this.classTeachers,
       saintName: saintName ?? this.saintName,
       fullName: fullName ?? this.fullName,
       birthDate: birthDate ?? this.birthDate,
@@ -91,10 +123,23 @@ class UserModel extends Equatable {
 
   @override
   List<Object?> get props => [
-    id, username, email, role, department, className, classId,
-    saintName, fullName, birthDate, phoneNumber, address,
-    isActive, lastLogin, createdAt, updatedAt
-  ];
+        id,
+        username,
+        email,
+        role,
+        departmentId,
+        department,
+        classTeachers,
+        saintName,
+        fullName,
+        birthDate,
+        phoneNumber,
+        address,
+        isActive,
+        lastLogin,
+        createdAt,
+        updatedAt
+      ];
 }
 
 enum UserRole { admin, department, teacher }
@@ -102,9 +147,12 @@ enum UserRole { admin, department, teacher }
 extension UserRoleExt on UserRole {
   String get displayName {
     switch (this) {
-      case UserRole.admin: return 'Ban Điều Hành';
-      case UserRole.department: return 'Phân Đoàn Trưởng';
-      case UserRole.teacher: return 'Giáo Lý Viên';
+      case UserRole.admin:
+        return 'Ban Điều Hành';
+      case UserRole.department:
+        return 'Phân Đoàn Trưởng';
+      case UserRole.teacher:
+        return 'Giáo Lý Viên';
     }
   }
 }

@@ -103,7 +103,7 @@ class UserDetailsDialog extends StatelessWidget {
                         DetailItem('Tên Thánh', user.saintName ?? 'Chưa cập nhật'),
                         DetailItem('Họ và tên', user.fullName ?? 'Chưa cập nhật'),
                         DetailItem('Username', user.username),
-                        DetailItem('Email', user.email),
+                        DetailItem('Email', user.email ?? 'Chưa cập nhật'),
                         DetailItem(
                           'Ngày sinh',
                           user.birthDate != null
@@ -131,7 +131,7 @@ class UserDetailsDialog extends StatelessWidget {
                       icon: Icons.work,
                       items: [
                         DetailItem('Vai trò', user.role.displayName),
-                        DetailItem('Ngành', user.department),
+                        DetailItem('Ngành', user.department?.displayName ?? 'Chưa phân công'),
                         if (user.className != null && user.className!.isNotEmpty)
                           DetailItem('Lớp phụ trách', user.className!),
                       ],
@@ -150,7 +150,7 @@ class UserDetailsDialog extends StatelessWidget {
                           icon: user.isActive ? Icons.check_circle : Icons.block,
                         ),
                         DetailItem('Ngày tạo', _formatDateTime(user.createdAt)),
-                        DetailItem('Cập nhật cuối', _formatDateTime(user.updatedAt)),
+                        DetailItem('Cập nhật cuối', _formatDateTime(user.updatedAt ?? user.createdAt)),
                         if (user.lastLogin != null)
                           DetailItem(
                             'Đăng nhập cuối',

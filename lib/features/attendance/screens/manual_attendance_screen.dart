@@ -1,6 +1,7 @@
 // manual_attendance_screen.dart - COMPLETE UPDATED VERSION
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:thieu_nhi_app/core/services/class_service.dart';
 import 'package:thieu_nhi_app/core/services/student_service.dart';
 import 'package:thieu_nhi_app/core/services/attendance_service.dart';
 import 'package:thieu_nhi_app/core/models/student_model.dart';
@@ -28,6 +29,7 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
   final TextEditingController _searchController = TextEditingController();
   final StudentService _studentService = StudentService();
   final AttendanceService _attendanceService = AttendanceService();
+  final ClassService _classService = ClassService();
 
   List<StudentModel> _searchResults = [];
   bool _isSearching = false;
@@ -120,33 +122,53 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
       }
 
       final user = authState.user;
+      print('👤 User info:');
+      print('- Role: ${user.role}');
+      print('- DepartmentId: ${user.departmentId}');
+      print('- ClassName: ${user.className}');
+      print('- ClassId: ${user.classId}');
+      
       if (user.role == UserRole.teacher && user.className != null && user.classId != null) {
         // Teacher: Get their specific class only
         final classId = int.tryParse(user.classId!) ?? 0;
+        print('🧑‍🏫 Teacher - Class: ${user.className}, ID: $classId');
         return {user.className!: classId};
       } else {
-        // Admin/Department: Get all classes with small sample to build list
-        final result = await _studentService.getStudents(
-          page: 1,
-          limit: 50, // Small limit just to get class list
-        );
+        // Admin/Department: Get all classes using ClassService
+        print('👑 Admin/Department - Getting classes...');
         
-        if (result.isSuccess) {
+        if (user.role == UserRole.department && user.departmentId != null) {
+          // Department user: Get classes by department  
+          final classes = await _classService.getClassesByDepartment(user.departmentId!);
+          
           final classMap = <String, int>{};
-          for (final student in result.students ?? []) {
-            if (student.className.isNotEmpty && student.classId.isNotEmpty) {
-              classMap[student.className] = int.tryParse(student.classId) ?? 0;
+          for (final classModel in classes) {
+            final classId = int.tryParse(classModel.id) ?? 0;
+            if (classId > 0) {
+              classMap[classModel.name] = classId;
             }
           }
+          
+          print('📚 Department classes loaded: $classMap');
           return classMap;
         } else {
-          print('Failed to get students: ${result.error}');
+          // Admin: Get all classes
+          final classes = await _classService.getClasses();
+          
+          final classMap = <String, int>{};
+          for (final classModel in classes) {
+            final classId = int.tryParse(classModel.id) ?? 0;
+            if (classId > 0) {
+              classMap[classModel.name] = classId;
+            }
+          }
+          
+          print('🌟 All classes loaded: $classMap');
+          return classMap;
         }
       }
-      
-      return {};
     } catch (e) {
-      print('Get user classes error: $e');
+      print('❌ Get user classes error: $e');
       return {};
     }
   }

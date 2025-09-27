@@ -373,7 +373,7 @@ class _RegisterFormState extends State<RegisterForm> {
                   ),
                 ),
                 child: DropdownButtonFormField<UserRole>(
-                  initialValue: _selectedRole,
+                  value: _selectedRole,
                   decoration: InputDecoration(
                     labelText: 'Vai trò *',
                     labelStyle: TextStyle(

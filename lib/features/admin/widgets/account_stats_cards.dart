@@ -290,7 +290,7 @@ class AccountStatsCards extends StatelessWidget {
     // Group by department
     final departmentGroups = <String, int>{};
     for (final user in roleUsers) {
-      departmentGroups[user.department] = (departmentGroups[user.department] ?? 0) + 1;
+      departmentGroups[user.department?.displayName ?? ''] = (departmentGroups[user.department] ?? 0) + 1;
     }
 
     showDialog(

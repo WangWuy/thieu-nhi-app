@@ -192,7 +192,7 @@ class UserCard extends StatelessWidget {
           UserDetailRow(
             icon: Icons.email,
             label: 'Email',
-            value: user.email,
+            value: user.email ?? 'Chưa cập nhật',
           ),
           UserDetailRow(
             icon: Icons.phone,

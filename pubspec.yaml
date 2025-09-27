@@ -59,8 +59,6 @@ flutter_icons:
 
 flutter:
   uses-material-design: true
-  config:
-    enable-swift-package-manager: false
   
   assets:
     - .env
@@ -72,7 +70,7 @@ flutter:
       fonts:
         - asset: assets/fonts/CustomIcons.ttf
 
-# THÊM CONFIGURATION CHO NATIVE SPLASH
+# CONFIGURATION CHO NATIVE SPLASH
 flutter_native_splash:
   # Logo của bạn (màu đầy đủ)
   image: assets/images/logo.png

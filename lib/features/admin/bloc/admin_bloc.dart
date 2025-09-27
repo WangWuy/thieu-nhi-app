@@ -26,7 +26,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     on<BulkUpdateUsers>(_onBulkUpdateUsers);
     on<RefreshUsers>(_onRefreshUsers);
     on<SearchUsers>(_onSearchUsers);
-    
+
     // Setup periodic refresh
     _setupPeriodicRefresh();
   }
@@ -94,7 +94,8 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
       ));
     } catch (e) {
       emit(AdminError(
-        message: 'Không thể tải danh sách ${event.role.displayName}: ${e.toString()}',
+        message:
+            'Không thể tải danh sách ${event.role.displayName}: ${e.toString()}',
         errorCode: 'LOAD_USERS_BY_ROLE_ERROR',
       ));
     }
@@ -110,10 +111,14 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
       // Load all users and filter by department on client side
       // TODO: Implement department filter in API
       final users = await _authService.getUsers(limit: 50);
-      
-      final filteredUsers = users.where((user) => 
-          user.department.toLowerCase() == event.department.toLowerCase()
-      ).toList();
+
+      final filteredUsers = users.where((user) {
+        // Option 1: Filter by departmentId (recommended)
+        if (event.department is int) {
+          return user.departmentId == event.department;
+        }
+        return false;
+      }).toList();
 
       emit(AdminLoaded(
         users: filteredUsers,
@@ -121,7 +126,8 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
       ));
     } catch (e) {
       emit(AdminError(
-        message: 'Không thể tải danh sách ngành ${event.department}: ${e.toString()}',
+        message:
+            'Không thể tải danh sách ngành ${event.department}: ${e.toString()}',
         errorCode: 'LOAD_USERS_BY_DEPARTMENT_ERROR',
       ));
     }
@@ -140,7 +146,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
         saintName: event.user.saintName,
         phoneNumber: event.user.phoneNumber,
         address: event.user.address,
-        departmentId: _getDepartmentId(event.user.department),
+        departmentId: event.user.departmentId ?? event.user.department?.id,
         birthDate: event.user.birthDate,
       );
 
@@ -153,7 +159,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
 📧 Vai trò: ${userModel.role.displayName}''',
           operationType: UserOperationType.create,
         ));
-        
+
         // Refresh users list
         add(const RefreshUsers());
       } else {
@@ -194,7 +200,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
           message: 'Đã cập nhật thông tin ${updatedUser.displayName}',
           operationType: UserOperationType.update,
         ));
-        
+
         // Update local state immediately
         final currentState = state;
         if (currentState is AdminLoaded) {
@@ -234,7 +240,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
           message: 'Đã vô hiệu hóa tài khoản',
           operationType: UserOperationType.delete,
         ));
-        
+
         // Refresh users list
         add(const RefreshUsers());
       } else {
@@ -257,7 +263,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
   ) async {
     try {
       final updateData = {'isActive': true};
-      
+
       final updatedUser = await _authService.updateUserProfile(
         event.userId,
         updateData,
@@ -268,13 +274,13 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
           message: 'Đã kích hoạt tài khoản',
           operationType: UserOperationType.activate,
         ));
-        
+
         // Update local state
         final currentState = state;
         if (currentState is AdminLoaded) {
           final updatedUsers = currentState.users.map((user) {
-            return user.id == event.userId 
-                ? user.copyWith(isActive: true) 
+            return user.id == event.userId
+                ? user.copyWith(isActive: true)
                 : user;
           }).toList();
 
@@ -298,7 +304,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
   ) async {
     try {
       final updateData = {'isActive': false};
-      
+
       final updatedUser = await _authService.updateUserProfile(
         event.userId,
         updateData,
@@ -309,13 +315,13 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
           message: 'Đã vô hiệu hóa tài khoản',
           operationType: UserOperationType.deactivate,
         ));
-        
+
         // Update local state
         final currentState = state;
         if (currentState is AdminLoaded) {
           final updatedUsers = currentState.users.map((user) {
-            return user.id == event.userId 
-                ? user.copyWith(isActive: false) 
+            return user.id == event.userId
+                ? user.copyWith(isActive: false)
                 : user;
           }).toList();
 
@@ -374,16 +380,12 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
         try {
           switch (operation.type) {
             case BulkOperationType.activate:
-              await _authService.updateUserProfile(
-                operation.userId, 
-                {'isActive': true}
-              );
+              await _authService
+                  .updateUserProfile(operation.userId, {'isActive': true});
               break;
             case BulkOperationType.deactivate:
-              await _authService.updateUserProfile(
-                operation.userId, 
-                {'isActive': false}
-              );
+              await _authService
+                  .updateUserProfile(operation.userId, {'isActive': false});
               break;
             case BulkOperationType.delete:
               await _authService.deactivateUser(operation.userId);
@@ -399,7 +401,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
         message: 'Hoàn thành: $successCount thành công, $failCount thất bại',
         operationType: UserOperationType.bulkUpdate,
       ));
-      
+
       // Refresh users list
       add(const RefreshUsers());
     } catch (e) {
@@ -457,28 +459,11 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     }
   }
 
-  int? _getDepartmentId(String departmentName) {
-    // Map department names to IDs
-    // TODO: Get this from API or make it dynamic
-    switch (departmentName.toLowerCase()) {
-      case 'chiên':
-        return 1;
-      case 'âu':
-        return 2;
-      case 'thiếu':
-        return 3;
-      case 'nghĩa':
-        return 4;
-      default:
-        return null;
-    }
-  }
-
   // Helper getters
   bool get isLoading => state is AdminLoading;
   bool get hasError => state is AdminError;
   bool get isRefreshing => state is AdminRefreshing;
-  
+
   List<UserModel> get users {
     final currentState = state;
     if (currentState is AdminLoaded) {

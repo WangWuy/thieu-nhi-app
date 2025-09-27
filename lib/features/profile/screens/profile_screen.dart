@@ -124,7 +124,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          ...infoItems.map((item) => _buildInfoRow(item.$1, item.$2, item.$3)),
+          ...infoItems.map((item) => _buildInfoRow(item.$1, item.$2 as String, item.$3)),
         ],
       ),
     );
