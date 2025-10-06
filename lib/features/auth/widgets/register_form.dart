@@ -19,7 +19,7 @@ class RegisterForm extends StatefulWidget {
   final TextEditingController birthDateController;
   final void Function({
     required UserRole role,
-    required DateTime birthDate,
+    DateTime? birthDate,
   }) onRegister;
 
   const RegisterForm({
@@ -97,7 +97,7 @@ class _RegisterFormState extends State<RegisterForm> {
     if (widget.formKey.currentState!.validate()) {
       widget.onRegister(
         role: _selectedRole,
-        birthDate: _selectedDate!,
+        birthDate: _selectedDate,
       );
     }
   }
@@ -307,18 +307,23 @@ class _RegisterFormState extends State<RegisterForm> {
                 child: AbsorbPointer(
                   child: ModernTextField(
                     controller: widget.birthDateController,
-                    label: 'Ngày sinh *',
+                    label: 'Ngày sinh',
                     icon: Icons.calendar_today_outlined,
                     validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Vui lòng chọn ngày sinh';
-                      }
-                      if (_selectedDate == null) {
-                        return 'Vui lòng chọn ngày sinh hợp lệ';
-                      }
-                      final age = DateTime.now().year - _selectedDate!.year;
-                      if (age < 16) {
-                        return 'Bạn phải ít nhất 16 tuổi để đăng ký';
+                      // Ngày sinh là tùy chọn; chỉ validate nếu người dùng đã chọn
+                      if ((value != null && value.isNotEmpty) || _selectedDate != null) {
+                        if (_selectedDate == null) {
+                          return 'Vui lòng chọn ngày sinh hợp lệ';
+                        }
+                        final now = DateTime.now();
+                        int age = now.year - _selectedDate!.year;
+                        if (now.month < _selectedDate!.month ||
+                            (now.month == _selectedDate!.month && now.day < _selectedDate!.day)) {
+                          age--;
+                        }
+                        if (age < 16) {
+                          return 'Bạn phải ít nhất 16 tuổi để đăng ký';
+                        }
                       }
                       return null;
                     },

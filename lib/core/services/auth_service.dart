@@ -128,7 +128,7 @@ class AuthService {
     String? saintName,
     required String phoneNumber,
     required String address,
-    required DateTime birthDate,
+    DateTime? birthDate,
   }) async {
     try {
       final response = await _httpClient.post('/register', body: {
@@ -140,7 +140,7 @@ class AuthService {
         if (saintName != null && saintName.isNotEmpty) 'saintName': saintName,
         'phoneNumber': phoneNumber,
         'address': address,
-        'birthDate': birthDate.toIso8601String(),
+        if (birthDate != null) 'birthDate': birthDate.toIso8601String(),
       });
       return response.isSuccess;
     } catch (e) {
@@ -381,7 +381,7 @@ class AuthService {
       saintName: json['saintName'],
       phoneNumber: json['phoneNumber'] ?? '',
       address: json['address'] ?? '',
-      birthDate: DateTime.parse(json['birthDate']),
+      birthDate: json['birthDate'] != null ? DateTime.parse(json['birthDate']) : null,
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),
     );

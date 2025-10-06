@@ -95,7 +95,7 @@ class _RegisterScreenState extends State<RegisterScreen>
 
   Future<void> _onRegister({
     required UserRole role,
-    required DateTime birthDate,
+    DateTime? birthDate,
   }) async {
     FocusManager.instance.primaryFocus?.unfocus();
 
