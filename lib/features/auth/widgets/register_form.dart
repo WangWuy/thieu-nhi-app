@@ -184,16 +184,16 @@ class _RegisterFormState extends State<RegisterForm> {
 
               ModernTextField(
                 controller: widget.emailController,
-                label: 'Email *',
+                label: 'Email',
                 icon: Icons.email_outlined,
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Vui lòng nhập email';
-                  }
-                  if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                      .hasMatch(value)) {
-                    return 'Email không hợp lệ';
+                  // Email là tùy chọn; chỉ kiểm tra định dạng nếu người dùng nhập
+                  if (value != null && value.isNotEmpty) {
+                    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                        .hasMatch(value)) {
+                      return 'Email không hợp lệ';
+                    }
                   }
                   return null;
                 },
@@ -273,14 +273,14 @@ class _RegisterFormState extends State<RegisterForm> {
 
               ModernTextField(
                 controller: widget.fullNameController,
-                label: 'Họ và tên *',
+                label: 'Họ và tên',
                 icon: Icons.badge_outlined,
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Vui lòng nhập họ và tên';
-                  }
-                  if (value.length < 2) {
-                    return 'Họ và tên phải có ít nhất 2 ký tự';
+                  // Họ và tên là tùy chọn; chỉ kiểm tra tối thiểu nếu có nhập
+                  if (value != null && value.isNotEmpty) {
+                    if (value.length < 2) {
+                      return 'Họ và tên phải có ít nhất 2 ký tự';
+                    }
                   }
                   return null;
                 },

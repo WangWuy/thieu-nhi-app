@@ -148,8 +148,10 @@ class _PendingUsersScreenState extends State<PendingUsersScreen> {
               _buildDetailRow('Vai trò:', user.role.displayName),
               _buildDetailRow('Số điện thoại:', user.phoneNumber),
               _buildDetailRow('Địa chỉ:', user.address),
-              _buildDetailRow('Ngày sinh:', _formatDate(user.birthDate)),
-              _buildDetailRow('Tuổi:', '${user.age} tuổi'),
+              _buildDetailRow('Ngày sinh:',
+                  user.birthDate != null ? _formatDate(user.birthDate!) : 'Chưa cung cấp'),
+              if (user.birthDate != null)
+                _buildDetailRow('Tuổi:', '${user.age} tuổi'),
               _buildDetailRow('Ngày đăng ký:', _formatDate(user.createdAt)),
             ],
           ),
