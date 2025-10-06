@@ -10,7 +10,7 @@ class PendingUserModel extends Equatable {
   final String? saintName;
   final String phoneNumber;
   final String address;
-  final DateTime birthDate;
+  final DateTime? birthDate;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -23,7 +23,7 @@ class PendingUserModel extends Equatable {
     this.saintName,
     required this.phoneNumber,
     required this.address,
-    required this.birthDate,
+    this.birthDate,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -37,9 +37,10 @@ class PendingUserModel extends Equatable {
 
   int get age {
     final now = DateTime.now();
-    int age = now.year - birthDate.year;
-    if (now.month < birthDate.month || 
-        (now.month == birthDate.month && now.day < birthDate.day)) {
+    if (birthDate == null) return 0;
+    int age = now.year - birthDate!.year;
+    if (now.month < birthDate!.month || 
+        (now.month == birthDate!.month && now.day < birthDate!.day)) {
       age--;
     }
     return age;
