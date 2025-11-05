@@ -166,7 +166,7 @@ class _StudentListScreenState extends State<StudentListScreen>
   void _loadDataBasedOnViewMode() {
     if (widget.isTeacherView && teacherViewMode == 'all') {
       // Load all students for search
-      context.read<StudentsBloc>().add(LoadAllStudentsEvent());
+      context.read<StudentsBloc>().add(const LoadAllStudentsEvent());
     } else {
       // Load students by class (default)
       context.read<StudentsBloc>().add(LoadStudents(widget.classId));
@@ -341,7 +341,7 @@ class _StudentListScreenState extends State<StudentListScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            const Text(
               'Bộ lọc xem',
               style: TextStyle(
                 fontSize: 16,
@@ -549,7 +549,7 @@ class _StudentListScreenState extends State<StudentListScreen>
                   _searchController.text.isNotEmpty
                       ? 'Thử từ khóa khác'
                       : _getEmptyStateSubtitle(),
-                  style: TextStyle(color: AppColors.grey600),
+                  style: const TextStyle(color: AppColors.grey600),
                 ),
                 const SizedBox(height: 24),
                 if (_searchController.text.isEmpty && _shouldShowAddButton())
@@ -649,17 +649,17 @@ class _StudentListScreenState extends State<StudentListScreen>
                     children: [
                       Text(
                         '${student.qrId}',
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 14,
                           color: AppColors.grey600,
                         ),
                       ),
                       // Show class name if viewing all students
                       if (widget.isTeacherView && teacherViewMode == 'all') ...[
-                        Text(' • ', style: TextStyle(color: AppColors.grey600)),
+                        const Text(' • ', style: TextStyle(color: AppColors.grey600)),
                         Text(
                           student.className,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 14,
                             color: AppColors.primary,
                             fontWeight: FontWeight.w500,

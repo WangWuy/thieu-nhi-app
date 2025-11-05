@@ -17,7 +17,10 @@ class RegisterForm extends StatefulWidget {
   final TextEditingController phoneController;
   final TextEditingController addressController;
   final TextEditingController birthDateController;
-  final VoidCallback onRegister;
+  final void Function({
+    required UserRole role,
+    DateTime? birthDate,
+  }) onRegister;
 
   const RegisterForm({
     super.key,
@@ -92,7 +95,10 @@ class _RegisterFormState extends State<RegisterForm> {
 
   void _handleRegister() {
     if (widget.formKey.currentState!.validate()) {
-      widget.onRegister();
+      widget.onRegister(
+        role: _selectedRole,
+        birthDate: _selectedDate,
+      );
     }
   }
 
@@ -178,16 +184,16 @@ class _RegisterFormState extends State<RegisterForm> {
 
               ModernTextField(
                 controller: widget.emailController,
-                label: 'Email *',
+                label: 'Email',
                 icon: Icons.email_outlined,
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Vui lòng nhập email';
-                  }
-                  if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                      .hasMatch(value)) {
-                    return 'Email không hợp lệ';
+                  // Email là tùy chọn; chỉ kiểm tra định dạng nếu người dùng nhập
+                  if (value != null && value.isNotEmpty) {
+                    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                        .hasMatch(value)) {
+                      return 'Email không hợp lệ';
+                    }
                   }
                   return null;
                 },
@@ -267,14 +273,14 @@ class _RegisterFormState extends State<RegisterForm> {
 
               ModernTextField(
                 controller: widget.fullNameController,
-                label: 'Họ và tên *',
+                label: 'Họ và tên',
                 icon: Icons.badge_outlined,
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Vui lòng nhập họ và tên';
-                  }
-                  if (value.length < 2) {
-                    return 'Họ và tên phải có ít nhất 2 ký tự';
+                  // Họ và tên là tùy chọn; chỉ kiểm tra tối thiểu nếu có nhập
+                  if (value != null && value.isNotEmpty) {
+                    if (value.length < 2) {
+                      return 'Họ và tên phải có ít nhất 2 ký tự';
+                    }
                   }
                   return null;
                 },
@@ -301,18 +307,23 @@ class _RegisterFormState extends State<RegisterForm> {
                 child: AbsorbPointer(
                   child: ModernTextField(
                     controller: widget.birthDateController,
-                    label: 'Ngày sinh *',
+                    label: 'Ngày sinh',
                     icon: Icons.calendar_today_outlined,
                     validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Vui lòng chọn ngày sinh';
-                      }
-                      if (_selectedDate == null) {
-                        return 'Vui lòng chọn ngày sinh hợp lệ';
-                      }
-                      final age = DateTime.now().year - _selectedDate!.year;
-                      if (age < 16) {
-                        return 'Bạn phải ít nhất 16 tuổi để đăng ký';
+                      // Ngày sinh là tùy chọn; chỉ validate nếu người dùng đã chọn
+                      if ((value != null && value.isNotEmpty) || _selectedDate != null) {
+                        if (_selectedDate == null) {
+                          return 'Vui lòng chọn ngày sinh hợp lệ';
+                        }
+                        final now = DateTime.now();
+                        int age = now.year - _selectedDate!.year;
+                        if (now.month < _selectedDate!.month ||
+                            (now.month == _selectedDate!.month && now.day < _selectedDate!.day)) {
+                          age--;
+                        }
+                        if (age < 16) {
+                          return 'Bạn phải ít nhất 16 tuổi để đăng ký';
+                        }
                       }
                       return null;
                     },

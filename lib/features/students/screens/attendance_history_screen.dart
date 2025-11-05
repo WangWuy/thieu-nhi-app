@@ -37,6 +37,28 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     
     if (widget.initialHistory != null) {
       _attendanceHistory = widget.initialHistory!;
+    } else {
+      // Initialize with empty history to prevent null errors
+      _attendanceHistory = StudentAttendanceHistory(
+        student: StudentBasicInfo(
+          id: int.tryParse(widget.student.id) ?? 0,
+          name: widget.student.name,
+          studentCode: widget.student.qrId ?? '',
+          className: widget.student.className,
+          department: widget.student.department,
+        ),
+        records: [],
+        groupedByMonth: [],
+        pagination: const AttendancePagination(
+          page: 1,
+          limit: 100,
+          total: 0,
+          pages: 0,
+          hasNext: false,
+          hasPrev: false,
+        ),
+        filters: const AttendanceFilters(),
+      );
     }
     
     _loadFullHistory();

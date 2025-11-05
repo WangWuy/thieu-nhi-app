@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:thieu_nhi_app/core/models/user_model.dart';
+import 'package:thieu_nhi_app/core/services/auth_service.dart';
 import 'package:thieu_nhi_app/features/auth/bloc/auth_bloc.dart';
 import 'package:thieu_nhi_app/features/auth/bloc/auth_event.dart';
 import 'package:thieu_nhi_app/features/auth/bloc/auth_state.dart';
@@ -20,6 +21,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _notificationsEnabled = true;
   bool _darkModeEnabled = false;
   String _selectedLanguage = 'Tiếng Việt';
+  String _deleteConfirmationText = '';
 
   @override
   Widget build(BuildContext context) {
@@ -189,6 +191,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _MenuItem('Quản lý tài khoản',
                   'Tạo, sửa, xóa tài khoản người dùng', Icons.manage_accounts,
                   onTap: () => context.push('/admin/accounts')),
+              _MenuItem('Đăng ký chờ phê duyệt',
+                  'Xem và phê duyệt đăng ký tài khoản', Icons.pending_actions,
+                  onTap: () => context.push('/admin/pending-users')),
               _MenuItem('Cài đặt hệ thống', 'Cấu hình ứng dụng',
                   Icons.settings_applications,
                   onTap: () => _showComingSoonDialog('Cài đặt hệ thống')),
@@ -207,6 +212,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ]),
           const SizedBox(height: 16),
           _buildMenuSection('Khác', [
+            _MenuItem('Ẩn tài khoản', 'Vô hiệu hóa và đăng xuất',
+                Icons.visibility_off,
+                iconColor: AppColors.error,
+                onTap: () => _showDeactivateAccountDialog(user)),
+            _MenuItem('Xóa tài khoản', 'Xóa vĩnh viễn tài khoản và dữ liệu',
+                Icons.delete_forever,
+                iconColor: AppColors.error,
+                onTap: () => _showDeleteAccountDialog(user)),
             _MenuItem('Đăng xuất', 'Thoát khỏi ứng dụng', Icons.logout,
                 iconColor: AppColors.error, onTap: _showLogoutDialog),
           ]),
@@ -470,6 +483,240 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ],
       ),
     );
+  }
+
+  void _showDeactivateAccountDialog(UserModel user) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Ẩn tài khoản'),
+        content: const Text(
+            'Tài khoản của bạn sẽ bị vô hiệu hóa và bạn sẽ bị đăng xuất. ' 
+            'Bạn có chắc muốn tiếp tục?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Hủy'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _deactivateCurrentUser(user.id);
+            },
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('Xác nhận'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _deactivateCurrentUser(String userId) async {
+    // Hiển thị dialog loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    final success = await AuthService().deactivateUser(userId);
+
+    // Đóng dialog loading
+    if (mounted) Navigator.pop(context);
+
+    if (!mounted) return;
+
+    if (success) {
+      // Thông báo và đăng xuất
+      await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Đã ẩn tài khoản'),
+          content: const Text(
+              'Tài khoản đã được vô hiệu hóa. Bạn sẽ đăng xuất ngay bây giờ.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Đóng'),
+            ),
+          ],
+        ),
+      );
+
+      if (!mounted) return;
+      context.read<AuthBloc>().add(AuthLogoutRequested());
+    } else {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Thao tác thất bại'),
+          content:
+              const Text('Không thể vô hiệu hóa tài khoản. Vui lòng thử lại.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Đóng'),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  void _showDeleteAccountDialog(UserModel user) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.warning, color: AppColors.error, size: 28),
+            const SizedBox(width: 8),
+            const Text('Xóa tài khoản'),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Bạn có chắc muốn xóa vĩnh viễn tài khoản này?',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 16),
+              
+              // Cảnh báo về hậu quả
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.error.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.error.withOpacity(0.3)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '⚠️ CẢNH BÁO: Hành động này không thể hoàn tác!',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.error,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Khi xóa tài khoản, tất cả dữ liệu sẽ bị xóa vĩnh viễn:',
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      '• Thông tin cá nhân\n'
+                      '• Lịch sử điểm danh\n'
+                      '• Dữ liệu học tập\n'
+                      '• Tất cả hoạt động liên quan',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+              
+              const SizedBox(height: 16),
+              
+              // Yêu cầu nhập tên để xác nhận
+              TextField(
+                decoration: const InputDecoration(
+                  labelText: 'Nhập "XÓA" để xác nhận',
+                  hintText: 'XÓA',
+                  border: OutlineInputBorder(),
+                ),
+                onChanged: (value) {
+                  setState(() {
+                    _deleteConfirmationText = value;
+                  });
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            onPressed: _deleteConfirmationText == 'XÓA' 
+                ? () {
+                    Navigator.pop(context);
+                    _deleteCurrentUserAccount(user.id);
+                  }
+                : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Xóa vĩnh viễn'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _deleteCurrentUserAccount(String userId) async {
+    // Hiển thị dialog loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    final success = await AuthService().deleteCurrentUserAccount();
+
+    // Đóng dialog loading
+    if (mounted) Navigator.pop(context);
+
+    if (!mounted) return;
+
+    if (success) {
+      // Thông báo và đăng xuất
+      await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Tài khoản đã bị xóa'),
+          content: const Text(
+              'Tài khoản và tất cả dữ liệu đã được xóa vĩnh viễn. '
+              'Bạn sẽ được đăng xuất ngay bây giờ.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Đóng'),
+            ),
+          ],
+        ),
+      );
+
+      if (!mounted) return;
+      context.read<AuthBloc>().add(AuthLogoutRequested());
+    } else {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Xóa tài khoản thất bại'),
+          content: const Text(
+              'Không thể xóa tài khoản. Vui lòng thử lại hoặc liên hệ hỗ trợ.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Đóng'),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   String _formatDate(DateTime date) => '${date.day}/${date.month}/${date.year}';
