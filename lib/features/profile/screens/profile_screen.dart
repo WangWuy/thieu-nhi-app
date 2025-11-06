@@ -1,4 +1,3 @@
-// lib/features/profile/screens/profile_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -126,7 +125,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          ...infoItems.map((item) => _buildInfoRow(item.$1, item.$2 as String, item.$3)),
+          ...infoItems.map(
+            (item) => _buildInfoRow(
+              item.$1,
+              (item.$2 ?? 'Chưa cập nhật') as String,
+              item.$3,
+            ),
+          ),
         ],
       ),
     );
@@ -144,7 +149,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(label,
-                    style: const TextStyle(fontSize: 12, color: AppColors.grey500)),
+                    style: const TextStyle(
+                        fontSize: 12, color: AppColors.grey500)),
                 const SizedBox(height: 4),
                 Text(value,
                     style: const TextStyle(
@@ -274,7 +280,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             final item = entry.value;
             return Column(
               children: [
-                if (index > 0) const Divider(color: AppColors.grey200, height: 1),
+                if (index > 0)
+                  const Divider(color: AppColors.grey200, height: 1),
                 ListTile(
                   contentPadding:
                       const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -292,7 +299,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       style: const TextStyle(
                           fontSize: 16, fontWeight: FontWeight.w600)),
                   subtitle: Text(item.subtitle,
-                      style: const TextStyle(fontSize: 14, color: AppColors.grey600)),
+                      style: const TextStyle(
+                          fontSize: 14, color: AppColors.grey600)),
                   trailing: item.trailing ??
                       (item.onTap != null
                           ? const Icon(Icons.arrow_forward_ios,
@@ -491,7 +499,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       builder: (context) => AlertDialog(
         title: const Text('Ẩn tài khoản'),
         content: const Text(
-            'Tài khoản của bạn sẽ bị vô hiệu hóa và bạn sẽ bị đăng xuất. ' 
+            'Tài khoản của bạn sẽ bị vô hiệu hóa và bạn sẽ bị đăng xuất. '
             'Bạn có chắc muốn tiếp tục?'),
         actions: [
           TextButton(
@@ -586,7 +594,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 16),
-              
+
               // Cảnh báo về hậu quả
               Container(
                 padding: const EdgeInsets.all(12),
@@ -609,7 +617,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const SizedBox(height: 8),
                     const Text(
                       'Khi xóa tài khoản, tất cả dữ liệu sẽ bị xóa vĩnh viễn:',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                      style:
+                          TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
                     ),
                     const SizedBox(height: 4),
                     const Text(
@@ -622,9 +631,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Yêu cầu nhập tên để xác nhận
               TextField(
                 decoration: const InputDecoration(
@@ -647,7 +656,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: const Text('Hủy'),
           ),
           ElevatedButton(
-            onPressed: _deleteConfirmationText == 'XÓA' 
+            onPressed: _deleteConfirmationText == 'XÓA'
                 ? () {
                     Navigator.pop(context);
                     _deleteCurrentUserAccount(user.id);
@@ -687,9 +696,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         context: context,
         builder: (context) => AlertDialog(
           title: const Text('Tài khoản đã bị xóa'),
-          content: const Text(
-              'Tài khoản và tất cả dữ liệu đã được xóa vĩnh viễn. '
-              'Bạn sẽ được đăng xuất ngay bây giờ.'),
+          content:
+              const Text('Tài khoản và tất cả dữ liệu đã được xóa vĩnh viễn. '
+                  'Bạn sẽ được đăng xuất ngay bây giờ.'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
