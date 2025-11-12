@@ -24,10 +24,12 @@ class _AccountManagementScreenState extends State<AccountManagementScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
+  late final ScrollController _scrollController;
   
   String _searchQuery = '';
   String? _selectedDepartmentFilter;
   bool _showInactiveOnly = false;
+  bool _isLoadingMore = false;
 
   // Department mapping name -> ID (từ backend schema)
   final Map<String, int> _departmentMapping = {
@@ -40,8 +42,9 @@ class _AccountManagementScreenState extends State<AccountManagementScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _searchController.addListener(_onSearchChanged);
+    _scrollController = ScrollController()..addListener(_onScroll);
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadUsers();
@@ -52,6 +55,9 @@ class _AccountManagementScreenState extends State<AccountManagementScreen>
   void dispose() {
     _tabController.dispose();
     _searchController.dispose();
+    _scrollController
+      ..removeListener(_onScroll)
+      ..dispose();
     super.dispose();
   }
 
@@ -78,6 +84,7 @@ class _AccountManagementScreenState extends State<AccountManagementScreen>
   // Apply all active filters
   void _applyFilters() {
     final adminBloc = context.read<AdminBloc>();
+    _isLoadingMore = false;
     
     if (_searchQuery.isNotEmpty) {
       // If searching, use search API
@@ -90,6 +97,33 @@ class _AccountManagementScreenState extends State<AccountManagementScreen>
             : null,
       ));
     }
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients ||
+        _isLoadingMore ||
+        _searchQuery.isNotEmpty) {
+      return;
+    }
+
+    final adminState = context.read<AdminBloc>().state;
+    if (adminState is! AdminLoaded || !adminState.hasMore) {
+      return;
+    }
+
+    if (_scrollController.position.extentAfter > 300) {
+      return;
+    }
+
+    _isLoadingMore = true;
+    final nextPage = adminState.currentPage + 1;
+
+    context.read<AdminBloc>().add(LoadAllUsers(
+      page: nextPage,
+      departmentId: _selectedDepartmentFilter != null
+          ? _departmentMapping[_selectedDepartmentFilter!] 
+          : null,
+    ));
   }
 
   // Clear all filters and reload
@@ -129,11 +163,13 @@ class _AccountManagementScreenState extends State<AccountManagementScreen>
                   context.read<AdminBloc>().add(const RefreshUsers());
                 },
                 child: CustomScrollView(
+                  controller: _scrollController,
                   slivers: [
                     _buildCompactAppBar(),
                     _buildCompactFilter(),
                     _buildTabBar(),
                     _buildUserList(state, currentUser),
+                    _buildLoadMoreIndicator(state),
                   ],
                 ),
               );
@@ -177,24 +213,6 @@ class _AccountManagementScreenState extends State<AccountManagementScreen>
           icon: const Icon(Icons.refresh, color: Colors.white),
           onPressed: () => context.read<AdminBloc>().add(const RefreshUsers()),
           tooltip: 'Làm mới',
-        ),
-        PopupMenuButton<String>(
-          icon: const Icon(Icons.more_vert, color: Colors.white),
-          onSelected: _handleMenuAction,
-          itemBuilder: (context) => [
-            const PopupMenuItem(
-              value: 'export',
-              child: Row(
-                children: [Icon(Icons.download), SizedBox(width: 8), Text('Xuất Excel')],
-              ),
-            ),
-            const PopupMenuItem(
-              value: 'import',
-              child: Row(
-                children: [Icon(Icons.upload), SizedBox(width: 8), Text('Nhập Excel')],
-              ),
-            ),
-          ],
         ),
       ],
     );
@@ -257,13 +275,16 @@ class _AccountManagementScreenState extends State<AccountManagementScreen>
                       borderRadius: BorderRadius.circular(18),
                     ),
                     child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
+                      child: DropdownButton<String?>(
                         hint: const Text('Ngành', style: TextStyle(fontSize: 13)),
                         value: _selectedDepartmentFilter,
                         items: [
-                          const DropdownMenuItem(value: null, child: Text('Tất cả', style: TextStyle(fontSize: 13))),
+                          const DropdownMenuItem<String?>(
+                            value: null,
+                            child: Text('Tất cả', style: TextStyle(fontSize: 13)),
+                          ),
                           ...['Chiên', 'Ấu', 'Thiếu', 'Nghĩa'].map((dept) => 
-                            DropdownMenuItem(
+                            DropdownMenuItem<String?>(
                               value: dept,
                               child: Text(dept, style: const TextStyle(fontSize: 13)),
                             )),
@@ -327,7 +348,6 @@ class _AccountManagementScreenState extends State<AccountManagementScreen>
             tabs: const [
               Tab(text: 'Tất cả'),
               Tab(text: 'BĐH'),
-              Tab(text: 'PDT'),
               Tab(text: 'GLV'),
             ],
           ),
@@ -337,7 +357,10 @@ class _AccountManagementScreenState extends State<AccountManagementScreen>
   }
 
   Widget _buildUserList(AdminState state, UserModel currentUser) {
-    if (state is AdminLoading) {
+    final AdminState effectiveState =
+        state is AdminRefreshing ? state.previousState : state;
+
+    if (effectiveState is AdminLoading) {
       return const SliverFillRemaining(
         child: Center(child: CircularProgressIndicator()),
       );
@@ -363,13 +386,13 @@ class _AccountManagementScreenState extends State<AccountManagementScreen>
       );
     }
 
-    if (state is! AdminLoaded) {
+    if (effectiveState is! AdminLoaded) {
       return const SliverFillRemaining(
         child: Center(child: Text('Không có dữ liệu')),
       );
     }
 
-    final filteredUsers = _getFilteredUsers(state.users);
+    final filteredUsers = _getFilteredUsers(effectiveState.users);
 
     if (filteredUsers.isEmpty) {
       return const SliverFillRemaining(
@@ -396,6 +419,23 @@ class _AccountManagementScreenState extends State<AccountManagementScreen>
           },
           childCount: filteredUsers.length,
         ),
+      ),
+    );
+  }
+
+  Widget _buildLoadMoreIndicator(AdminState state) {
+    final bool showIndicator = _isLoadingMore &&
+        state is AdminLoaded &&
+        state.hasMore;
+
+    if (!showIndicator) {
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
+
+    return const SliverToBoxAdapter(
+      child: Padding(
+        padding: EdgeInsets.only(bottom: 24),
+        child: Center(child: CircularProgressIndicator()),
       ),
     );
   }
@@ -510,6 +550,13 @@ class _AccountManagementScreenState extends State<AccountManagementScreen>
   }
 
   void _handleBlocStateChange(BuildContext context, AdminState state) {
+    if (state is AdminLoaded ||
+        state is AdminError ||
+        state is AdminRefreshing ||
+        state is UserOperationSuccess) {
+      _isLoadingMore = false;
+    }
+
     if (state is AdminError) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -529,29 +576,14 @@ class _AccountManagementScreenState extends State<AccountManagementScreen>
     }
   }
 
-  void _handleMenuAction(String action) {
-    switch (action) {
-      case 'export':
-        // TODO: Implement export
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Chức năng xuất Excel đang phát triển')),
-        );
-        break;
-      case 'import':
-        // TODO: Implement import
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Chức năng nhập Excel đang phát triển')),
-        );
-        break;
-    }
-  }
-
   List<UserModel> _getFilteredUsers(List<UserModel> users) {
     var filtered = users;
 
     // Apply department filter
     if (_selectedDepartmentFilter != null) {
-      filtered = filtered.where((user) => user.department == _selectedDepartmentFilter).toList();
+      filtered = filtered
+          .where((user) => user.department?.displayName == _selectedDepartmentFilter)
+          .toList();
     }
 
     // Apply active/inactive filter
@@ -564,10 +596,7 @@ class _AccountManagementScreenState extends State<AccountManagementScreen>
       case 1: // BĐH
         filtered = filtered.where((user) => user.role == UserRole.admin).toList();
         break;
-      case 2: // PDT
-        filtered = filtered.where((user) => user.role == UserRole.department).toList();
-        break;
-      case 3: // GLV
+      case 2: // GLV
         filtered = filtered.where((user) => user.role == UserRole.teacher).toList();
         break;
     }

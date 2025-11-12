@@ -21,6 +21,7 @@ class BackendStudentAdapter {
         department: json['class']?['department']?['displayName'] ?? 'Unknown',
         attendance: const {},
         grades: _parseGrades(json),
+        note: json['note'],
         createdAt: _parseDate(json['createdAt']) ?? DateTime.now(),
         updatedAt: _parseDate(json['updatedAt']) ?? DateTime.now(),
 
@@ -120,6 +121,8 @@ class BackendStudentAdapter {
 // Extension for other adapters (keeping existing ones)
 class BackendUserAdapter {
   static UserModel fromBackendJson(Map<String, dynamic> json) {
+    final teacherClassInfo = _getTeacherClassInfo(json);
+
     return UserModel(
       id: json['id'].toString(),
       username: json['username'] ?? '',
@@ -128,15 +131,24 @@ class BackendUserAdapter {
       departmentId: json['departmentId'],
       department: _getDepartmentModel(json),
       classTeachers: _getClassTeachers(json),
+      teacherClassId: teacherClassInfo?.classId,
+      teacherClassName: teacherClassInfo?.className,
+      teacherClassStudentCount: teacherClassInfo?.totalStudents,
+      permissions: _getPermissions(json),
       saintName: json['saintName'],
       fullName: json['fullName'],
-      birthDate: json['birthDate'] != null ? DateTime.parse(json['birthDate']) : null,
+      birthDate: json['birthDate'] != null
+          ? DateTime.parse(json['birthDate'])
+          : null,
       phoneNumber: json['phoneNumber'],
       address: json['address'],
       isActive: json['isActive'] ?? true,
-      lastLogin: json['lastLogin'] != null ? DateTime.parse(json['lastLogin']) : null,
-      createdAt: DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
-      updatedAt: DateTime.parse(json['updatedAt'] ?? DateTime.now().toIso8601String()),
+      lastLogin:
+          json['lastLogin'] != null ? DateTime.parse(json['lastLogin']) : null,
+      createdAt:
+          DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
+      updatedAt:
+          DateTime.parse(json['updatedAt'] ?? DateTime.now().toIso8601String()),
     );
   }
 
@@ -193,6 +205,18 @@ class BackendUserAdapter {
     }
   }
 
+  static List<String> _getPermissions(Map<String, dynamic> json) {
+    final permissions = json['permissions'];
+    if (permissions is List) {
+      return permissions
+          .map((perm) => perm?.toString())
+          .whereType<String>()
+          .where((perm) => perm.isNotEmpty)
+          .toList();
+    }
+    return const [];
+  }
+
   // NEW: Get all classes for teacher (not just primary)
   static List<Map<String, dynamic>> getAllClasses(Map<String, dynamic> json) {
     final classes = <Map<String, dynamic>>[];
@@ -237,6 +261,55 @@ class BackendUserAdapter {
       case UserRole.teacher:
         return 'giao_ly_vien';
     }
+  }
+
+  static _TeacherClassInfo? _getTeacherClassInfo(Map<String, dynamic> json) {
+    final singleAssignment = _asMap(json['classTeacher']);
+    if (singleAssignment != null) {
+      final classData =
+          _asMap(singleAssignment['classInfo']) ?? _asMap(singleAssignment['class']);
+      if (classData != null) {
+        return _TeacherClassInfo.fromJson(classData);
+      }
+    }
+
+    if (json['classTeachers'] is List && (json['classTeachers'] as List).isNotEmpty) {
+      final classTeachers = json['classTeachers'] as List;
+      Map<String, dynamic>? selected;
+
+      for (final item in classTeachers) {
+        final mapItem = _asMap(item);
+        if (mapItem == null) continue;
+
+        if (mapItem['isPrimary'] == true) {
+          selected = mapItem;
+          break;
+        }
+
+        selected ??= mapItem;
+      }
+
+      final classData =
+          _asMap(selected?['class']) ?? _asMap(selected?['classInfo']);
+      if (classData != null) {
+        return _TeacherClassInfo.fromJson(classData);
+      }
+    }
+
+    return null;
+  }
+
+  static Map<String, dynamic>? _asMap(dynamic value) {
+    if (value is Map<String, dynamic>) return value;
+    if (value is Map) return Map<String, dynamic>.from(value);
+    return null;
+  }
+
+  static int? _parseInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value.toString());
   }
 }
 
@@ -401,5 +474,31 @@ class BackendDepartmentAdapter {
       return json['totalTeachers'];
     }
     return 0;
+  }
+}
+
+class _TeacherClassInfo {
+  final String? classId;
+  final String? className;
+  final int? totalStudents;
+
+  _TeacherClassInfo({
+    this.classId,
+    this.className,
+    this.totalStudents,
+  });
+
+  factory _TeacherClassInfo.fromJson(Map<String, dynamic> json) {
+    final totalStudents =
+        BackendUserAdapter._parseInt(json['totalStudents']) ??
+            BackendUserAdapter._parseInt(
+                BackendUserAdapter._asMap(json['_count'])?['students']) ??
+            (json['students'] is List ? (json['students'] as List).length : null);
+
+    return _TeacherClassInfo(
+      classId: json['id']?.toString(),
+      className: json['name'] ?? json['className'],
+      totalStudents: totalStudents,
+    );
   }
 }

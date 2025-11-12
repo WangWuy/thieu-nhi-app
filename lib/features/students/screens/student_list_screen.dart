@@ -1,4 +1,3 @@
-// lib/features/students/screens/student_list_screen.dart - UPDATED WITH TEACHER FILTERS
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -222,19 +221,7 @@ class _StudentListScreenState extends State<StudentListScreen>
 
     return Scaffold(
       body: _buildBody(),
-      floatingActionButton: hasPermission && _shouldShowFAB()
-          ? FloatingActionButton(
-              heroTag: "add_student_fab",
-              onPressed: () => _showAddStudentDialog(),
-              child: const Icon(Icons.add),
-            )
-          : null,
     );
-  }
-
-  bool _shouldShowFAB() {
-    if (widget.isTeacherView && teacherViewMode == 'all') return false;
-    return true;
   }
 
   Widget _buildBody() {
@@ -552,12 +539,6 @@ class _StudentListScreenState extends State<StudentListScreen>
                   style: const TextStyle(color: AppColors.grey600),
                 ),
                 const SizedBox(height: 24),
-                if (_searchController.text.isEmpty && _shouldShowAddButton())
-                  ElevatedButton.icon(
-                    onPressed: () => _showAddStudentDialog(),
-                    icon: const Icon(Icons.person_add),
-                    label: const Text('Thêm thiếu nhi'),
-                  ),
               ],
             ),
           ),
@@ -688,32 +669,6 @@ class _StudentListScreenState extends State<StudentListScreen>
         ),
       ),
     );
-  }
-
-  void _showAddStudentDialog() {
-    final currentState = context.read<StudentsBloc>().state;
-
-    if (currentState is StudentsLoaded && currentState.students.isNotEmpty) {
-      final firstStudent = currentState.students.first;
-      context.push(
-          '/add-student/${widget.classId}?className=${Uri.encodeComponent(firstStudent.className)}&department=${Uri.encodeComponent(firstStudent.department)}');
-    } else {
-      context.push(
-          '/add-student/${widget.classId}?className=${Uri.encodeComponent(_getClassDisplayName())}&department=Unknown');
-    }
-  }
-
-  bool _shouldShowAddButton() {
-    if (currentUser == null) return false;
-    if (widget.isTeacherView && teacherViewMode == 'all') return false;
-    
-    switch (currentUser!.role) {
-      case UserRole.admin:
-      case UserRole.department:
-        return true;
-      case UserRole.teacher:
-        return teacherViewMode == 'myClass';
-    }
   }
 
   String _getClassDisplayName() {

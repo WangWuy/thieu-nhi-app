@@ -42,15 +42,15 @@ class AttendanceCardHeader extends StatelessWidget {
           ),
 
         // Refresh button
-        IconButton(
-          icon: Icon(
-            Icons.refresh,
-            size: 20,
-            color: isLoading ? AppColors.grey400 : AppColors.primary,
-          ),
-          onPressed: isLoading ? null : onRefresh,
-          tooltip: 'Làm mới',
-        ),
+        // IconButton(
+        //   icon: Icon(
+        //     Icons.refresh,
+        //     size: 20,
+        //     color: isLoading ? AppColors.grey400 : AppColors.primary,
+        //   ),
+        //   onPressed: isLoading ? null : onRefresh,
+        //   tooltip: 'Làm mới',
+        // ),
       ],
     );
   }

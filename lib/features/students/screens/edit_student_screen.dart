@@ -33,7 +33,7 @@ class _EditStudentScreenState extends State<EditStudentScreen>
   late final TextEditingController _parentPhone1Controller;
   late final TextEditingController _parentPhone2Controller;
   late final TextEditingController _addressController;
-
+  late final TextEditingController _noteController;
   DateTime? _selectedBirthDate;
   bool _isLoading = false;
 
@@ -65,6 +65,7 @@ class _EditStudentScreenState extends State<EditStudentScreen>
     _parentPhone2Controller =
         TextEditingController(); // Có thể thêm field mới này vào model
     _addressController = TextEditingController(text: widget.student.address);
+    _noteController = TextEditingController(text: widget.student.note);
 
     _selectedBirthDate = widget.student.birthDate;
   }
@@ -103,6 +104,7 @@ class _EditStudentScreenState extends State<EditStudentScreen>
     _parentPhone1Controller.dispose();
     _parentPhone2Controller.dispose();
     _addressController.dispose();
+    _noteController.dispose();
     super.dispose();
   }
 
@@ -195,6 +197,8 @@ class _EditStudentScreenState extends State<EditStudentScreen>
             _buildPersonalInfoSection(),
             const SizedBox(height: 24),
             _buildContactInfoSection(),
+            const SizedBox(height: 24),
+            _buildNoteSection(),
             const SizedBox(height: 32),
             _buildSubmitButton(),
             const SizedBox(height: 32),
@@ -501,6 +505,38 @@ class _EditStudentScreenState extends State<EditStudentScreen>
     );
   }
 
+  Widget _buildNoteSection() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionHeader('Ghi chú', Icons.note_alt),
+          const SizedBox(height: 20),
+          CustomTextField(
+            controller: _noteController,
+            label: 'Ghi chú',
+            icon: Icons.note,
+            maxLines: 4,
+            keyboardType: TextInputType.multiline,
+            validator: null, // Optional field
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSubmitButton() {
     return CustomButton(
       onPressed: _isLoading ? null : _submitForm,
@@ -562,6 +598,9 @@ class _EditStudentScreenState extends State<EditStudentScreen>
         phone: _phoneController.text.trim(),
         parentPhone: _parentPhone1Controller.text.trim(),
         address: _addressController.text.trim(),
+        note: _noteController.text.trim().isNotEmpty
+            ? _noteController.text.trim() 
+            : null,
         birthDate: _selectedBirthDate!,
         updatedAt: DateTime.now(),
       );

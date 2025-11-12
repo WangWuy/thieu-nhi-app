@@ -1,4 +1,3 @@
-// lib/features/students/screens/attendance_history_screen.dart
 import 'package:flutter/material.dart';
 import 'package:thieu_nhi_app/core/models/attendance_models.dart';
 import 'package:thieu_nhi_app/core/models/student_model.dart';
@@ -149,7 +148,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Lịch sử điểm danh - ${widget.student.name}'),
+        title: Text('Lịch sử điểm danh'),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         actions: [
@@ -358,113 +357,131 @@ class AttendanceRecordListTile extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      leading: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: record.isPresent 
-              ? AppColors.success.withOpacity(0.1)
-              : AppColors.error.withOpacity(0.1),
-          shape: BoxShape.circle,
-        ),
-        child: Icon(
-          record.isPresent ? Icons.check_circle : Icons.cancel,
-          color: record.isPresent ? AppColors.success : AppColors.error,
-          size: 20,
-        ),
+Widget build(BuildContext context) {
+  return ListTile(
+    leading: Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: record.isPresent 
+            ? AppColors.success.withOpacity(0.1)
+            : AppColors.error.withOpacity(0.1),
+        shape: BoxShape.circle,
       ),
-      title: Text(
-        _formatDate(record.attendanceDate),
-        style: const TextStyle(fontWeight: FontWeight.w600),
+      child: Icon(
+        record.isPresent ? Icons.check_circle : Icons.cancel,
+        color: record.isPresent ? AppColors.success : AppColors.error,
+        size: 20,
       ),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    ),
+    title: Text(
+      _formatDate(record.attendanceDate),
+      style: const TextStyle(fontWeight: FontWeight.w600),
+    ),
+    subtitle: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ✅ FIX: Wrap Row trong Flexible và thêm mainAxisSize
+        Row(
+          mainAxisSize: MainAxisSize.min, // ✅ Quan trọng!
+          children: [
+            Icon(
+              record.attendanceType == 'thursday' ? Icons.event : Icons.church,
+              size: 14,
+              color: AppColors.grey600,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              record.attendanceType == 'thursday' ? 'Thứ 5' : 'Chủ nhật',
+              style: const TextStyle(
+                color: AppColors.grey600,
+                fontSize: 13, // ✅ Giảm size
+              ),
+            ),
+            if (record.markedAt != null) ...[
+              const SizedBox(width: 8), // ✅ Giảm spacing từ 12
+              const Icon(Icons.schedule, size: 14, color: AppColors.grey600),
+              const SizedBox(width: 4),
+              Flexible( // ✅ Wrap text trong Flexible
+                child: Text(
+                  _formatTime(record.markedAt!),
+                  style: const TextStyle(
+                    color: AppColors.grey600,
+                    fontSize: 13,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ],
+        ),
+        if (record.note?.isNotEmpty ?? false) ...[
+          const SizedBox(height: 4),
           Row(
             children: [
-              Icon(
-                record.attendanceType == 'thursday' ? Icons.event : Icons.church,
-                size: 14,
-                color: AppColors.grey600,
-              ),
+              const Icon(Icons.note, size: 14, color: AppColors.grey500),
               const SizedBox(width: 4),
-              Text(
-                record.attendanceType == 'thursday' ? 'Thứ 5' : 'Chủ nhật',
-                style: const TextStyle(color: AppColors.grey600),
-              ),
-              if (record.markedAt != null) ...[
-                const SizedBox(width: 12),
-                const Icon(Icons.schedule, size: 14, color: AppColors.grey600),
-                const SizedBox(width: 4),
-                Text(
-                  _formatTime(record.markedAt!),
-                  style: const TextStyle(color: AppColors.grey600),
+              Expanded(
+                child: Text(
+                  record.note ?? '',
+                  style: const TextStyle(
+                    color: AppColors.grey500,
+                    fontStyle: FontStyle.italic,
+                    fontSize: 12,
+                  ),
+                  maxLines: 1, // ✅ Thêm maxLines
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ],
+              ),
             ],
           ),
-          if (record.note?.isNotEmpty ?? false) ...[
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                const Icon(Icons.note, size: 14, color: AppColors.grey500),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    record.note!,
-                    style: const TextStyle(
-                      color: AppColors.grey500,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-          if (record.marker?.fullName != null) ...[
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                const Icon(Icons.person, size: 14, color: AppColors.grey500),
-                const SizedBox(width: 4),
-                Text(
+        ],
+        if (record.marker?.fullName != null) ...[
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              const Icon(Icons.person, size: 14, color: AppColors.grey500),
+              const SizedBox(width: 4),
+              Expanded( // ✅ Wrap trong Expanded
+                child: Text(
                   'Điểm danh bởi: ${record.marker!.fullName}',
                   style: const TextStyle(
                     fontSize: 12,
                     color: AppColors.grey500,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ],
-      ),
-      trailing: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
+      ],
+    ),
+    trailing: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: record.isPresent 
+            ? AppColors.success.withOpacity(0.1)
+            : AppColors.error.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
           color: record.isPresent 
-              ? AppColors.success.withOpacity(0.1)
-              : AppColors.error.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: record.isPresent 
-                ? AppColors.success.withOpacity(0.3)
-                : AppColors.error.withOpacity(0.3),
-          ),
-        ),
-        child: Text(
-          record.isPresent ? 'Có mặt' : 'Vắng',
-          style: TextStyle(
-            color: record.isPresent ? AppColors.success : AppColors.error,
-            fontWeight: FontWeight.bold,
-            fontSize: 12,
-          ),
+              ? AppColors.success.withOpacity(0.3)
+              : AppColors.error.withOpacity(0.3),
         ),
       ),
-      onTap: () => _showRecordDetails(context, record),
-    );
-  }
+      child: Text(
+        record.isPresent ? 'Có mặt' : 'Vắng',
+        style: TextStyle(
+          color: record.isPresent ? AppColors.success : AppColors.error,
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
+        ),
+      ),
+    ),
+    onTap: () => _showRecordDetails(context, record),
+  );
+}
 
   void _showRecordDetails(BuildContext context, AttendanceRecord record) {
     showDialog(
@@ -490,7 +507,7 @@ class AttendanceRecordListTile extends StatelessWidget {
             if (record.marker?.fullName != null)
               _buildDetailRow('Người điểm danh', record.marker!.fullName),
             if (record.markedAt != null)
-              _buildDetailRow('Thời gian', _formatDateTime(record.markedAt!)),
+              _buildDetailRow('Thời gian điểm danh', _formatDateTime(record.markedAt!)),
           ],
         ),
         actions: [

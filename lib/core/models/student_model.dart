@@ -13,6 +13,7 @@ class StudentModel extends Equatable {
   final String classId;
   final String className;
   final String department;
+  final String? note;
 
   // Attendance & grades data
   final Map<String, bool> attendance;
@@ -72,6 +73,7 @@ class StudentModel extends Equatable {
     this.academicYearName,
     this.academicYearTotalWeeks,
     this.recentAttendance,
+    this.note,
   });
 
   // Helper getters - giữ nguyên
@@ -114,6 +116,8 @@ class StudentModel extends Equatable {
     String? photoUrl,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? note,
+
     // New copyWith params
     String? saintName,
     String? parentPhone2,
@@ -148,6 +152,8 @@ class StudentModel extends Equatable {
       photoUrl: photoUrl ?? this.photoUrl,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      note: note ?? this.note,
+      
       // New fields
       saintName: saintName ?? this.saintName,
       parentPhone2: parentPhone2 ?? this.parentPhone2,

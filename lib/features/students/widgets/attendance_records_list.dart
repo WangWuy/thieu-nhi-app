@@ -1,4 +1,3 @@
-// lib/features/students/widgets/attendance_records_list.dart
 import 'package:thieu_nhi_app/core/models/attendance_models.dart';
 import 'package:flutter/material.dart';
 import 'package:thieu_nhi_app/theme/app_colors.dart';
@@ -19,7 +18,6 @@ class AttendanceRecordsList extends StatelessWidget {
   }
 }
 
-// lib/features/students/widgets/attendance_record_item.dart
 class AttendanceRecordItem extends StatelessWidget {
   final AttendanceRecord record;
 

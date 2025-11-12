@@ -92,8 +92,12 @@ class StudentProfileCard extends StatelessWidget {
           if (student.parentPhone2?.isNotEmpty ?? false)
             _buildInfoRow(
                 'SĐT phụ huynh 2', student.parentPhone2!, Icons.contact_phone),
-          _buildInfoRow('Địa chỉ', student.address, Icons.location_on,
-              isLast: true),
+          _buildInfoRow('Địa chỉ', student.address, Icons.location_on),
+          if (student.note?.isNotEmpty ?? false)
+            _buildInfoRow('Ghi chú', student.note!, Icons.note_alt,
+                isLast: true)
+          else
+            _buildInfoRow('Ghi chú', 'Chưa có', Icons.note_alt, isLast: true),
 
           // Thêm thông tin thời gian
           const SizedBox(height: 16),

@@ -21,22 +21,30 @@ class AdminLoading extends AdminState {
 class AdminLoaded extends AdminState {
   final List<UserModel> users;
   final DateTime lastUpdated;
+  final bool hasMore;
+  final int currentPage;
 
   const AdminLoaded({
     required this.users,
     required this.lastUpdated,
+    this.hasMore = true,
+    this.currentPage = 1,
   });
 
   @override
-  List<Object?> get props => [users, lastUpdated];
+  List<Object?> get props => [users, lastUpdated, hasMore, currentPage];
 
   AdminLoaded copyWith({
     List<UserModel>? users,
     DateTime? lastUpdated,
+    bool? hasMore,
+    int? currentPage,
   }) {
     return AdminLoaded(
       users: users ?? this.users,
       lastUpdated: lastUpdated ?? this.lastUpdated,
+      hasMore: hasMore ?? this.hasMore,
+      currentPage: currentPage ?? this.currentPage,
     );
   }
 }

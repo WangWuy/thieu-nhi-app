@@ -237,12 +237,14 @@ class DashboardScreen extends StatelessWidget {
           ],
         );
       case UserRole.teacher:
+        final classStudentCount = user.classStudentCount ?? data.totalStudents;
+        final presentCount = data.presentToday;
         return Row(
           children: [
             Expanded(
               child: _buildStatItem(
                 'thiếu nhi lớp',
-                '25', // TODO: Get real data from class
+                classStudentCount.toString(),
                 Icons.people,
               ),
             ),
@@ -250,7 +252,7 @@ class DashboardScreen extends StatelessWidget {
             Expanded(
               child: _buildStatItem(
                 'Có mặt hôm nay',
-                '23', // TODO: Get real data from class
+                presentCount.toString(),
                 Icons.check_circle,
               ),
             ),
@@ -413,10 +415,15 @@ class DashboardScreen extends StatelessWidget {
               child: _buildManagementCard(
                 context: context,
                 title: user.className!,
-                subtitle: 'Quản lý thiếu nhi',
+                subtitle:
+                    '${user.classStudentCount ?? 0} thiếu nhi • nhấn để xem danh sách',
                 icon: Icons.groups,
                 color: AppColors.success,
-                onTap: () => context.push('/students/${user.classId}?isTeacherView=true'),
+                onTap: () {
+                  final classId = user.classId;
+                  if (classId == null) return;
+                  context.push('/students/$classId?isTeacherView=true');
+                },
               ),
             ),
           )
@@ -609,7 +616,13 @@ class DashboardScreen extends StatelessWidget {
       case UserRole.department:
         return 'Ngành ${user.department}';
       case UserRole.teacher:
-        return user.className ?? 'Chưa phân công lớp';
+        if (user.className != null) {
+          final count = user.classStudentCount;
+          final countText =
+              count != null ? ' • $count thiếu nhi' : '';
+          return '${user.className}$countText';
+        }
+        return 'Chưa phân công lớp';
     }
   }
 }

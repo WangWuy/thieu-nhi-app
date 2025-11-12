@@ -92,18 +92,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildProfileInfo(UserModel user) {
-    final infoItems = [
-      ('Tên Thánh', user.saintName ?? 'Chưa cập nhật', Icons.auto_awesome),
-      ('Họ và tên', user.fullName ?? user.username, Icons.person),
-      ('Email', user.email, Icons.email),
-      ('Số điện thoại', user.phoneNumber ?? 'Chưa cập nhật', Icons.phone),
-      ('Địa chỉ', user.address ?? 'Chưa cập nhật', Icons.location_on),
-      ('Ngành', user.department, Icons.business),
-      if (user.className != null) ('Lớp', user.className!, Icons.school),
-      (
+    final widgets = <Widget>[
+      _buildPersonalInfoCard(user),
+    ];
+
+    final assignmentCard = _buildAssignmentCard(user);
+    if (assignmentCard != null) {
+      widgets..add(const SizedBox(height: 16))..add(assignmentCard);
+    }
+
+    final permissionsCard = _buildPermissionsCard(user);
+    if (permissionsCard != null) {
+      widgets..add(const SizedBox(height: 16))..add(permissionsCard);
+    }
+
+    return Column(children: widgets);
+  }
+
+  Widget _buildPersonalInfoCard(UserModel user) {
+    final infoItems = <_ProfileInfoItem>[
+      _ProfileInfoItem(
+          'Tên Thánh', _formatNullableText(user.saintName), Icons.auto_awesome),
+      _ProfileInfoItem(
+        'Họ và tên',
+        _formatNullableText(user.fullName ?? user.username),
+        Icons.person,
+      ),
+      _ProfileInfoItem(
+          'Email', _formatNullableText(user.email), Icons.email),
+      _ProfileInfoItem('Số điện thoại', _formatNullableText(user.phoneNumber),
+          Icons.phone),
+      _ProfileInfoItem(
+          'Địa chỉ', _formatNullableText(user.address), Icons.location_on),
+      _ProfileInfoItem('Ngành', _formatDepartment(user), Icons.business),
+      if (_formatClassSummary(user) != null)
+        _ProfileInfoItem('Lớp phụ trách', _formatClassSummary(user)!, Icons.school),
+      _ProfileInfoItem(
         'Ngày sinh',
-        user.birthDate != null ? _formatDate(user.birthDate!) : 'Chưa cập nhật',
-        Icons.cake
+        user.birthDate != null
+            ? _formatDate(user.birthDate!)
+            : 'Chưa cập nhật',
+        Icons.cake,
       ),
     ];
 
@@ -111,6 +140,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       'Thông tin cá nhân',
       Icons.info_outline,
       Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -127,9 +157,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: 16),
           ...infoItems.map(
             (item) => _buildInfoRow(
-              item.$1,
-              (item.$2 ?? 'Chưa cập nhật') as String,
-              item.$3,
+              item.label,
+              item.value,
+              item.icon,
             ),
           ),
         ],
@@ -157,6 +187,94 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         fontSize: 16, fontWeight: FontWeight.w600)),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget? _buildAssignmentCard(UserModel user) {
+    final rows = <Widget>[];
+
+    final department = user.department;
+    if (department != null) {
+      rows.add(_buildInfoRow(
+        'Ngành phụ trách',
+        '${department.displayName} (${department.name})',
+        Icons.apartment,
+      ));
+    } else if (user.departmentId != null) {
+      rows.add(_buildInfoRow(
+        'Ngành phụ trách',
+        'ID #${user.departmentId}',
+        Icons.apartment,
+      ));
+    }
+
+    if (user.className != null) {
+      final count = user.classStudentCount;
+      final subtitle =
+          count != null ? '${user.className} • $count thiếu nhi' : user.className!;
+      rows.add(_buildInfoRow(
+        'Lớp phụ trách',
+        subtitle,
+        Icons.class_,
+      ));
+    }
+
+    if (user.classId != null) {
+      rows.add(_buildInfoRow(
+        'Mã lớp',
+        '#${user.classId}',
+        Icons.confirmation_number,
+      ));
+    }
+
+    if (rows.isEmpty) return null;
+
+    return _buildCard(
+      'Phân công giảng dạy',
+      Icons.school,
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Phân công giảng dạy',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          ...rows,
+        ],
+      ),
+    );
+  }
+
+  Widget? _buildPermissionsCard(UserModel user) {
+    if (user.permissions.isEmpty) return null;
+
+    return _buildCard(
+      'Quyền truy cập',
+      Icons.verified_user,
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Quyền truy cập',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: user.permissions
+                .map(
+                  (permission) => Chip(
+                    label: Text(_formatPermission(permission)),
+                    backgroundColor: AppColors.grey100,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                )
+                .toList(),
           ),
         ],
       ),
@@ -232,6 +350,51 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ],
       ),
     );
+  }
+
+  String _formatNullableText(String? value) {
+    if (value == null) return 'Chưa cập nhật';
+    final trimmed = value.trim();
+    return trimmed.isEmpty ? 'Chưa cập nhật' : trimmed;
+  }
+
+  String _formatDepartment(UserModel user) {
+    final department = user.department;
+    if (department != null) {
+      final display =
+          department.displayName.isNotEmpty ? department.displayName : department.name;
+      final code =
+          department.name.isNotEmpty ? ' (${department.name})' : '';
+      final result = '$display$code'.trim();
+      return result.isEmpty ? 'Chưa cập nhật' : result;
+    }
+    if (user.departmentId != null) {
+      return 'ID #${user.departmentId}';
+    }
+    return 'Chưa cập nhật';
+  }
+
+  String? _formatClassSummary(UserModel user) {
+    final className = user.className;
+    if (className == null || className.isEmpty) return null;
+    final count = user.classStudentCount;
+    final suffix = count != null ? ' • $count thiếu nhi' : '';
+    return '$className$suffix';
+  }
+
+  String _formatPermission(String permission) {
+    switch (permission) {
+      case 'read:class':
+        return 'Xem lớp học';
+      case 'write:class':
+        return 'Cập nhật lớp học';
+      case 'manage:students':
+        return 'Quản lý thiếu nhi';
+      case 'manage:attendance':
+        return 'Quản lý điểm danh';
+      default:
+        return permission.replaceAll(':', ' → ').replaceAll('_', ' ');
+    }
   }
 
   Widget _buildCard(String title, IconData icon, Widget child) {
@@ -752,4 +915,12 @@ class _MenuItem {
 
   _MenuItem(this.title, this.subtitle, this.icon,
       {this.iconColor, this.trailing, this.onTap});
+}
+
+class _ProfileInfoItem {
+  final String label;
+  final String value;
+  final IconData icon;
+
+  const _ProfileInfoItem(this.label, this.value, this.icon);
 }

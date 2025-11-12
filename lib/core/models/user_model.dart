@@ -11,6 +11,10 @@ class UserModel extends Equatable {
   final int? departmentId;
   final DepartmentModel? department;
   final List<ClassTeacher> classTeachers;
+  final String? teacherClassId;
+  final String? teacherClassName;
+  final int? teacherClassStudentCount;
+  final List<String> permissions;
 
   // Personal info từ backend
   final String? saintName;
@@ -33,6 +37,10 @@ class UserModel extends Equatable {
     this.departmentId,
     this.department,
     this.classTeachers = const [],
+    this.teacherClassId,
+    this.teacherClassName,
+    this.teacherClassStudentCount,
+    this.permissions = const [],
     this.saintName,
     this.fullName,
     this.birthDate,
@@ -66,22 +74,22 @@ class UserModel extends Equatable {
 
   // NEW: Lấy className cho backward compatibility
   String? get className {
-    // Lấy tên class, không phải fullName của teacher
-    final primary = primaryClass;
-    if (primary != null) {
-      // Cần thêm field className vào ClassTeacher
-      // Hoặc tìm cách khác để lấy class name
-      return null; // Tạm thời return null
+    if (teacherClassName != null && teacherClassName!.isNotEmpty) {
+      return teacherClassName;
     }
-    return null;
+    final primary = primaryClass;
+    return primary?.displayName;
   }
 
   // NEW: Lấy classId cho backward compatibility
   String? get classId {
-    // Lấy classId thông qua một cách khác
-    // Vì ClassTeacher không có classId
-    return null; // Tạm thời return null
+    if (teacherClassId != null && teacherClassId!.isNotEmpty) {
+      return teacherClassId;
+    }
+    return null;
   }
+
+  int? get classStudentCount => teacherClassStudentCount;
 
   UserModel copyWith({
     String? id,
@@ -91,6 +99,10 @@ class UserModel extends Equatable {
     int? departmentId,
     DepartmentModel? department,
     List<ClassTeacher>? classTeachers,
+    String? teacherClassId,
+    String? teacherClassName,
+    int? teacherClassStudentCount,
+    List<String>? permissions,
     String? saintName,
     String? fullName,
     DateTime? birthDate,
@@ -109,6 +121,11 @@ class UserModel extends Equatable {
       departmentId: departmentId ?? this.departmentId,
       department: department ?? this.department,
       classTeachers: classTeachers ?? this.classTeachers,
+      teacherClassId: teacherClassId ?? this.teacherClassId,
+      teacherClassName: teacherClassName ?? this.teacherClassName,
+      teacherClassStudentCount:
+          teacherClassStudentCount ?? this.teacherClassStudentCount,
+      permissions: permissions ?? this.permissions,
       saintName: saintName ?? this.saintName,
       fullName: fullName ?? this.fullName,
       birthDate: birthDate ?? this.birthDate,
@@ -130,6 +147,10 @@ class UserModel extends Equatable {
         departmentId,
         department,
         classTeachers,
+        teacherClassId,
+        teacherClassName,
+        teacherClassStudentCount,
+        permissions,
         saintName,
         fullName,
         birthDate,

@@ -6,12 +6,9 @@ import 'package:thieu_nhi_app/core/services/student_service.dart';
 import 'package:thieu_nhi_app/core/services/attendance_service.dart';
 import 'package:thieu_nhi_app/core/models/student_model.dart';
 import 'package:thieu_nhi_app/core/models/attendance_models.dart';
-import 'package:thieu_nhi_app/core/models/user_model.dart';
 import 'package:thieu_nhi_app/features/attendance/bloc/attendance_bloc.dart';
 import 'package:thieu_nhi_app/features/attendance/bloc/attendance_event.dart';
 import 'package:thieu_nhi_app/features/attendance/bloc/attendance_state.dart';
-import 'package:thieu_nhi_app/features/auth/bloc/auth_bloc.dart';
-import 'package:thieu_nhi_app/features/auth/bloc/auth_state.dart';
 import 'package:thieu_nhi_app/features/attendance/screens/widgets/manual_attendance_search_bar.dart';
 import 'package:thieu_nhi_app/features/attendance/screens/widgets/manual_attendance_class_filter.dart';
 import 'package:thieu_nhi_app/features/attendance/screens/widgets/manual_attendance_summary.dart';
@@ -112,61 +109,20 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
     }
   }
 
-  // NEW: Get classes based on user role
+  // NEW: Get classes (always full list)
   Future<Map<String, int>> _getUserClasses() async {
     try {
-      // Get current user info from AuthBloc
-      final authState = context.read<AuthBloc>().state;
-      if (authState is! AuthAuthenticated) {
-        return {};
-      }
+      final classes = await _classService.getClasses();
+      final classMap = <String, int>{};
 
-      final user = authState.user;
-      print('👤 User info:');
-      print('- Role: ${user.role}');
-      print('- DepartmentId: ${user.departmentId}');
-      print('- ClassName: ${user.className}');
-      print('- ClassId: ${user.classId}');
-      
-      if (user.role == UserRole.teacher && user.className != null && user.classId != null) {
-        // Teacher: Get their specific class only
-        final classId = int.tryParse(user.classId!) ?? 0;
-        print('🧑‍🏫 Teacher - Class: ${user.className}, ID: $classId');
-        return {user.className!: classId};
-      } else {
-        // Admin/Department: Get all classes using ClassService
-        print('👑 Admin/Department - Getting classes...');
-        
-        if (user.role == UserRole.department && user.departmentId != null) {
-          // Department user: Get classes by department  
-          final classes = await _classService.getClassesByDepartment(user.departmentId!);
-          
-          final classMap = <String, int>{};
-          for (final classModel in classes) {
-            final classId = int.tryParse(classModel.id) ?? 0;
-            if (classId > 0) {
-              classMap[classModel.name] = classId;
-            }
-          }
-          
-          print('📚 Department classes loaded: $classMap');
-          return classMap;
-        } else {
-          // Admin: Get all classes
-          final classes = await _classService.getClasses();
-          
-          final classMap = <String, int>{};
-          for (final classModel in classes) {
-            final classId = int.tryParse(classModel.id) ?? 0;
-            if (classId > 0) {
-              classMap[classModel.name] = classId;
-            }
-          }
-          
-          print('🌟 All classes loaded: $classMap');
-          return classMap;
+      for (final classModel in classes) {
+        final classId = int.tryParse(classModel.id) ?? 0;
+        if (classId > 0) {
+          classMap[classModel.name] = classId;
         }
       }
+
+      return classMap;
     } catch (e) {
       print('❌ Get user classes error: $e');
       return {};

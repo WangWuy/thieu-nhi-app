@@ -158,22 +158,28 @@ class MonthlyAttendanceStats extends Equatable {
 class AttendanceTypeStats extends Equatable {
   final int total;
   final int present;
+  final int absent;
 
   const AttendanceTypeStats({
     required this.total,
     required this.present,
+    required this.absent,
   });
 
-  int get absent => total - present;
   double get percentage => total > 0 ? (present / total) * 100 : 0;
 
   @override
-  List<Object?> get props => [total, present];
+  List<Object?> get props => [total, present, absent];
 
   factory AttendanceTypeStats.fromJson(Map<String, dynamic> json) {
+    final present = json['present'] as int? ?? 0;
+    final absent = json['absent'] as int? ?? 0;
+    final total = json['total'] as int? ?? (present + absent);
+    
     return AttendanceTypeStats(
-      total: json['total'],
-      present: json['present'],
+      total: total,
+      present: present,
+      absent: absent,
     );
   }
 }

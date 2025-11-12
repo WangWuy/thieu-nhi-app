@@ -52,21 +52,31 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     LoadAllUsers event,
     Emitter<AdminState> emit,
   ) async {
-    // Only show loading if no data exists
-    if (state is! AdminLoaded) {
+    final page = event.page ?? 1;
+    final limit = event.limit ?? 20;
+    final isInitialLoad = state is! AdminLoaded && state is! AdminRefreshing;
+
+    if (page == 1 && isInitialLoad) {
       emit(const AdminLoading());
     }
 
     try {
       final users = await _authService.getUsers(
-        page: event.page ?? 1,
-        limit: event.limit ?? 20,
+        page: page,
+        limit: limit,
         departmentId: event.departmentId,
       );
 
+      final combinedUsers = page > 1
+          ? _mergeUsers(_getExistingUsersForPagination(state), users)
+          : users;
+      final hasMore = users.length >= limit;
+
       emit(AdminLoaded(
-        users: users,
+        users: combinedUsers,
         lastUpdated: DateTime.now(),
+        hasMore: hasMore,
+        currentPage: page,
       ));
     } catch (e) {
       emit(AdminError(
@@ -91,6 +101,8 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
       emit(AdminLoaded(
         users: users,
         lastUpdated: DateTime.now(),
+        hasMore: false,
+        currentPage: 1,
       ));
     } catch (e) {
       emit(AdminError(
@@ -123,6 +135,8 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
       emit(AdminLoaded(
         users: filteredUsers,
         lastUpdated: DateTime.now(),
+        hasMore: false,
+        currentPage: 1,
       ));
     } catch (e) {
       emit(AdminError(
@@ -425,6 +439,8 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
       emit(AdminLoaded(
         users: users,
         lastUpdated: DateTime.now(),
+        hasMore: false,
+        currentPage: 1,
       ));
     } catch (e) {
       emit(AdminError(
@@ -445,6 +461,36 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
 
     // Reload all users
     add(const LoadAllUsers());
+  }
+
+  List<UserModel> _getExistingUsersForPagination(AdminState state) {
+    if (state is AdminLoaded) {
+      return state.users;
+    }
+    if (state is AdminRefreshing) {
+      return state.previousState.users;
+    }
+    return const [];
+  }
+
+  List<UserModel> _mergeUsers(
+    List<UserModel> existing,
+    List<UserModel> incoming,
+  ) {
+    if (existing.isEmpty) {
+      return incoming;
+    }
+
+    final merged = List<UserModel>.from(existing);
+    for (final user in incoming) {
+      final index = merged.indexWhere((element) => element.id == user.id);
+      if (index >= 0) {
+        merged[index] = user;
+      } else {
+        merged.add(user);
+      }
+    }
+    return merged;
   }
 
   // Helper methods

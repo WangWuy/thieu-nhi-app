@@ -1,8 +1,8 @@
-// lib/core/services/auth_service.dart - FIXED USERNAME LOGIN
-import '../models/user_model.dart';
+import '../models/auth_model.dart';
 import '../models/pending_user_model.dart';
-import 'http_client.dart';
+import '../models/user_model.dart';
 import 'backend_adapters.dart';
+import 'http_client.dart';
 
 class AuthService {
   final HttpClient _httpClient = HttpClient();
@@ -34,19 +34,29 @@ class AuthService {
       });
 
       if (response.isSuccess) {
-        final token = response.data['token'];
-        final userData = response.data['user'];
+        final data = response.getDataAsMap();
+        if (data == null) {
+          return AuthResult.error('Dữ liệu đăng nhập không hợp lệ');
+        }
+
+        final authResponse = AuthResponseModel.fromJson(data);
+        if (!authResponse.success) {
+          return AuthResult.error(
+              authResponse.message ?? 'Đăng nhập thất bại');
+        }
 
         // Save token
-        await _httpClient.setToken(token);
+        await _httpClient.setToken(authResponse.token);
 
         // Parse user
-        _currentUser = BackendUserAdapter.fromBackendJson(userData);
+        _currentUser = BackendUserAdapter.fromBackendJson(
+          authResponse.user.toBackendUserJson(),
+        );
 
         return AuthResult.success(
           user: _currentUser!,
-          token: token,
-          message: response.data['message'],
+          token: authResponse.token,
+          message: authResponse.message,
         );
       } else {
         return AuthResult.error(response.error ?? 'Đăng nhập thất bại');

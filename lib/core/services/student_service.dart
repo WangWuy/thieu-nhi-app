@@ -134,8 +134,10 @@ class StudentService {
   Future<StudentModel?> updateStudent(
       String studentId, Map<String, dynamic> updates) async {
     try {
-      final response =
-          await _httpClient.put('/students/$studentId', body: updates);
+      final response = await _httpClient.put('/students/$studentId', body: {
+        ...updates,
+        if (updates.containsKey('note')) 'note': updates['note'],
+      });
 
       if (response.isSuccess) {
         return BackendStudentAdapter.fromBackendJson(response.data);

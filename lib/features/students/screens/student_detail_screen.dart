@@ -31,6 +31,30 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
     _loadStudentData();
   }
 
+  Future<bool> _handleBackNavigation() async {
+    final bloc = context.read<StudentsBloc>();
+    String? classId;
+
+    final currentState = bloc.state;
+    if (currentState is StudentsLoaded && currentState.currentClassId != null) {
+      classId = currentState.currentClassId;
+    } else if (currentState is StudentDetailLoaded) {
+      classId = currentState.student.classId;
+    } else if (student != null) {
+      classId = student!.classId;
+    }
+
+    bloc.add(BackToStudentsList(classId: classId));
+    return true;
+  }
+
+  Future<void> _onBackPressed() async {
+    await _handleBackNavigation();
+    if (mounted) {
+      context.pop();
+    }
+  }
+
   void _loadStudentData({bool forceRefresh = false}) {
     // Always load from API to ensure fresh data
     if (forceRefresh || _isInitialLoad) {
@@ -49,35 +73,37 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: BlocListener<StudentsBloc, StudentsState>(
-        listener: (context, state) {
-          if (state is StudentsError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: AppColors.error,
-                action: SnackBarAction(
-                  label: 'Thử lại',
-                  textColor: Colors.white,
-                  onPressed: () => _loadStudentData(forceRefresh: true),
+    return WillPopScope(
+      onWillPop: _handleBackNavigation,
+      child: Scaffold(
+        body: BlocListener<StudentsBloc, StudentsState>(
+          listener: (context, state) {
+            if (state is StudentsError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.message),
+                  backgroundColor: AppColors.error,
+                  action: SnackBarAction(
+                    label: 'Thử lại',
+                    textColor: Colors.white,
+                    onPressed: () => _loadStudentData(forceRefresh: true),
+                  ),
                 ),
-              ),
-            );
-          }
-          
-          // Handle successful operations
-          if (state is StudentOperationSuccess) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: AppColors.success,
-              ),
-            );
-            // Refresh data after successful operation
-            _loadStudentData(forceRefresh: true);
-          }
-        },
+              );
+            }
+
+            // Handle successful operations
+            if (state is StudentOperationSuccess) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(state.message),
+                  backgroundColor: AppColors.success,
+                ),
+              );
+              // Refresh data after successful operation
+              _loadStudentData(forceRefresh: true);
+            }
+          },
         child: BlocBuilder<StudentsBloc, StudentsState>(
           builder: (context, state) {
             if (state is StudentsLoading && _isInitialLoad) {
@@ -115,7 +141,7 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
         ),
       ),
       floatingActionButton: student != null ? _buildFloatingActionButtons() : null,
-    );
+    ));
   }
 
   Widget _buildLoadingScreen() {
@@ -126,7 +152,7 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
         foregroundColor: Colors.white,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
+          onPressed: _onBackPressed,
         ),
       ),
       body: const Center(
@@ -150,7 +176,7 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
         foregroundColor: Colors.white,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
+          onPressed: _onBackPressed,
         ),
         actions: [
           IconButton(
@@ -412,7 +438,7 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
       ),
       leading: IconButton(
         icon: const Icon(Icons.arrow_back, color: Colors.white),
-        onPressed: () => context.pop(),
+        onPressed: _onBackPressed,
       ),
       actions: [
         if (isRefreshing)

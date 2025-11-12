@@ -22,7 +22,9 @@ class ManualAttendanceStudentItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final studentCode = student.qrId ?? student.id;
+    final studentClass = student.className;
+    final parentPhone = student.parentPhone;
+    final parentPhone2 = student.parentPhone2;
     final hasAttendance = attendanceStatus != null;
 
     return Container(
@@ -48,7 +50,8 @@ class ManualAttendanceStudentItem extends StatelessWidget {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: _buildLeadingAvatar(hasAttendance),
         title: _buildTitle(hasAttendance),
-        subtitle: _buildSubtitle(studentCode, hasAttendance),
+        subtitle: _buildSubtitle(
+            studentClass, hasAttendance, parentPhone, parentPhone2),
         trailing: _buildActionButton(hasAttendance),
       ),
     );
@@ -88,11 +91,24 @@ class ManualAttendanceStudentItem extends StatelessWidget {
     );
   }
 
-  Widget _buildSubtitle(String studentCode, bool hasAttendance) {
+  Widget _buildSubtitle(String studentClass, bool hasAttendance,
+      String parentPhone, String? parentPhone2) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Mã: $studentCode'),
+        Text('$studentClass'),
+        Text('SĐT1: $parentPhone'),
+        if (parentPhone2 == null || parentPhone2.isEmpty) ...[
+          const Text(
+            'SĐT2: Chưa cập nhật',
+            style: TextStyle(
+              fontStyle: FontStyle.italic,
+              color: AppColors.grey600,
+            ),
+          ),
+        ] else ...[
+          Text('SĐT2: $parentPhone2'),
+        ],
         if (hasAttendance && attendanceStatus?.markedAt != null) ...[
           const SizedBox(height: 4),
           Text(

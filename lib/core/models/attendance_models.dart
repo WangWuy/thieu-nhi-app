@@ -1,31 +1,42 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 
-// Thêm MarkerInfo class
 class MarkerInfo extends Equatable {
-  final int id;
+  final int? id; // ✅ Nullable
   final String fullName;
+  final String? saintName; // ✅ Thêm saintName
 
   const MarkerInfo({
-    required this.id,
+    this.id,
     required this.fullName,
+    this.saintName,
   });
 
   @override
-  List<Object?> get props => [id, fullName];
+  List<Object?> get props => [id, fullName, saintName];
 
   factory MarkerInfo.fromJson(Map<String, dynamic> json) {
     return MarkerInfo(
-      id: json['id'],
-      fullName: json['fullName'],
+      id: json['id'], // Có thể null
+      fullName: json['fullName'] ?? json['saintName'] ?? 'Unknown',
+      saintName: json['saintName'],
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
+      if (id != null) 'id': id,
       'fullName': fullName,
+      if (saintName != null) 'saintName': saintName,
     };
+  }
+
+  // ✅ Helper getter để hiển thị tên đầy đủ
+  String get displayName {
+    if (saintName != null && saintName!.isNotEmpty) {
+      return '$saintName $fullName';
+    }
+    return fullName;
   }
 }
 
