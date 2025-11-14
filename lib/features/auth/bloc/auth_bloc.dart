@@ -24,7 +24,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     AuthCheckRequested event,
     Emitter<AuthState> emit,
   ) async {
-    emit(AuthLoading());
+    final shouldShowLoading = state is! AuthAuthenticated;
+    if (shouldShowLoading) {
+      emit(AuthLoading());
+    }
 
     try {
       // Check if user is authenticated via API

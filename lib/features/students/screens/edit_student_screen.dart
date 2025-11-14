@@ -204,8 +204,6 @@ class _EditStudentScreenState extends State<EditStudentScreen>
         key: _formKey,
         child: Column(
           children: [
-            _buildStudentInfoCard(),
-            const SizedBox(height: 24),
             _buildPersonalInfoSection(),
             const SizedBox(height: 24),
             _buildContactInfoSection(),
@@ -217,67 +215,6 @@ class _EditStudentScreenState extends State<EditStudentScreen>
             SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildStudentInfoCard() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: AppColors.primary.withOpacity(0.2),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              _buildPreviewAvatar(),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.student.name,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.grey800,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'ID: ${widget.student.id}',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: AppColors.grey600,
-                      ),
-                    ),
-                    Text(
-                      '${widget.student.className} - ${widget.student.department}',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: AppColors.grey600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }
@@ -496,6 +433,14 @@ class _EditStudentScreenState extends State<EditStudentScreen>
                 onPressed: _isUploadingAvatar ? null : _showAvatarOptions,
                 icon: const Icon(Icons.camera_alt),
                 label: const Text('Cập nhật ảnh'),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Bấm "Cập nhật ảnh" là ảnh sẽ lưu ngay, không cần bấm "Cập nhật thông tin".',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.grey600,
+                ),
               ),
               if ((_currentAvatarUrl?.isNotEmpty ?? false) || _avatarFile != null)
                 TextButton.icon(

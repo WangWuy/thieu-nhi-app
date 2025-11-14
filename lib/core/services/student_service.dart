@@ -264,6 +264,11 @@ class StudentService {
     int limit = 50,
     AttendanceHistoryFilter? filter,
   }) async {
+    if (!_isValidStudentId(studentId)) {
+      print('⚠️ Skip attendance history fetch: invalid studentId "$studentId"');
+      return AttendanceHistoryResponse.error('ID thiếu nhi không hợp lệ');
+    }
+
     try {
       final queryParams = <String, String>{
         'page': page.toString(),
@@ -355,6 +360,11 @@ class StudentService {
     String studentId, {
     int? year,
   }) async {
+    if (!_isValidStudentId(studentId)) {
+      print('⚠️ Skip attendance stats fetch: invalid studentId "$studentId"');
+      return null;
+    }
+
     try {
       final queryParams = <String, String>{};
       if (year != null) {
@@ -504,6 +514,11 @@ class StudentService {
       print('Delete student avatar error: $e');
       rethrow;
     }
+  }
+
+  bool _isValidStudentId(String studentId) {
+    if (studentId.isEmpty) return false;
+    return studentId.toLowerCase() != 'null';
   }
 }
 

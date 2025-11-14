@@ -12,7 +12,6 @@ import 'package:thieu_nhi_app/features/auth/bloc/auth_bloc.dart';
 import 'package:thieu_nhi_app/features/auth/bloc/auth_state.dart';
 import 'package:thieu_nhi_app/features/classes/screens/all_classes_screen.dart'; // NEW IMPORT
 import 'package:thieu_nhi_app/features/main/screens/main_layout_screen.dart';
-import 'package:thieu_nhi_app/features/students/screens/add_student_screen.dart';
 import 'package:thieu_nhi_app/features/students/screens/edit_student_screen.dart';
 import 'package:thieu_nhi_app/features/students/screens/student_detail_screen.dart';
 import 'package:thieu_nhi_app/features/students/screens/student_list_screen.dart';
@@ -163,22 +162,6 @@ class AppRouter {
               }
 
               return EditStudentScreen(student: studentData);
-            },
-          ),
-
-          GoRoute(
-            path: '/add-student/:classId',
-            name: 'add-student',
-            builder: (context, state) {
-              final classId = state.pathParameters['classId']!;
-              final className = state.uri.queryParameters['className'] ?? '';
-              final department = state.uri.queryParameters['department'] ?? '';
-
-              return AddStudentScreen(
-                classId: classId,
-                className: className,
-                department: department,
-              );
             },
           ),
 

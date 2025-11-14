@@ -8,6 +8,7 @@ import 'package:thieu_nhi_app/features/attendance/screens/manual_attendance_scre
 import 'package:thieu_nhi_app/features/attendance/bloc/attendance_bloc.dart';
 import 'package:thieu_nhi_app/features/auth/bloc/auth_bloc.dart';
 import 'package:thieu_nhi_app/features/auth/bloc/auth_state.dart';
+import 'package:thieu_nhi_app/features/auth/bloc/auth_event.dart';
 import 'package:thieu_nhi_app/features/dashboard/screens/dashboard_screen.dart';
 import 'package:thieu_nhi_app/features/profile/screens/profile_screen.dart';
 import 'package:thieu_nhi_app/theme/app_colors.dart';
@@ -139,7 +140,7 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
 
               return Expanded(
                 child: GestureDetector(
-                  onTap: () => _onTabTapped(index),
+                  onTap: () => _onTabTapped(index, tab),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     padding: const EdgeInsets.symmetric(vertical: 4),
@@ -207,10 +208,18 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
     );
   }
 
-  void _onTabTapped(int index) {
-    setState(() {
-      _currentIndex = index;
-    });
+  void _onTabTapped(int index, TabItem tab) {
+    final isProfileTab = tab.label == 'Cá nhân';
+
+    if (_currentIndex != index) {
+      setState(() {
+        _currentIndex = index;
+      });
+    }
+
+    if (isProfileTab) {
+      context.read<AuthBloc>().add(const AuthCheckRequested());
+    }
   }
 
   Color _getRoleColor(UserRole role) {
