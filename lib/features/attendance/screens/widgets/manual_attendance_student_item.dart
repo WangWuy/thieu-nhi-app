@@ -125,13 +125,22 @@ class ManualAttendanceStudentItem extends StatelessWidget {
         if (hasAttendance && attendanceStatus?.markedAt != null) ...[
           const SizedBox(height: 4),
           Text(
-            'Đã điểm danh lúc: ${_formatTime(attendanceStatus!.markedAt)}',
+            'Đã điểm danh lúc: ${_formatVietnamAttendanceTime(attendanceStatus!.markedAt)}',
             style: const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
               color: AppColors.success,
             ),
           ),
+          if ((attendanceStatus?.markedBy ?? '').isNotEmpty)
+            Text(
+              'Điểm danh bởi: ${attendanceStatus!.markedBy}',
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: AppColors.grey700,
+              ),
+            ),
         ],
       ],
     );
@@ -220,8 +229,26 @@ class ManualAttendanceStudentItem extends StatelessWidget {
     }
   }
 
-  String _formatTime(DateTime dateTime) {
-    return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+  String _formatVietnamAttendanceTime(DateTime dateTime) {
+    const weekdayNames = [
+      'Chủ nhật',
+      'Thứ Hai',
+      'Thứ Ba',
+      'Thứ Tư',
+      'Thứ Năm',
+      'Thứ Sáu',
+      'Thứ Bảy',
+    ];
+
+    final vietnamTime = dateTime.toUtc().add(const Duration(hours: 7));
+    final weekdayLabel = weekdayNames[vietnamTime.weekday % 7];
+    final day = vietnamTime.day.toString().padLeft(2, '0');
+    final month = vietnamTime.month.toString().padLeft(2, '0');
+    final year = vietnamTime.year.toString();
+    final hour = vietnamTime.hour.toString().padLeft(2, '0');
+    final minute = vietnamTime.minute.toString().padLeft(2, '0');
+
+    return '$hour:$minute, $day/$month/$year, $weekdayLabel';
   }
 
   Widget _buildPlaceholder(bool hasAttendance) {
