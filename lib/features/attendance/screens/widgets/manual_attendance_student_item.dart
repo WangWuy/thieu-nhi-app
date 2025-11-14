@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:thieu_nhi_app/core/models/student_model.dart';
 import 'package:thieu_nhi_app/core/models/attendance_models.dart';
+import 'package:thieu_nhi_app/core/services/http_client.dart';
 import 'package:thieu_nhi_app/theme/app_colors.dart';
 
 class ManualAttendanceStudentItem extends StatelessWidget {
@@ -58,26 +59,38 @@ class ManualAttendanceStudentItem extends StatelessWidget {
   }
 
   Widget _buildLeadingAvatar(bool hasAttendance) {
-    return CircleAvatar(
-      backgroundColor: hasAttendance
-          ? AppColors.success
-          : isProcessing
-              ? AppColors.secondary
-              : AppColors.grey300,
-      child: isProcessing
-          ? const SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              ),
-            )
-          : Icon(
-              hasAttendance ? Icons.check : Icons.person,
-              color: Colors.white,
-              size: 20,
+    final imageUrl = _resolveAvatarUrl(student.avatarUrl ?? student.photoUrl);
+
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        CircleAvatar(
+          radius: 24,
+          backgroundColor: hasAttendance
+              ? AppColors.success.withOpacity(0.2)
+              : AppColors.grey200,
+          child: ClipOval(
+            child: imageUrl != null
+                ? Image.network(
+                    imageUrl,
+                    width: 44,
+                    height: 44,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => _buildPlaceholder(hasAttendance),
+                  )
+                : _buildPlaceholder(hasAttendance),
+          ),
+        ),
+        if (isProcessing)
+          const SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
             ),
+          ),
+      ],
     );
   }
 
@@ -209,5 +222,26 @@ class ManualAttendanceStudentItem extends StatelessWidget {
 
   String _formatTime(DateTime dateTime) {
     return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+  }
+
+  Widget _buildPlaceholder(bool hasAttendance) {
+    return Container(
+      color: hasAttendance ? AppColors.success : AppColors.grey400,
+      width: 44,
+      height: 44,
+      child: Icon(
+        hasAttendance ? Icons.check : Icons.person,
+        color: Colors.white,
+        size: 20,
+      ),
+    );
+  }
+
+  String? _resolveAvatarUrl(String? path) {
+    if (path == null || path.isEmpty) return null;
+    if (path.startsWith('http')) return path;
+    final base = HttpClient().apiBaseUrl;
+    if (path.startsWith('/')) return '$base$path';
+    return '$base/$path';
   }
 }

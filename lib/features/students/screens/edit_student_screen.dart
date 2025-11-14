@@ -1,13 +1,19 @@
 // lib/features/students/screens/edit_student_screen.dart
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:thieu_nhi_app/core/models/student_model.dart';
+import 'package:thieu_nhi_app/core/services/http_client.dart';
 import 'package:thieu_nhi_app/core/widgets/custom_button.dart';
 import 'package:thieu_nhi_app/core/widgets/custom_text_field.dart';
 import 'package:thieu_nhi_app/features/students/bloc/students_bloc.dart';
 import 'package:thieu_nhi_app/features/students/bloc/students_event.dart';
 import 'package:thieu_nhi_app/features/students/bloc/students_state.dart';
+import 'package:thieu_nhi_app/features/students/models/student_filter.dart';
 import 'package:thieu_nhi_app/theme/app_colors.dart';
 
 class EditStudentScreen extends StatefulWidget {
@@ -36,6 +42,10 @@ class _EditStudentScreenState extends State<EditStudentScreen>
   late final TextEditingController _noteController;
   DateTime? _selectedBirthDate;
   bool _isLoading = false;
+  final ImagePicker _imagePicker = ImagePicker();
+  File? _avatarFile;
+  String? _currentAvatarUrl;
+  bool _isUploadingAvatar = false;
 
   // Animation
   late AnimationController _animationController;
@@ -68,6 +78,7 @@ class _EditStudentScreenState extends State<EditStudentScreen>
     _noteController = TextEditingController(text: widget.student.note);
 
     _selectedBirthDate = widget.student.birthDate;
+    _currentAvatarUrl = widget.student.avatarUrl ?? widget.student.photoUrl;
   }
 
   void _setupAnimations() {
@@ -121,8 +132,9 @@ class _EditStudentScreenState extends State<EditStudentScreen>
                 backgroundColor: AppColors.success,
               ),
             );
-            // Quay về trang trước sau khi update thành công
-            context.pop();
+            if (state.operationType == StudentOperationType.update) {
+              context.pop();
+            }
           } else if (state is StudentsError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -231,21 +243,7 @@ class _EditStudentScreenState extends State<EditStudentScreen>
         children: [
           Row(
             children: [
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: AppColors.primaryGradient,
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Icon(
-                  Icons.person,
-                  color: Colors.white,
-                  size: 24,
-                ),
-              ),
+              _buildPreviewAvatar(),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
@@ -302,6 +300,8 @@ class _EditStudentScreenState extends State<EditStudentScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSectionHeader('Thông tin cá nhân', Icons.person),
+          const SizedBox(height: 20),
+          _buildAvatarPicker(),
           const SizedBox(height: 20),
 
           // Tên Thánh
@@ -421,6 +421,95 @@ class _EditStudentScreenState extends State<EditStudentScreen>
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildAvatarPicker() {
+    ImageProvider? imageProvider;
+    if (_avatarFile != null) {
+      imageProvider = FileImage(_avatarFile!);
+    } else if (_currentAvatarUrl != null &&
+        _resolveAvatarUrl(_currentAvatarUrl!) != null) {
+      imageProvider = NetworkImage(_resolveAvatarUrl(_currentAvatarUrl!)!);
+    }
+
+    return Row(
+      children: [
+        Stack(
+          alignment: Alignment.center,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(24),
+                gradient: const LinearGradient(
+                  colors: AppColors.primaryGradient,
+                ),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: imageProvider != null
+                    ? Image(
+                        image: imageProvider,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const Icon(
+                          Icons.person,
+                          color: Colors.white,
+                          size: 36,
+                        ),
+                      )
+                    : const Icon(
+                        Icons.person,
+                        color: Colors.white,
+                        size: 36,
+                      ),
+              ),
+            ),
+            if (_isUploadingAvatar)
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.4),
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: const Center(
+                  child: SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ElevatedButton.icon(
+                onPressed: _isUploadingAvatar ? null : _showAvatarOptions,
+                icon: const Icon(Icons.camera_alt),
+                label: const Text('Cập nhật ảnh'),
+              ),
+              if ((_currentAvatarUrl?.isNotEmpty ?? false) || _avatarFile != null)
+                TextButton.icon(
+                  onPressed: _isUploadingAvatar ? null : _removeAvatar,
+                  icon: const Icon(Icons.delete_outline, color: AppColors.error),
+                  label: const Text(
+                    'Gỡ ảnh',
+                    style: TextStyle(color: AppColors.error),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -549,6 +638,150 @@ class _EditStudentScreenState extends State<EditStudentScreen>
     );
   }
 
+  void _showAvatarOptions() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: AppColors.grey300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_camera, color: AppColors.primary),
+              title: const Text('Chụp ảnh mới'),
+              onTap: () {
+                Navigator.of(context).pop();
+                _pickAvatar(ImageSource.camera);
+              },
+            ),
+            ListTile(
+              leading:
+                  const Icon(Icons.photo_library, color: AppColors.primary),
+              title: const Text('Chọn từ thư viện'),
+              onTap: () {
+                Navigator.of(context).pop();
+                _pickAvatar(ImageSource.gallery);
+              },
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickAvatar(ImageSource source) async {
+    try {
+      final picked = await _imagePicker.pickImage(
+        source: source,
+        maxWidth: 1024,
+        imageQuality: 85,
+      );
+
+      if (picked == null) return;
+
+      await _uploadAvatar(File(picked.path));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Không thể chọn ảnh: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+
+  Future<void> _uploadAvatar(File file) async {
+    if (!mounted) return;
+
+    setState(() {
+      _isUploadingAvatar = true;
+    });
+
+    final completer = Completer<StudentModel?>();
+    context.read<StudentsBloc>().add(
+          UploadStudentAvatar(
+            studentId: widget.student.id,
+            avatarFile: file,
+            completer: completer,
+          ),
+        );
+
+    try {
+      final updated = await completer.future;
+      if (!mounted) return;
+      setState(() {
+        _avatarFile = null;
+        _currentAvatarUrl = updated?.avatarUrl ?? updated?.photoUrl;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Không thể cập nhật ảnh: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUploadingAvatar = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _removeAvatar() async {
+    if (!mounted) return;
+
+    setState(() {
+      _isUploadingAvatar = true;
+    });
+
+    final completer = Completer<StudentModel?>();
+    context.read<StudentsBloc>().add(
+          DeleteStudentAvatar(
+            studentId: widget.student.id,
+            completer: completer,
+          ),
+        );
+
+    try {
+      await completer.future;
+      if (!mounted) return;
+      setState(() {
+        _avatarFile = null;
+        _currentAvatarUrl = null;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Không thể gỡ ảnh: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUploadingAvatar = false;
+        });
+      }
+    }
+  }
+
   // Event handlers
   Future<void> _selectBirthDate() async {
     final DateTime? picked = await showDatePicker(
@@ -656,6 +889,39 @@ class _EditStudentScreenState extends State<EditStudentScreen>
   }
 
   // Helper methods
+  Widget _buildPreviewAvatar() {
+    final imageUrl = _resolveAvatarUrl(_currentAvatarUrl);
+
+    return Container(
+      width: 50,
+      height: 50,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: AppColors.primaryGradient,
+        ),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: imageUrl != null
+            ? Image.network(
+                imageUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const Icon(
+                  Icons.person,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              )
+            : const Icon(
+                Icons.person,
+                color: Colors.white,
+                size: 24,
+              ),
+      ),
+    );
+  }
+
   bool _isValidPhoneNumber(String phone) {
     final phoneRegex = RegExp(r'^[0-9]{10,11}$');
     return phoneRegex.hasMatch(phone.replaceAll(RegExp(r'[^\d]'), ''));
@@ -709,5 +975,15 @@ class _EditStudentScreenState extends State<EditStudentScreen>
       default:
         return AppColors.primaryGradient;
     }
+  }
+
+  String? _resolveAvatarUrl(String? path) {
+    if (path == null || path.isEmpty) return null;
+    if (path.startsWith('http')) return path;
+    final base = HttpClient().apiBaseUrl;
+    if (path.startsWith('/')) {
+      return '$base$path';
+    }
+    return '$base/$path';
   }
 }

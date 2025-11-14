@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import '../models/auth_model.dart';
 import '../models/pending_user_model.dart';
 import '../models/user_model.dart';
@@ -181,6 +183,8 @@ class AuthService {
     String? address,
     int? departmentId,
     DateTime? birthDate,
+    String? email,
+    String? classId,
   }) async {
     try {
       final response = await _httpClient.post('/users', body: {
@@ -193,6 +197,8 @@ class AuthService {
         'address': address,
         'departmentId': departmentId,
         'birthDate': birthDate?.toIso8601String(),
+        'email': email,
+        'classId': classId,
       });
 
       if (response.isSuccess) {
@@ -268,6 +274,39 @@ class AuthService {
       print('Update user error: $e');
       return null;
     }
+  }
+
+  Future<UserModel> uploadAvatar(File avatarFile) async {
+    if (_currentUser == null) await getCurrentUser();
+    final user = _currentUser;
+    if (user == null) {
+      throw Exception('Chưa đăng nhập');
+    }
+
+    final updatedUser = await uploadUserAvatar(user.id, avatarFile);
+    _currentUser = updatedUser;
+    return updatedUser;
+  }
+
+  Future<UserModel> uploadUserAvatar(String userId, File avatarFile) async {
+    final response = await _httpClient.uploadMultipart(
+      '/users/$userId/avatar',
+      files: {'avatar': avatarFile},
+    );
+
+    if (response.isSuccess && response.data is Map<String, dynamic>) {
+      final updatedUser = BackendUserAdapter.fromBackendJson(
+        response.data as Map<String, dynamic>,
+      );
+
+      if (_currentUser?.id == updatedUser.id) {
+        _currentUser = updatedUser;
+      }
+
+      return updatedUser;
+    }
+
+    throw Exception(response.error ?? 'Không thể cập nhật ảnh đại diện');
   }
 
   // Reset password (Admin)

@@ -1,4 +1,5 @@
 // lib/core/services/student_service.dart
+import 'dart:io';
 import 'package:thieu_nhi_app/core/models/attendance_models.dart';
 import 'package:thieu_nhi_app/core/models/student_attendance_history.dart';
 
@@ -17,7 +18,7 @@ class StudentService {
   // Get students with pagination and filters
   Future<StudentListResult> getStudents({
     int page = 1,
-    int limit = 20,
+    int limit = 10,
     String? search,
     String? classFilter, // This will be classId as string
   }) async {
@@ -165,7 +166,7 @@ class StudentService {
     try {
       final response = await _httpClient.get('/students', queryParams: {
         'search': query,
-        'limit': '50', // Increase limit for search
+        'limit': '10',
       });
 
       if (response.isSuccess) {
@@ -461,6 +462,47 @@ class StudentService {
     } catch (e) {
       print('❌ Error getting attendance summary: $e');
       return {};
+    }
+  }
+
+  Future<StudentModel?> uploadStudentAvatar(
+    String studentId,
+    File avatarFile,
+  ) async {
+    try {
+      final response = await _httpClient.uploadMultipart(
+        '/students/$studentId/avatar',
+        files: {'avatar': avatarFile},
+      );
+
+      if (response.isSuccess && response.data is Map<String, dynamic>) {
+        return BackendStudentAdapter.fromBackendJson(
+            response.data as Map<String, dynamic>);
+      }
+
+      throw Exception(response.error ?? 'Không thể cập nhật ảnh thiếu nhi');
+    } catch (e) {
+      print('Upload student avatar error: $e');
+      rethrow;
+    }
+  }
+
+  Future<StudentModel?> deleteStudentAvatar(String studentId) async {
+    try {
+      final response = await _httpClient.delete('/students/$studentId/avatar');
+
+      if (response.isSuccess) {
+        if (response.data is Map<String, dynamic>) {
+          return BackendStudentAdapter.fromBackendJson(
+              response.data as Map<String, dynamic>);
+        }
+        return await getStudentById(studentId);
+      }
+
+      throw Exception(response.error ?? 'Không thể xóa ảnh thiếu nhi');
+    } catch (e) {
+      print('Delete student avatar error: $e');
+      rethrow;
     }
   }
 }

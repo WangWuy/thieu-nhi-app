@@ -57,6 +57,7 @@ enum StudentOperationType {
   update,
   delete,
   bulkUpdate,
+  avatarUpdate,
 }
 
 // Extension for first or null

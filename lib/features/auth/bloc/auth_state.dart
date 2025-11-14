@@ -21,6 +21,10 @@ class AuthAuthenticated extends AuthState {
   List<Object> get props => [user];
 }
 
+class AuthAvatarUpdating extends AuthAuthenticated {
+  const AuthAvatarUpdating({required super.user});
+}
+
 class AuthUnauthenticated extends AuthState {}
 
 class AuthError extends AuthState {

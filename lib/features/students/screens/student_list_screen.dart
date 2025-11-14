@@ -7,6 +7,7 @@ import 'package:thieu_nhi_app/features/students/bloc/students_event.dart';
 import 'package:thieu_nhi_app/features/students/bloc/students_state.dart';
 import 'package:thieu_nhi_app/theme/app_colors.dart';
 import 'package:thieu_nhi_app/core/models/user_model.dart';
+import 'package:thieu_nhi_app/core/services/http_client.dart';
 import '../../../core/models/student_model.dart';
 import '../../../core/widgets/custom_text_field.dart';
 import '../bloc/students_bloc.dart';
@@ -588,30 +589,7 @@ class _StudentListScreenState extends State<StudentListScreen>
         ),
         child: Row(
           children: [
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: AppColors.primaryGradient,
-                ),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withOpacity(0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: const Center(
-                child: Icon(
-                  Icons.person,
-                  color: Colors.white,
-                  size: 28,
-                ),
-              ),
-            ),
+            _buildStudentAvatar(student),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
@@ -669,6 +647,54 @@ class _StudentListScreenState extends State<StudentListScreen>
         ),
       ),
     );
+  }
+
+  Widget _buildStudentAvatar(StudentModel student) {
+    final imageUrl = _resolveAvatarUrl(student.avatarUrl ?? student.photoUrl);
+
+    return Container(
+      width: 56,
+      height: 56,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: AppColors.primaryGradient,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: imageUrl != null
+            ? Image.network(
+                imageUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const Icon(
+                  Icons.person,
+                  color: Colors.white,
+                  size: 28,
+                ),
+              )
+            : const Icon(
+                Icons.person,
+                color: Colors.white,
+                size: 28,
+              ),
+      ),
+    );
+  }
+
+  String? _resolveAvatarUrl(String? path) {
+    if (path == null || path.isEmpty) return null;
+    if (path.startsWith('http')) return path;
+    final base = HttpClient().apiBaseUrl;
+    if (path.startsWith('/')) return '$base$path';
+    return '$base/$path';
   }
 
   String _getClassDisplayName() {

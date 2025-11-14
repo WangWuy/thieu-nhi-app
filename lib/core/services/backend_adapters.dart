@@ -22,6 +22,8 @@ class BackendStudentAdapter {
         attendance: const {},
         grades: _parseGrades(json),
         note: json['note'],
+        photoUrl: _getStudentPhoto(json),
+        avatarUrl: _getStudentAvatar(json),
         createdAt: _parseDate(json['createdAt']) ?? DateTime.now(),
         updatedAt: _parseDate(json['updatedAt']) ?? DateTime.now(),
 
@@ -79,6 +81,8 @@ class BackendStudentAdapter {
       department: 'Unknown',
       attendance: const {},
       grades: const [0.0],
+      photoUrl: null,
+      avatarUrl: null,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
@@ -116,6 +120,24 @@ class BackendStudentAdapter {
 
     return data;
   }
+
+  static String? _getStudentPhoto(Map<String, dynamic> json) {
+    final raw = json['photoUrl'] ?? json['photo'];
+    if (raw == null) return null;
+    final value = raw.toString().trim();
+    return value.isEmpty ? null : value;
+  }
+
+  static String? _getStudentAvatar(Map<String, dynamic> json) {
+    final raw = json['avatarUrl'] ??
+        json['avatar'] ??
+        json['photoUrl'] ??
+        json['photo'] ??
+        json['profileImage'];
+    if (raw == null) return null;
+    final value = raw.toString().trim();
+    return value.isEmpty ? null : value;
+  }
 }
 
 // Extension for other adapters (keeping existing ones)
@@ -142,6 +164,7 @@ class BackendUserAdapter {
           : null,
       phoneNumber: json['phoneNumber'],
       address: json['address'],
+      avatarUrl: _getAvatarUrl(json),
       isActive: json['isActive'] ?? true,
       lastLogin:
           json['lastLogin'] != null ? DateTime.parse(json['lastLogin']) : null,
@@ -249,6 +272,7 @@ class BackendUserAdapter {
       'phoneNumber': user.phoneNumber,
       'address': user.address,
       'isActive': user.isActive,
+      'avatarUrl': user.avatarUrl,
     };
   }
 
@@ -310,6 +334,18 @@ class BackendUserAdapter {
     if (value is int) return value;
     if (value is num) return value.toInt();
     return int.tryParse(value.toString());
+  }
+
+  static String? _getAvatarUrl(Map<String, dynamic> json) {
+    final raw = json['avatarUrl'] ??
+        json['avatar'] ??
+        json['avatarPath'] ??
+        json['profileImage'];
+
+    if (raw == null) return null;
+    final value = raw.toString().trim();
+    if (value.isEmpty) return null;
+    return value;
   }
 }
 

@@ -443,6 +443,7 @@ class _AddStudentScreenState extends State<AddStudentScreen>
         attendance: const {}, // Empty attendance initially
         grades: const [], // Empty grades initially
         photoUrl: null,
+        avatarUrl: null,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );

@@ -1,4 +1,6 @@
 // lib/features/admin/bloc/admin_event.dart - UPDATED FOR API SERVICES
+import 'dart:io';
+
 import 'package:equatable/equatable.dart';
 import '../../../core/models/user_model.dart';
 
@@ -51,23 +53,26 @@ class SearchUsers extends AdminEvent {
 class CreateUser extends AdminEvent {
   final UserModel user;
   final String password;
+  final File? avatarFile;
 
   const CreateUser({
     required this.user,
     required this.password,
+    this.avatarFile,
   });
 
   @override
-  List<Object?> get props => [user, password];
+  List<Object?> get props => [user, password, avatarFile?.path];
 }
 
 class UpdateUser extends AdminEvent {
   final UserModel user;
+  final File? avatarFile;
 
-  const UpdateUser(this.user);
+  const UpdateUser(this.user, {this.avatarFile});
 
   @override
-  List<Object?> get props => [user];
+  List<Object?> get props => [user, avatarFile?.path];
 }
 
 class DeleteUser extends AdminEvent {

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:thieu_nhi_app/core/models/user_model.dart';
 import 'package:thieu_nhi_app/core/services/permission_service.dart';
 import 'package:thieu_nhi_app/core/services/auth_service.dart';
+import 'package:thieu_nhi_app/core/services/http_client.dart';
 import 'package:thieu_nhi_app/features/auth/bloc/auth_bloc.dart';
 import 'package:thieu_nhi_app/features/auth/bloc/auth_state.dart';
 import 'package:thieu_nhi_app/features/admin/bloc/admin_bloc.dart';
@@ -445,14 +446,7 @@ class _AccountManagementScreenState extends State<AccountManagementScreen>
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
-        leading: CircleAvatar(
-          radius: 20,
-          backgroundColor: _getRoleColor(user.role),
-          child: Text(
-            _getUserInitials(user),
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
-          ),
-        ),
+        leading: _buildUserAvatar(user),
         title: Text(
           user.displayName,
           style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
@@ -527,6 +521,42 @@ class _AccountManagementScreenState extends State<AccountManagementScreen>
         onTap: () => _showUserDetailsDialog(user),
       ),
     );
+  }
+
+  Widget _buildUserAvatar(UserModel user) {
+    final resolvedUrl = _resolveAvatarUrl(user.avatarUrl);
+    final borderColor = _getRoleColor(user.role);
+
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: borderColor.withOpacity(0.4), width: 2),
+      ),
+      child: CircleAvatar(
+        backgroundColor: resolvedUrl == null ? borderColor : Colors.white,
+        backgroundImage: resolvedUrl != null ? NetworkImage(resolvedUrl) : null,
+        child: resolvedUrl == null
+            ? Text(
+                _getUserInitials(user),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              )
+            : null,
+      ),
+    );
+  }
+
+  String? _resolveAvatarUrl(String? avatarUrl) {
+    if (avatarUrl == null || avatarUrl.isEmpty) return null;
+    if (avatarUrl.startsWith('http')) return avatarUrl;
+    final base = HttpClient().apiBaseUrl;
+    if (avatarUrl.startsWith('/')) return '$base$avatarUrl';
+    return '$base/$avatarUrl';
   }
 
   Widget _buildAccessDenied() {
@@ -607,7 +637,7 @@ class _AccountManagementScreenState extends State<AccountManagementScreen>
   void _handleUserAction(String action, UserModel user) {
     switch (action) {
       case 'edit':
-        context.push('/admin/accounts/add', extra: user);
+        context.push('/admin/accounts/edit/${user.id}', extra: user);
         break;
       case 'view':
         _showUserDetailsDialog(user);

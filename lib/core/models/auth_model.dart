@@ -47,6 +47,7 @@ class AuthUserModel extends Equatable {
   final AuthDepartmentModel? department;
   final AuthClassTeacherModel? classTeacher;
   final List<String> permissions;
+  final String? avatarUrl;
 
   const AuthUserModel({
     required this.id,
@@ -56,6 +57,7 @@ class AuthUserModel extends Equatable {
     required this.department,
     required this.classTeacher,
     required this.permissions,
+    this.avatarUrl,
   });
 
   factory AuthUserModel.fromJson(Map<String, dynamic> json) {
@@ -76,6 +78,7 @@ class AuthUserModel extends Equatable {
               ?.map((e) => e.toString())
               .toList() ??
           const [],
+      avatarUrl: json['avatarUrl'] ?? json['avatar'],
     );
   }
 
@@ -87,6 +90,7 @@ class AuthUserModel extends Equatable {
         'department': department?.toJson(),
         'classTeacher': classTeacher?.toJson(),
         'permissions': permissions,
+        'avatarUrl': avatarUrl,
       };
 
   /// Chuẩn hoá dữ liệu để tái sử dụng [BackendUserAdapter].
@@ -108,6 +112,7 @@ class AuthUserModel extends Equatable {
           }
       ],
       'permissions': permissions,
+      'avatarUrl': avatarUrl,
       'isActive': true,
       'createdAt': nowIso,
       'updatedAt': nowIso,
@@ -116,7 +121,7 @@ class AuthUserModel extends Equatable {
 
   @override
   List<Object?> get props =>
-      [id, username, fullName, role, department, classTeacher, permissions];
+      [id, username, fullName, role, department, classTeacher, permissions, avatarUrl];
 }
 
 class AuthDepartmentModel extends Equatable {

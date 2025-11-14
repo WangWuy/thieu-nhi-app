@@ -21,7 +21,7 @@ class LoginFooter extends StatelessWidget {
         child: Column(
           children: [
             Text(
-              'Phiên bản 1.0.0',
+              'Phiên bản 1.1.2',
               style: TextStyle(
                 color: const Color(0xFF8B4513).withOpacity(0.8),
                 fontSize: 12,

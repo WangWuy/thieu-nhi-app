@@ -1,6 +1,7 @@
 // lib/features/admin/widgets/user_details_dialog.dart
 import 'package:flutter/material.dart';
 import 'package:thieu_nhi_app/core/models/user_model.dart';
+import 'package:thieu_nhi_app/core/services/http_client.dart';
 import 'package:thieu_nhi_app/theme/app_colors.dart';
 
 class UserDetailsDialog extends StatelessWidget {
@@ -10,6 +11,7 @@ class UserDetailsDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final avatarUrl = _resolveAvatarUrl(user.avatarUrl);
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Container(
@@ -32,14 +34,18 @@ class UserDetailsDialog extends StatelessWidget {
                   CircleAvatar(
                     radius: 30,
                     backgroundColor: Colors.white,
-                    child: Text(
-                      _getUserInitials(user),
-                      style: const TextStyle(
-                        color: AppColors.primary,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    backgroundImage:
+                        avatarUrl != null ? NetworkImage(avatarUrl) : null,
+                    child: avatarUrl == null
+                        ? Text(
+                            _getUserInitials(user),
+                            style: const TextStyle(
+                              color: AppColors.primary,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          )
+                        : null,
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -188,6 +194,16 @@ class UserDetailsDialog extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String? _resolveAvatarUrl(String? avatarUrl) {
+    if (avatarUrl == null || avatarUrl.isEmpty) return null;
+    if (avatarUrl.startsWith('http')) return avatarUrl;
+    final base = HttpClient().apiBaseUrl;
+    if (avatarUrl.startsWith('/')) {
+      return '$base$avatarUrl';
+    }
+    return '$base/$avatarUrl';
   }
 
   String _getUserInitials(UserModel user) {

@@ -27,11 +27,18 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
   final StudentService _studentService = StudentService();
   final AttendanceService _attendanceService = AttendanceService();
   final ClassService _classService = ClassService();
+  static const int _pageSize = 10;
+  late final ScrollController _resultsScrollController;
 
   List<StudentModel> _searchResults = [];
   bool _isSearching = false;
+  bool _isLoadingMore = false;
+  bool _hasMore = true;
+  int _currentPage = 1;
   TodayAttendanceStatus? _todayStatus;
   String? _selectedClassFilter;
+  String? _currentClassId;
+  String? _currentSearchQuery;
   List<String> _availableClasses = [];
   Map<String, int> _classNameToIdMap = {};
   bool _initialDataLoaded = false;
@@ -39,13 +46,25 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
   @override
   void initState() {
     super.initState();
+    _resultsScrollController = ScrollController()..addListener(_handleScroll);
     _loadInitialData();
   }
 
   @override
   void dispose() {
+    _resultsScrollController
+      ..removeListener(_handleScroll)
+      ..dispose();
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _handleScroll() {
+    if (_resultsScrollController.position.pixels >=
+            _resultsScrollController.position.maxScrollExtent - 200 &&
+        !_isSearching) {
+      _loadMoreStudents();
+    }
   }
 
   // UPDATED: Load user's classes first, then auto-select
@@ -77,7 +96,7 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
       // Step 3: Load students for first class only
       final result = await _studentService.getStudents(
         page: 1,
-        limit: 50,
+        limit: _pageSize,
         classFilter: firstClassId.toString(),
       );
       
@@ -90,6 +109,11 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
           _availableClasses = sortedClasses;
           _classNameToIdMap = classes;
           _selectedClassFilter = firstClassName; // Auto-select first class
+          _currentClassId = firstClassId?.toString();
+          _currentSearchQuery = null;
+          _currentPage = result.currentPage ?? 1;
+          final totalPages = result.totalPages ?? 1;
+          _hasMore = _currentPage < totalPages && students.isNotEmpty;
           _isSearching = false;
           _initialDataLoaded = true;
         });
@@ -135,60 +159,13 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
   }
 
   // UPDATED: Search within current class or reload current class
-  void onSearchChanged(String query) async {
-    if (query.trim().length < 2 && query.trim().isNotEmpty) return;
+  void onSearchChanged(String query) {
+    final trimmed = query.trim();
+    if (trimmed.isNotEmpty && trimmed.length < 2) return;
 
-    setState(() => _isSearching = true);
-
-    try {
-      // If search is empty, reload the selected class
-      if (query.trim().isEmpty) {
-        final classId = _selectedClassFilter != null 
-            ? _classNameToIdMap[_selectedClassFilter]
-            : _classNameToIdMap.values.first;
-
-        final result = await _studentService.getStudents(
-          page: 1,
-          limit: 50,
-          classFilter: classId?.toString(),
-        );
-        
-        if (mounted && result.isSuccess) {
-          setState(() {
-            _searchResults = result.students ?? [];
-            _isSearching = false;
-          });
-          _loadAttendanceStatusForResults();
-        }
-        return;
-      }
-
-      // Search within current class
-      final classId = _selectedClassFilter != null 
-          ? _classNameToIdMap[_selectedClassFilter]
-          : null;
-
-      final result = await _studentService.getStudents(
-        page: 1,
-        limit: 50,
-        search: query.trim(),
-        classFilter: classId?.toString(),
-      );
-      
-      if (mounted && result.isSuccess) {
-        setState(() {
-          _searchResults = result.students ?? [];
-          _isSearching = false;
-        });
-
-        _loadAttendanceStatusForResults();
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isSearching = false);
-      }
-      print('Search error: $e');
-    }
+    _currentSearchQuery = trimmed.isEmpty ? null : trimmed;
+    _resetPagination();
+    _fetchStudents(page: 1);
   }
 
   void _loadAttendanceStatusForResults() async {
@@ -228,36 +205,15 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
   void onClassFilterChanged(String? newFilter) async {
     if (_selectedClassFilter == newFilter) return;
 
+    final classId = newFilter != null ? _classNameToIdMap[newFilter] : null;
+
     setState(() {
       _selectedClassFilter = newFilter;
-      _isSearching = true;
+      _currentClassId = classId?.toString();
     });
 
-    try {
-      // Convert className to classId
-      final classId = newFilter != null ? _classNameToIdMap[newFilter] : null;
-
-      final result = await _studentService.getStudents(
-        page: 1,
-        limit: 50,
-        search: _searchController.text.trim().isEmpty ? null : _searchController.text.trim(),
-        classFilter: classId?.toString(),
-      );
-      
-      if (mounted && result.isSuccess) {
-        setState(() {
-          _searchResults = result.students ?? [];
-          _isSearching = false;
-        });
-
-        _loadAttendanceStatusForResults();
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isSearching = false);
-      }
-      print('Class filter error: $e');
-    }
+    _resetPagination();
+    _fetchStudents(page: 1);
   }
 
   void onMarkAttendance(StudentModel student) {
@@ -308,8 +264,9 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
   // UPDATED: Keep current class when clearing search
   void onClearSearch() {
     _searchController.clear();
-    // Don't reset class filter, keep current selection
-    onSearchChanged(''); // Reload current class
+    _currentSearchQuery = null;
+    _resetPagination();
+    _fetchStudents(page: 1);
   }
 
   @override
@@ -356,14 +313,6 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
                   selectedClass: _selectedClassFilter,
                   onClassChanged: onClassFilterChanged,
                   classStudentCounts: classStudentCounts,
-                ),
-
-              // Summary - Show when have results
-              if (_searchResults.isNotEmpty)
-                ManualAttendanceSummary(
-                  todayStatus: _todayStatus,
-                  filteredStudentCodes: filteredStudentCodes,
-                  selectedClass: _selectedClassFilter,
                 ),
 
               // Results
@@ -450,6 +399,8 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
       onMarkAttendance: onMarkAttendance,
       onUndoAttendance: onUndoAttendance,
       onClearClassFilter: () => onClassFilterChanged(null),
+      scrollController: _resultsScrollController,
+      isLoadingMore: _isLoadingMore,
     );
   }
 
@@ -475,5 +426,66 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
         duration: const Duration(seconds: 3),
       ),
     );
+  }
+
+  void _resetPagination() {
+    _currentPage = 1;
+    _hasMore = true;
+    _isLoadingMore = false;
+  }
+
+  Future<void> _fetchStudents({
+    required int page,
+    bool append = false,
+  }) async {
+    if (!append) {
+      setState(() => _isSearching = true);
+    }
+
+    try {
+      final result = await _studentService.getStudents(
+        page: page,
+        limit: _pageSize,
+        search: _currentSearchQuery,
+        classFilter: _currentClassId,
+      );
+
+      if (!mounted) return;
+
+      if (result.isSuccess) {
+        final students = result.students ?? [];
+        setState(() {
+          if (append) {
+            _searchResults = [..._searchResults, ...students];
+          } else {
+            _searchResults = students;
+          }
+          _currentPage = result.currentPage ?? page;
+          final totalPages = result.totalPages ?? _currentPage;
+          _hasMore = (_currentPage < totalPages) && students.isNotEmpty;
+          _isSearching = false;
+          _isLoadingMore = false;
+        });
+        _loadAttendanceStatusForResults();
+      } else {
+        setState(() {
+          _isSearching = false;
+          _isLoadingMore = false;
+        });
+      }
+    } catch (e) {
+      print('Fetch students error: $e');
+      if (!mounted) return;
+      setState(() {
+        _isSearching = false;
+        _isLoadingMore = false;
+      });
+    }
+  }
+
+  Future<void> _loadMoreStudents() async {
+    if (!_initialDataLoaded || !_hasMore || _isLoadingMore) return;
+    setState(() => _isLoadingMore = true);
+    await _fetchStudents(page: _currentPage + 1, append: true);
   }
 }

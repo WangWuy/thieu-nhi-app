@@ -34,6 +34,8 @@ class StudentsBloc extends Bloc<StudentsEvent, StudentsState> {
     on<LoadStudentDetail>(_onLoadStudentDetail);
     on<AddStudent>(_onAddStudent);
     on<UpdateStudent>(_onUpdateStudent);
+    on<UploadStudentAvatar>(_onUploadStudentAvatar);
+    on<DeleteStudentAvatar>(_onDeleteStudentAvatar);
     on<DeleteStudent>(_onDeleteStudent);
     on<UpdateStudentAttendance>(_onUpdateStudentAttendance);
     on<UpdateStudentGrades>(_onUpdateStudentGrades);
@@ -410,6 +412,95 @@ class StudentsBloc extends Bloc<StudentsEvent, StudentsState> {
       emit(StudentsError(
         message: 'Không thể cập nhật thông tin thiếu nhi: ${_formatError(e)}',
         errorCode: 'UPDATE_STUDENT_ERROR',
+      ));
+    }
+  }
+
+  Future<void> _onUploadStudentAvatar(
+    UploadStudentAvatar event,
+    Emitter<StudentsState> emit,
+  ) async {
+    try {
+      final updatedStudent = await _studentService.uploadStudentAvatar(
+        event.studentId,
+        event.avatarFile,
+      );
+
+      if (updatedStudent != null) {
+        _studentCache[updatedStudent.id] = updatedStudent;
+        _emitAvatarUpdateSuccess(
+          updatedStudent,
+          'Đã cập nhật ảnh đại diện thiếu nhi',
+          emit,
+        );
+        event.completer?.complete(updatedStudent);
+      } else {
+        throw Exception('Không thể cập nhật ảnh đại diện');
+      }
+    } catch (e) {
+      event.completer?.completeError(e);
+    }
+  }
+
+  Future<void> _onDeleteStudentAvatar(
+    DeleteStudentAvatar event,
+    Emitter<StudentsState> emit,
+  ) async {
+    try {
+      final updatedStudent =
+          await _studentService.deleteStudentAvatar(event.studentId);
+
+      if (updatedStudent != null) {
+        _studentCache[updatedStudent.id] = updatedStudent;
+        _emitAvatarUpdateSuccess(
+          updatedStudent,
+          'Đã gỡ ảnh đại diện thiếu nhi',
+          emit,
+        );
+        event.completer?.complete(updatedStudent);
+      } else {
+        throw Exception('Không thể gỡ ảnh đại diện');
+      }
+    } catch (e) {
+      event.completer?.completeError(e);
+    }
+  }
+
+  void _emitAvatarUpdateSuccess(
+    StudentModel updatedStudent,
+    String message,
+    Emitter<StudentsState> emit,
+  ) {
+    final currentState = state;
+
+    if (currentState is StudentsLoaded) {
+      emit(StudentOperationSuccess(
+        message: message,
+        operationType: StudentOperationType.avatarUpdate,
+        previousState: currentState,
+      ));
+
+      final updatedStudents = currentState.students.map((student) {
+        return student.id == updatedStudent.id ? updatedStudent : student;
+      }).toList();
+
+      final filteredStudents = _applyFilters(
+        updatedStudents,
+        currentState.searchQuery,
+        currentState.filter,
+      );
+
+      emit(
+        currentState.copyWith(
+          students: updatedStudents,
+          filteredStudents: filteredStudents,
+          lastUpdated: DateTime.now(),
+        ),
+      );
+    } else if (currentState is StudentDetailLoaded) {
+      emit(currentState.copyWith(
+        student: updatedStudent,
+        lastUpdated: DateTime.now(),
       ));
     }
   }

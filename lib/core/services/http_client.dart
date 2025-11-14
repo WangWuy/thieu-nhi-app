@@ -198,6 +198,37 @@ class HttpClient {
     );
   }
 
+  Future<ApiResponse> uploadMultipart(
+    String endpoint, {
+      Map<String, String>? fields,
+      Map<String, File>? files,
+      Map<String, String>? headers,
+      String method = 'POST',
+    }) async {
+    final request = http.MultipartRequest(
+      method.toUpperCase(),
+      Uri.parse(_buildUrl(endpoint, null)),
+    );
+
+    final multipartHeaders = {..._defaultHeaders, ...?headers};
+    multipartHeaders.remove('Content-Type');
+    request.headers.addAll(multipartHeaders);
+
+    if (fields != null && fields.isNotEmpty) {
+      request.fields.addAll(fields);
+    }
+
+    if (files != null && files.isNotEmpty) {
+      for (final entry in files.entries) {
+        request.files.add(
+          await http.MultipartFile.fromPath(entry.key, entry.value.path),
+        );
+      }
+    }
+
+    return _makeMultipartRequest(request, method.toUpperCase(), endpoint);
+  }
+
   // ✅ Core request handler with comprehensive error handling
   Future<ApiResponse> _makeRequest(
     Future<http.Response> Function() request,
@@ -250,6 +281,69 @@ class HttpClient {
     } catch (e) {
       if (enableLogging) {
         print('❌ Request error: $e');
+      }
+      return ApiResponse.error(
+        'Lỗi không xác định. Vui lòng thử lại.',
+        'UNKNOWN_ERROR',
+      );
+    }
+  }
+
+  Future<ApiResponse> _makeMultipartRequest(
+    http.MultipartRequest request,
+    String method,
+    String endpoint,
+  ) async {
+    try {
+      if (enableLogging) {
+        print('🌐 $method ${request.url}');
+      }
+
+      final streamedResponse = await request.send().timeout(
+        Duration(milliseconds: apiTimeout),
+        onTimeout: () {
+          throw TimeoutException(
+            'Request timeout after ${apiTimeout}ms',
+            Duration(milliseconds: apiTimeout),
+          );
+        },
+      );
+
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (enableLogging) {
+        print('📥 Response: ${response.statusCode}');
+        _logResponseBody(response.body);
+        print('🔍 Response content-type: ${response.headers['content-type']}');
+      }
+
+      return _handleResponse(response);
+    } on SocketException {
+      return ApiResponse.error(
+        'Không có kết nối internet. Vui lòng kiểm tra mạng.',
+        'NETWORK_ERROR',
+      );
+    } on TimeoutException {
+      return ApiResponse.error(
+        'Kết nối quá chậm. Vui lòng thử lại.',
+        'TIMEOUT_ERROR',
+      );
+    } on HttpException {
+      return ApiResponse.error(
+        'Lỗi HTTP. Vui lòng thử lại sau.',
+        'HTTP_ERROR',
+      );
+    } on FormatException catch (e) {
+      if (enableLogging) {
+        print('❌ Format Exception: $e');
+      }
+      return ApiResponse.error(
+        'Dữ liệu từ server không hợp lệ.',
+        'FORMAT_ERROR',
+      );
+    } catch (e) {
+      if (enableLogging) {
+        print('❌ Multipart request error: $e');
       }
       return ApiResponse.error(
         'Lỗi không xác định. Vui lòng thử lại.',

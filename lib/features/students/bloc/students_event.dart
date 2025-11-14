@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:io';
 import 'package:equatable/equatable.dart';
 import 'package:thieu_nhi_app/features/students/bloc/students_state.dart';
 import 'package:thieu_nhi_app/features/students/models/student_filter.dart';
@@ -85,6 +87,34 @@ class DeleteStudent extends StudentsEvent {
   final String studentId;
 
   const DeleteStudent(this.studentId);
+
+  @override
+  List<Object?> get props => [studentId];
+}
+
+class UploadStudentAvatar extends StudentsEvent {
+  final String studentId;
+  final File avatarFile;
+  final Completer<StudentModel?>? completer;
+
+  const UploadStudentAvatar({
+    required this.studentId,
+    required this.avatarFile,
+    this.completer,
+  });
+
+  @override
+  List<Object?> get props => [studentId, avatarFile.path];
+}
+
+class DeleteStudentAvatar extends StudentsEvent {
+  final String studentId;
+  final Completer<StudentModel?>? completer;
+
+  const DeleteStudentAvatar({
+    required this.studentId,
+    this.completer,
+  });
 
   @override
   List<Object?> get props => [studentId];

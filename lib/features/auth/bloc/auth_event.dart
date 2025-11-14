@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:equatable/equatable.dart';
 import '../../../core/models/user_model.dart';
 
@@ -86,6 +89,19 @@ class AuthUpdateProfileRequested extends AuthEvent {
 
   @override
   List<Object?> get props => [updatedUser];
+}
+
+class AuthAvatarUploadRequested extends AuthEvent {
+  final File avatarFile;
+  final Completer<UserModel>? completer;
+
+  const AuthAvatarUploadRequested({
+    required this.avatarFile,
+    this.completer,
+  });
+
+  @override
+  List<Object?> get props => [avatarFile.path];
 }
 
 class AuthChangePasswordRequested extends AuthEvent {

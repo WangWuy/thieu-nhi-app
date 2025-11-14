@@ -1,10 +1,14 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:thieu_nhi_app/core/models/class_model.dart';
 import 'package:thieu_nhi_app/core/models/department_model.dart';
 import 'package:thieu_nhi_app/core/models/user_model.dart';
-import 'package:thieu_nhi_app/core/services/department_service.dart';
 import 'package:thieu_nhi_app/core/services/class_service.dart';
+import 'package:thieu_nhi_app/core/services/department_service.dart';
+import 'package:thieu_nhi_app/core/services/http_client.dart';
 import 'package:thieu_nhi_app/features/admin/bloc/admin_bloc.dart';
 import 'package:thieu_nhi_app/features/admin/bloc/admin_event.dart';
 import 'package:thieu_nhi_app/features/admin/bloc/admin_state.dart';
@@ -25,6 +29,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
   final _controllers = <String, TextEditingController>{};
   late final DepartmentService _departmentService;
   late final ClassService _classService;
+  final ImagePicker _imagePicker = ImagePicker();
 
   UserRole _selectedRole = UserRole.teacher;
   String _selectedDepartment = 'CHIEN';
@@ -33,10 +38,26 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
       DateTime.now().subtract(const Duration(days: 7300));
   bool _showPassword = false;
   bool _showConfirmPassword = false;
+  File? _avatarFile;
+  String? _currentAvatarUrl;
 
   List<Map<String, dynamic>> _departments = [];
   List<Map<String, dynamic>> _classes = [];
   bool _loadingClasses = false;
+
+  static const Map<int, String> _departmentIdToKey = {
+    1: 'CHIEN',
+    2: 'AU',
+    3: 'THIEU',
+    4: 'NGHIA',
+  };
+
+  static const Map<String, String> _departmentKeyToDisplay = {
+    'CHIEN': 'Chiên',
+    'AU': 'Âu',
+    'THIEU': 'Thiếu',
+    'NGHIA': 'Nghĩa',
+  };
 
   @override
   void initState() {
@@ -44,8 +65,8 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
     _departmentService = DepartmentService();
     _classService = ClassService();
     _initControllers();
-    _loadDepartments();
     _initializeForm();
+    _loadDepartments();
   }
 
   void _initControllers() {
@@ -73,21 +94,21 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
       _controllers['phoneNumber']!.text = account.phoneNumber ?? '';
       _controllers['address']!.text = account.address ?? '';
       _selectedRole = account.role;
-      _selectedDepartment = account.department?.displayName ?? '';
-      _selectedClass = account.className;
+      _selectedDepartment =
+          _resolveDepartmentKeyFromAccount(account) ?? _selectedDepartment;
+      _selectedClass = account.teacherClassId ?? account.classId;
       _selectedBirthDate = account.birthDate ??
           DateTime.now().subtract(const Duration(days: 7300));
+      _currentAvatarUrl = account.avatarUrl;
 
       // Load classes for selected department
       if (_selectedDepartment.isNotEmpty) {
-        _loadClasses(_selectedDepartment);
+        _loadClasses(_selectedDepartment, preselectClassId: _selectedClass);
       }
     } else {
       _controllers['email']!.text = '@gmail.com';
-      if (_departments.isNotEmpty) {
-        _selectedDepartment = _departments.first['name'] as String;
-        _loadClasses(_selectedDepartment);
-      }
+      _currentAvatarUrl = null;
+      _loadClasses(_selectedDepartment);
     }
   }
 
@@ -103,7 +124,8 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                 })
             .toList();
 
-        if (_departments.isNotEmpty && _selectedDepartment.isEmpty) {
+        if (_departments.isNotEmpty &&
+            !_departments.any((dept) => dept['name'] == _selectedDepartment)) {
           _selectedDepartment = _departments.first['name'] as String;
         }
       });
@@ -112,33 +134,38 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
       // Fallback to default departments
       setState(() {
         _departments = [
-          {'id': '1', 'name': 'CHIEN', 'displayName': 'Chiên'},
-          {'id': '2', 'name': 'AU', 'displayName': 'Âu'},
-          {'id': '3', 'name': 'THIEU', 'displayName': 'Thiếu'},
-          {'id': '4', 'name': 'NGHIA', 'displayName': 'Nghĩa'},
+          {'id': 1, 'name': 'CHIEN', 'displayName': 'Chiên'},
+          {'id': 2, 'name': 'AU', 'displayName': 'Âu'},
+          {'id': 3, 'name': 'THIEU', 'displayName': 'Thiếu'},
+          {'id': 4, 'name': 'NGHIA', 'displayName': 'Nghĩa'},
         ];
-        if (_selectedDepartment.isEmpty) {
+        if (!_departments
+            .any((dept) => dept['name'] == _selectedDepartment)) {
           _selectedDepartment = _departments.first['name'] as String;
         }
       });
     }
+
+    if (_selectedDepartment.isNotEmpty) {
+      _loadClasses(_selectedDepartment, preselectClassId: _selectedClass);
+    }
   }
 
-  Future<void> _loadClasses(String departmentName) async {
+  Future<void> _loadClasses(String departmentKey,
+      {String? preselectClassId}) async {
     setState(() {
       _loadingClasses = true;
-      _selectedClass = null;
     });
 
     try {
-      // Get all classes and filter by department
       final allClasses = await _classService.getClasses();
-      final filteredClasses = allClasses
-          .where((cls) =>
-                  cls.department ==
-                  departmentName // cls.department is String, not object
-              )
-          .toList();
+      final selectedDeptId = _getDepartmentIdByKey(departmentKey);
+      final filteredClasses = allClasses.where((cls) {
+        if (selectedDeptId != null) {
+          return cls.departmentId == selectedDeptId;
+        }
+        return cls.department.toUpperCase() == departmentKey.toUpperCase();
+      }).toList();
 
       setState(() {
         _classes = filteredClasses
@@ -148,12 +175,23 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                 })
             .toList();
         _loadingClasses = false;
+
+        final candidateClassId = preselectClassId ?? _selectedClass;
+        if (candidateClassId != null &&
+            _classes.any((cls) => cls['id'].toString() == candidateClassId)) {
+          _selectedClass = candidateClassId;
+        } else if (_selectedRole != UserRole.teacher) {
+          _selectedClass = null;
+        }
       });
     } catch (e) {
       print('Load classes error: $e');
       setState(() {
         _classes = [];
         _loadingClasses = false;
+        if (_selectedRole != UserRole.teacher) {
+          _selectedClass = null;
+        }
       });
 
       if (mounted) {
@@ -268,6 +306,8 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
       'Thông tin cá nhân',
       Icons.person,
       [
+        _buildAvatarPicker(),
+        const SizedBox(height: 16),
         CustomTextField(
           controller: _controllers['saintName']!,
           label: 'Tên Thánh',
@@ -305,6 +345,50 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
     );
   }
 
+  Widget _buildAvatarPicker() {
+    ImageProvider? imageProvider;
+    if (_avatarFile != null) {
+      imageProvider = FileImage(_avatarFile!);
+    } else if (_currentAvatarUrl != null &&
+        _resolveAvatarUrl(_currentAvatarUrl!) != null) {
+      imageProvider = NetworkImage(_resolveAvatarUrl(_currentAvatarUrl!)!);
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Ảnh đại diện',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            CircleAvatar(
+              radius: 32,
+              backgroundColor: AppColors.primary.withOpacity(0.1),
+              backgroundImage: imageProvider,
+              child: imageProvider == null
+                  ? const Icon(Icons.person, color: AppColors.primary, size: 32)
+                  : null,
+            ),
+            const SizedBox(width: 16),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: _showAvatarOptions,
+                  icon: const Icon(Icons.camera_alt),
+                  label: const Text('Chọn ảnh'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
   Widget _buildLoginSection(bool isEditing) {
     return _buildSection(
       'Thông tin đăng nhập',
@@ -316,8 +400,9 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
           icon: Icons.account_circle,
           validator: (value) {
             if (value?.isEmpty ?? true) return 'Vui lòng nhập tên đăng nhập';
-            if (value!.length < 3)
+            if (value!.length < 3) {
               return 'Tên đăng nhập phải có ít nhất 3 ký tự';
+            }
             return null;
           },
         ),
@@ -328,7 +413,9 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
           keyboardType: TextInputType.emailAddress,
           validator: (value) {
             if (value?.isEmpty ?? true) return 'Vui lòng nhập email';
-            if (!value!.contains('@')) return 'Email không hợp lệ';
+            if (!value!.contains('@')) {
+              return 'Email không hợp lệ';
+            }
             return null;
           },
         ),
@@ -363,8 +450,9 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
             ),
             validator: (value) {
               if (value?.isEmpty ?? true) return 'Vui lòng xác nhận mật khẩu';
-              if (value != _controllers['password']!.text)
+              if (value != _controllers['password']!.text) {
                 return 'Mật khẩu xác nhận không khớp';
+              }
               return null;
             },
           ),
@@ -467,6 +555,9 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
           _selectedRole = role;
           if (role != UserRole.teacher) _selectedClass = null;
         });
+        if (role == UserRole.teacher && _selectedDepartment.isNotEmpty) {
+          _loadClasses(_selectedDepartment, preselectClassId: _selectedClass);
+        }
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
@@ -536,11 +627,12 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
               ))
           .toList(),
       (value) {
+        if (value == null) return;
         setState(() {
-          _selectedDepartment = value!;
+          _selectedDepartment = value;
           _selectedClass = null;
         });
-        _loadClasses(value!);
+        _loadClasses(value);
       },
     );
   }
@@ -612,6 +704,22 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
   Widget _buildDropdown<T>(String label, T? value,
       List<DropdownMenuItem<T>> items, void Function(T?) onChanged,
       {String? hint}) {
+    T? effectiveValue = value;
+    if (effectiveValue != null &&
+        items.every((item) => item.value != effectiveValue)) {
+      effectiveValue = null;
+      if (label == 'Lớp học') {
+        // keep internal state consistent
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            setState(() {
+              _selectedClass = null;
+            });
+          }
+        });
+      }
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -625,7 +733,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<T>(
-              value: value,
+              value: effectiveValue,
               isExpanded: true,
               hint: hint != null ? Text(hint) : null,
               onChanged: onChanged,
@@ -693,7 +801,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                 _controllers['phoneNumber']!.text.ifEmpty('0123456789'),
                 Icons.phone
               ],
-              ['Ngành', 'Ngành $_selectedDepartment', Icons.business],
+              ['Ngành', _getDepartmentDisplayName(), Icons.business],
               if (_selectedClass != null)
                 ['Lớp', _getSelectedClassName(), Icons.school],
             ].map((item) => _buildPreviewRow(
@@ -718,6 +826,82 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
         ],
       ),
     );
+  }
+
+  void _showAvatarOptions() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: AppColors.grey300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_camera, color: AppColors.primary),
+              title: const Text('Chụp ảnh mới'),
+              onTap: () {
+                Navigator.of(context).pop();
+                _pickAvatar(ImageSource.camera);
+              },
+            ),
+            ListTile(
+              leading:
+                  const Icon(Icons.photo_library, color: AppColors.primary),
+              title: const Text('Chọn từ thư viện'),
+              onTap: () {
+                Navigator.of(context).pop();
+                _pickAvatar(ImageSource.gallery);
+              },
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickAvatar(ImageSource source) async {
+    try {
+      final picked = await _imagePicker.pickImage(
+        source: source,
+        maxWidth: 1024,
+        imageQuality: 85,
+      );
+
+      if (picked == null) return;
+
+      setState(() {
+        _avatarFile = File(picked.path);
+        _currentAvatarUrl = null;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Không thể chọn ảnh: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+
+  String? _resolveAvatarUrl(String? path) {
+    if (path == null || path.isEmpty) return null;
+    if (path.startsWith('http')) return path;
+    final base = HttpClient().apiBaseUrl;
+    if (path.startsWith('/')) return '$base$path';
+    return '$base/$path';
   }
 
   Future<void> _selectBirthDate() async {
@@ -748,7 +932,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
     final user = UserModel(
       id: isEditing ? widget.accountData!.id : '',
       username: _controllers['username']!.text.trim(),
-      email: _controllers['email']!.text.trim(),
+      email: _controllers['email']!.text.trim().nullIfEmpty,
       role: _selectedRole,
 
       // FIX: Use departmentId instead of department string
@@ -765,48 +949,85 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
       birthDate: _selectedBirthDate,
       phoneNumber: _controllers['phoneNumber']!.text.trim().nullIfEmpty,
       address: _controllers['address']!.text.trim().nullIfEmpty,
-      isActive: true,
+      teacherClassId:
+          _selectedRole == UserRole.teacher ? _selectedClass : null,
+      teacherClassName: _selectedRole == UserRole.teacher
+          ? _getSelectedClassName()
+          : null,
+      permissions: widget.accountData?.permissions ?? const [],
+      isActive: isEditing ? widget.accountData!.isActive : true,
       createdAt: isEditing ? widget.accountData!.createdAt : DateTime.now(),
       updatedAt: DateTime.now(),
+      avatarUrl: _currentAvatarUrl,
     );
 
     if (isEditing) {
-      context.read<AdminBloc>().add(UpdateUser(user));
+      context
+          .read<AdminBloc>()
+          .add(UpdateUser(user, avatarFile: _avatarFile));
     } else {
-      context.read<AdminBloc>().add(
-          CreateUser(user: user, password: _controllers['password']!.text));
+      context.read<AdminBloc>().add(CreateUser(
+            user: user,
+            password: _controllers['password']!.text,
+            avatarFile: _avatarFile,
+          ));
     }
   }
 
   int? _getSelectedDepartmentId() {
-    // If _selectedDepartment is a string name, map to ID
-    if (_selectedDepartment is String) {
-      switch (_selectedDepartment.toString().toUpperCase()) {
-        case 'CHIEN':
-          return 1;
-        case 'AU':
-          return 2;
-        case 'THIEU':
-          return 3;
-        case 'NGHIA':
-          return 4;
-        default:
-          return null;
-      }
+    return _getDepartmentIdByKey(_selectedDepartment);
+  }
+
+  int? _getDepartmentIdByKey(String? key) {
+    if (key == null) return null;
+
+    final match = _findDepartmentByKey(key);
+
+    if (match != null) {
+      final value = match['id'];
+      if (value is int) return value;
+      if (value is String) return int.tryParse(value);
     }
 
-    // If already an int
-    if (_selectedDepartment is int) {
-      return _selectedDepartment as int;
+    final fallback = _departmentIdToKey.entries.firstWhere(
+      (entry) => entry.value == key.toUpperCase(),
+      orElse: () => const MapEntry(0, ''),
+    );
+
+    return fallback.key == 0 ? null : fallback.key;
+  }
+
+  String? _resolveDepartmentKeyFromAccount(UserModel account) {
+    if (account.department?.name != null &&
+        account.department!.name.isNotEmpty) {
+      return account.department!.name.toUpperCase();
+    }
+
+    if (account.department?.displayName != null) {
+      final display = account.department!.displayName;
+      final match = _departmentKeyToDisplay.entries.firstWhere(
+        (entry) => entry.value.toLowerCase() == display.toLowerCase(),
+        orElse: () => const MapEntry('', ''),
+      );
+      if (match.key.isNotEmpty) return match.key;
+    }
+
+    if (account.departmentId != null) {
+      return _departmentIdToKey[account.departmentId!];
     }
 
     return null;
   }
 
-  DepartmentModel? _getSelectedDepartmentModel() {
-    // Return null for now - backend will handle this
-    // The important part is departmentId
-    return null;
+  String _getDepartmentDisplayName() {
+    final match = _findDepartmentByKey(_selectedDepartment);
+
+    if (match != null && match.isNotEmpty) {
+      return match['displayName'] as String;
+    }
+
+    return _departmentKeyToDisplay[_selectedDepartment] ??
+        _selectedDepartment;
   }
 
   List<ClassTeacher> _createClassTeachersList() {
@@ -815,23 +1036,54 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
     return [];
   }
 
+  DepartmentModel? _getSelectedDepartmentModel() {
+    // Optional: return null because backend sẽ trả về dữ liệu đầy đủ sau khi lưu
+    return null;
+  }
+
   String _getDisplayName() {
     final saintName = _controllers['saintName']!.text.trim();
     final fullName = _controllers['fullName']!.text.trim();
-    if (saintName.isNotEmpty && fullName.isNotEmpty)
+    if (saintName.isNotEmpty && fullName.isNotEmpty) {
       return '$saintName $fullName';
-    if (fullName.isNotEmpty) return fullName;
-    if (saintName.isNotEmpty) return saintName;
+    }
+    if (fullName.isNotEmpty) {
+      return fullName;
+    }
+    if (saintName.isNotEmpty) {
+      return saintName;
+    }
     return _controllers['username']!.text.ifEmpty('Tên người dùng');
   }
 
   String? _getSelectedClassName() {
     if (_selectedClass == null) return null;
-    final selectedClass = _classes.firstWhere(
-      (cls) => cls['id'].toString() == _selectedClass,
-      orElse: () => <String, dynamic>{},
-    );
+    Map<String, dynamic>? selectedClass;
+    try {
+      final result = _classes.firstWhere(
+        (cls) => cls['id'].toString() == _selectedClass,
+        orElse: () => <String, dynamic>{},
+      );
+      selectedClass =
+          result.isEmpty ? null : Map<String, dynamic>.from(result as Map);
+    } catch (_) {
+      selectedClass = null;
+    }
+    if (selectedClass == null || selectedClass.isEmpty) {
+      return widget.accountData?.teacherClassName;
+    }
     return selectedClass['name'] as String?;
+  }
+
+  Map<String, dynamic>? _findDepartmentByKey(String? key) {
+    if (key == null) return null;
+    for (final dept in _departments) {
+      final name = (dept['name'] as String?)?.toUpperCase();
+      if (name == key.toUpperCase()) {
+        return Map<String, dynamic>.from(dept as Map);
+      }
+    }
+    return null;
   }
 }
 

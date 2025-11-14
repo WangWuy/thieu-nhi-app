@@ -140,7 +140,18 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
           },
         ),
       ),
-      floatingActionButton: student != null ? _buildFloatingActionButtons() : null,
+      floatingActionButton: student != null
+          ? FloatingActionButton.extended(
+              onPressed: _editStudent,
+              backgroundColor: AppColors.primary,
+              icon: const Icon(Icons.edit, color: Colors.white),
+              label: const Text(
+                'Chỉnh sửa',
+                style:
+                    TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+              ),
+            )
+          : null,
     ));
   }
 
@@ -506,32 +517,6 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
               ),
             ),
           ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildFloatingActionButtons() {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        FloatingActionButton(
-          heroTag: "refresh",
-          onPressed: _onRefresh,
-          backgroundColor: AppColors.secondary,
-          tooltip: 'Làm mới',
-          child: const Icon(Icons.refresh, color: Colors.white),
-        ),
-        const SizedBox(height: 12),
-        FloatingActionButton.extended(
-          heroTag: "editExtended",
-          onPressed: _editStudent,
-          backgroundColor: AppColors.primary,
-          icon: const Icon(Icons.edit, color: Colors.white),
-          label: const Text(
-            'Chỉnh sửa',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-          ),
         ),
       ],
     );

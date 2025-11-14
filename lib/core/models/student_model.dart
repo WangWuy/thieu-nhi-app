@@ -20,6 +20,7 @@ class StudentModel extends Equatable {
   final List<double> grades;
 
   final String? photoUrl;
+  final String? avatarUrl;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -55,6 +56,7 @@ class StudentModel extends Equatable {
     required this.attendance,
     required this.grades,
     this.photoUrl,
+    this.avatarUrl,
     required this.createdAt,
     required this.updatedAt,
     // New fields
@@ -114,6 +116,7 @@ class StudentModel extends Equatable {
     Map<String, bool>? attendance,
     List<double>? grades,
     String? photoUrl,
+    String? avatarUrl,
     DateTime? createdAt,
     DateTime? updatedAt,
     String? note,
@@ -150,6 +153,7 @@ class StudentModel extends Equatable {
       attendance: attendance ?? this.attendance,
       grades: grades ?? this.grades,
       photoUrl: photoUrl ?? this.photoUrl,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       note: note ?? this.note,
@@ -189,6 +193,7 @@ class StudentModel extends Equatable {
         attendance,
         grades,
         photoUrl,
+        avatarUrl,
         createdAt,
         updatedAt,
         // New props

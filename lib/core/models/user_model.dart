@@ -1,7 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:thieu_nhi_app/core/models/class_model.dart';
 import 'package:thieu_nhi_app/core/models/department_model.dart';
-import 'package:thieu_nhi_app/core/services/backend_adapters.dart';
 
 class UserModel extends Equatable {
   final String id;
@@ -22,6 +21,7 @@ class UserModel extends Equatable {
   final DateTime? birthDate;
   final String? phoneNumber;
   final String? address;
+  final String? avatarUrl;
 
   // Status fields
   final bool isActive;
@@ -50,6 +50,7 @@ class UserModel extends Equatable {
     this.lastLogin,
     required this.createdAt,
     this.updatedAt,
+    this.avatarUrl,
   });
 
   // Helper getters
@@ -108,6 +109,7 @@ class UserModel extends Equatable {
     DateTime? birthDate,
     String? phoneNumber,
     String? address,
+    String? avatarUrl,
     bool? isActive,
     DateTime? lastLogin,
     DateTime? createdAt,
@@ -131,6 +133,7 @@ class UserModel extends Equatable {
       birthDate: birthDate ?? this.birthDate,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       address: address ?? this.address,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
       isActive: isActive ?? this.isActive,
       lastLogin: lastLogin ?? this.lastLogin,
       createdAt: createdAt ?? this.createdAt,
@@ -156,6 +159,7 @@ class UserModel extends Equatable {
         birthDate,
         phoneNumber,
         address,
+        avatarUrl,
         isActive,
         lastLogin,
         createdAt,

@@ -17,6 +17,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthLogoutRequested>(_onAuthLogoutRequested);
     on<AuthUpdateProfileRequested>(_onUpdateProfileRequested);
     on<AuthChangePasswordRequested>(_onChangePasswordRequested);
+    on<AuthAvatarUploadRequested>(_onAvatarUploadRequested);
   }
 
   Future<void> _onAuthCheckRequested(
@@ -132,6 +133,29 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     } catch (e) {
       emit(AuthAuthenticated(user: currentState.user));
       rethrow;
+    }
+  }
+
+  Future<void> _onAvatarUploadRequested(
+    AuthAvatarUploadRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    if (state is! AuthAuthenticated) {
+      event.completer?.completeError(Exception('Chưa đăng nhập'));
+      return;
+    }
+
+    final currentState = state as AuthAuthenticated;
+    emit(AuthAvatarUpdating(user: currentState.user));
+
+    try {
+      final updatedUser = await _authService.uploadAvatar(event.avatarFile);
+      emit(AuthAuthenticated(user: updatedUser));
+      event.completer?.complete(updatedUser);
+      return;
+    } catch (e) {
+      emit(AuthAuthenticated(user: currentState.user));
+      event.completer?.completeError(e);
     }
   }
 

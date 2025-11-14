@@ -1,8 +1,13 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:thieu_nhi_app/core/models/user_model.dart';
 import 'package:thieu_nhi_app/core/services/auth_service.dart';
+import 'package:thieu_nhi_app/core/services/http_client.dart';
 import 'package:thieu_nhi_app/features/auth/bloc/auth_bloc.dart';
 import 'package:thieu_nhi_app/features/auth/bloc/auth_event.dart';
 import 'package:thieu_nhi_app/features/auth/bloc/auth_state.dart';
@@ -21,6 +26,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _darkModeEnabled = false;
   String _selectedLanguage = 'Tiếng Việt';
   String _deleteConfirmationText = '';
+  final ImagePicker _imagePicker = ImagePicker();
+  bool _isUploadingAvatar = false;
 
   @override
   Widget build(BuildContext context) {
@@ -59,11 +66,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       child: Column(
         children: [
-          CircleAvatar(
-            radius: 50,
-            backgroundColor: Colors.white.withOpacity(0.2),
-            child: const Icon(Icons.person, size: 50, color: Colors.white),
-          ),
+          _buildAvatar(user),
           const SizedBox(height: 16),
           Text(
             user.displayName,
@@ -107,6 +110,188 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     return Column(children: widgets);
+  }
+
+  Widget _buildAvatar(UserModel user) {
+    final resolvedUrl = _resolveAvatarUrl(user.avatarUrl);
+
+    return GestureDetector(
+      onTap: _isUploadingAvatar ? null : () => _showAvatarOptions(user),
+      child: SizedBox(
+        width: 120,
+        height: 120,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            CircleAvatar(
+              radius: 55,
+              backgroundColor: Colors.white.withOpacity(0.2),
+              backgroundImage:
+                  resolvedUrl != null ? NetworkImage(resolvedUrl) : null,
+              child: resolvedUrl == null
+                  ? const Icon(Icons.person, size: 50, color: Colors.white)
+                  : null,
+            ),
+            if (_isUploadingAvatar)
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.4),
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: const SizedBox(
+                  width: 28,
+                  height: 28,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 3,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+              )
+            else
+              Positioned(
+                bottom: 12,
+                right: 12,
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.15),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.camera_alt,
+                    size: 18,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showAvatarOptions(UserModel user) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: AppColors.grey300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_camera, color: AppColors.primary),
+              title: const Text('Chụp ảnh mới'),
+              onTap: () {
+                Navigator.of(context).pop();
+                _pickImage(ImageSource.camera);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library, color: AppColors.primary),
+              title: const Text('Chọn từ thư viện'),
+              onTap: () {
+                Navigator.of(context).pop();
+                _pickImage(ImageSource.gallery);
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final pickedFile = await _imagePicker.pickImage(
+        source: source,
+        maxWidth: 1024,
+        imageQuality: 85,
+      );
+
+      if (pickedFile == null) return;
+
+      await _uploadAvatar(File(pickedFile.path));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Không thể chọn ảnh: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+
+  Future<void> _uploadAvatar(File file) async {
+    if (!mounted) return;
+
+    setState(() {
+      _isUploadingAvatar = true;
+    });
+
+    final completer = Completer<UserModel>();
+    context.read<AuthBloc>().add(
+          AuthAvatarUploadRequested(
+            avatarFile: file,
+            completer: completer,
+          ),
+        );
+
+    try {
+      await completer.future;
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Cập nhật ảnh đại diện thành công'),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Lỗi cập nhật ảnh: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUploadingAvatar = false;
+        });
+      }
+    }
+  }
+
+  String? _resolveAvatarUrl(String? avatarUrl) {
+    if (avatarUrl == null || avatarUrl.isEmpty) return null;
+    if (avatarUrl.startsWith('http')) return avatarUrl;
+
+    final base = HttpClient().apiBaseUrl;
+    if (avatarUrl.startsWith('/')) {
+      return '$base$avatarUrl';
+    }
+    return '$base/$avatarUrl';
   }
 
   Widget _buildPersonalInfoCard(UserModel user) {
@@ -331,7 +516,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _MenuItem('Liên hệ hỗ trợ', 'Gửi phản hồi hoặc báo lỗi',
                 Icons.support_agent,
                 onTap: _showSupportDialog),
-            _MenuItem('Về ứng dụng', 'Phiên bản 1.0.0', Icons.info,
+            _MenuItem('Về ứng dụng', 'Phiên bản 1.1.2', Icons.info,
                 onTap: _showAboutDialog),
           ]),
           const SizedBox(height: 16),
@@ -598,7 +783,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Text('Ứng dụng Quản lý Thiếu Nhi',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             SizedBox(height: 8),
-            Text('Phiên bản: 1.0.0'),
+            Text('Phiên bản: 1.1.2'),
             Text('© 2025 Giáo xứ Thiên Ân'),
             SizedBox(height: 16),
             Text(

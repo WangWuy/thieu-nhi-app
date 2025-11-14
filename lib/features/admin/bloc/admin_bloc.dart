@@ -162,15 +162,38 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
         address: event.user.address,
         departmentId: event.user.departmentId ?? event.user.department?.id,
         birthDate: event.user.birthDate,
+        email: event.user.email,
+        classId: event.user.teacherClassId,
       );
 
       if (userModel != null) {
-        emit(UserOperationSuccess(
-          message: '''✅ Đã tạo tài khoản ${userModel.displayName} thành công!
+        UserModel finalUser = userModel;
+        String? avatarError;
 
-👤 Username: ${userModel.username}
-🔑 Mật khẩu: ${event.password}
-📧 Vai trò: ${userModel.role.displayName}''',
+        if (event.avatarFile != null) {
+          try {
+            finalUser = await _authService.uploadUserAvatar(
+              userModel.id,
+              event.avatarFile!,
+            );
+          } catch (e) {
+            avatarError = e.toString();
+          }
+        }
+
+        final successMessage = StringBuffer(
+            '✅ Đã tạo tài khoản ${finalUser.displayName} thành công!\n\n'
+            '👤 Username: ${finalUser.username}\n'
+            '🔑 Mật khẩu: ${event.password}\n'
+            '📧 Vai trò: ${finalUser.role.displayName}');
+
+        if (avatarError != null) {
+          successMessage.writeln(
+              '\n⚠️ Lưu ý: không thể cập nhật ảnh đại diện (${avatarError.trim()}).');
+        }
+
+        emit(UserOperationSuccess(
+          message: successMessage.toString(),
           operationType: UserOperationType.create,
         ));
 
@@ -196,13 +219,23 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
   ) async {
     try {
       final updateData = {
+        'username': event.user.username,
+        'email': event.user.email,
         'fullName': event.user.fullName,
         'saintName': event.user.saintName,
         'phoneNumber': event.user.phoneNumber,
         'address': event.user.address,
         'birthDate': event.user.birthDate?.toIso8601String(),
         'isActive': event.user.isActive,
+        'role': _roleToBackendString(event.user.role),
+        'departmentId': event.user.departmentId ?? event.user.department?.id,
+        'classId': event.user.teacherClassId,
       };
+      updateData.removeWhere(
+        (key, value) =>
+            value == null ||
+            (value is String && value.trim().isEmpty),
+      );
 
       final updatedUser = await _authService.updateUserProfile(
         event.user.id,
@@ -210,8 +243,29 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
       );
 
       if (updatedUser != null) {
+        UserModel finalUser = updatedUser;
+        String? avatarError;
+
+        if (event.avatarFile != null) {
+          try {
+            finalUser = await _authService.uploadUserAvatar(
+              event.user.id,
+              event.avatarFile!,
+            );
+          } catch (e) {
+            avatarError = e.toString();
+          }
+        }
+
+        final messageBuffer = StringBuffer(
+            'Đã cập nhật thông tin ${finalUser.displayName}');
+        if (avatarError != null) {
+          messageBuffer.writeln(
+              '\n⚠️ Không thể cập nhật ảnh đại diện (${avatarError.trim()}).');
+        }
+
         emit(UserOperationSuccess(
-          message: 'Đã cập nhật thông tin ${updatedUser.displayName}',
+          message: messageBuffer.toString(),
           operationType: UserOperationType.update,
         ));
 
@@ -219,7 +273,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
         final currentState = state;
         if (currentState is AdminLoaded) {
           final updatedUsers = currentState.users.map((user) {
-            return user.id == event.user.id ? updatedUser : user;
+            return user.id == event.user.id ? finalUser : user;
           }).toList();
 
           emit(currentState.copyWith(

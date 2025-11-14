@@ -14,6 +14,8 @@ class ManualAttendanceResults extends StatelessWidget {
   final Function(StudentModel) onMarkAttendance; // ✅ SIMPLIFIED
   final Function(StudentModel) onUndoAttendance; // ✅ NEW
   final VoidCallback onClearClassFilter;
+  final ScrollController? scrollController;
+  final bool isLoadingMore;
 
   const ManualAttendanceResults({
     super.key,
@@ -25,6 +27,8 @@ class ManualAttendanceResults extends StatelessWidget {
     required this.onMarkAttendance,
     required this.onUndoAttendance,
     required this.onClearClassFilter,
+    this.scrollController,
+    this.isLoadingMore = false,
   });
 
   @override
@@ -40,9 +44,19 @@ class ManualAttendanceResults extends StatelessWidget {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: filteredResults.length,
+      controller: scrollController,
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+      itemCount: filteredResults.length + (isLoadingMore ? 1 : 0),
       itemBuilder: (context, index) {
+        if (index >= filteredResults.length) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+
         final student = filteredResults[index];
         final studentCode = student.qrId ?? student.id;
         final attendanceStatus = todayStatus?.getStudentStatus(studentCode);

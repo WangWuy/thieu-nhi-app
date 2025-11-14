@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:thieu_nhi_app/core/models/student_model.dart';
+import 'package:thieu_nhi_app/core/services/http_client.dart';
 import 'package:thieu_nhi_app/theme/app_colors.dart';
 
 class StudentProfileCard extends StatelessWidget {
@@ -27,21 +28,7 @@ class StudentProfileCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: _getDepartmentGradient(student.department),
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Icon(
-                  Icons.person,
-                  color: Colors.white,
-                  size: 32,
-                ),
-              ),
+              _buildAvatar(),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
@@ -121,6 +108,39 @@ class StudentProfileCard extends StatelessWidget {
     );
   }
 
+  Widget _buildAvatar() {
+    final imageUrl = _resolveAvatarUrl(student.avatarUrl ?? student.photoUrl);
+
+    return Container(
+      width: 60,
+      height: 60,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: _getDepartmentGradient(student.department),
+        ),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: imageUrl != null
+            ? Image.network(
+                imageUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const Icon(
+                  Icons.person,
+                  color: Colors.white,
+                  size: 32,
+                ),
+              )
+            : const Icon(
+                Icons.person,
+                color: Colors.white,
+                size: 32,
+              ),
+      ),
+    );
+  }
+
   Widget _buildInfoRow(String label, String value, IconData icon,
       {bool isLast = false}) {
     return Padding(
@@ -183,5 +203,13 @@ class StudentProfileCard extends StatelessWidget {
       default:
         return [AppColors.primary, AppColors.secondary];
     }
+  }
+
+  String? _resolveAvatarUrl(String? path) {
+    if (path == null || path.isEmpty) return null;
+    if (path.startsWith('http')) return path;
+    final base = HttpClient().apiBaseUrl;
+    if (path.startsWith('/')) return '$base$path';
+    return '$base/$path';
   }
 }

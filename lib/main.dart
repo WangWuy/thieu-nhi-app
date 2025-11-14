@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:thieu_nhi_app/core/services/auth_service.dart';
 import 'package:thieu_nhi_app/core/services/student_service.dart';
 import 'package:thieu_nhi_app/core/services/class_service.dart';
@@ -104,6 +105,15 @@ class _ThieuNhiAppState extends State<ThieuNhiApp> {
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
         themeMode: ThemeMode.light,
+        supportedLocales: const [
+          Locale('en'),
+          Locale('vi', 'VN'),
+        ],
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
         routerConfig: AppRouter.router,
         debugShowCheckedModeBanner: false,
       ),
