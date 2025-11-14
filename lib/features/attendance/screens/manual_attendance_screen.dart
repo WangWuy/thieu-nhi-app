@@ -11,7 +11,6 @@ import 'package:thieu_nhi_app/features/attendance/bloc/attendance_event.dart';
 import 'package:thieu_nhi_app/features/attendance/bloc/attendance_state.dart';
 import 'package:thieu_nhi_app/features/attendance/screens/widgets/manual_attendance_search_bar.dart';
 import 'package:thieu_nhi_app/features/attendance/screens/widgets/manual_attendance_class_filter.dart';
-import 'package:thieu_nhi_app/features/attendance/screens/widgets/manual_attendance_summary.dart';
 import 'package:thieu_nhi_app/features/attendance/screens/widgets/manual_attendance_results.dart';
 import 'package:thieu_nhi_app/theme/app_colors.dart';
 
