@@ -8,12 +8,10 @@ import 'package:thieu_nhi_app/features/attendance/screens/widgets/manual_attenda
 class ManualAttendanceResults extends StatelessWidget {
   final TextEditingController searchController;
   final List<StudentModel> filteredResults;
-  final String? selectedClassFilter;
   final TodayAttendanceStatus? todayStatus;
   final AttendanceState attendanceState;
   final Function(StudentModel) onMarkAttendance; // ✅ SIMPLIFIED
   final Function(StudentModel) onUndoAttendance; // ✅ NEW
-  final VoidCallback onClearClassFilter;
   final ScrollController? scrollController;
   final bool isLoadingMore;
 
@@ -21,12 +19,10 @@ class ManualAttendanceResults extends StatelessWidget {
     super.key,
     required this.searchController,
     required this.filteredResults,
-    required this.selectedClassFilter,
     required this.todayStatus,
     required this.attendanceState,
     required this.onMarkAttendance,
     required this.onUndoAttendance,
-    required this.onClearClassFilter,
     this.scrollController,
     this.isLoadingMore = false,
   });
@@ -103,9 +99,7 @@ class ManualAttendanceResults extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            selectedClassFilter != null
-                ? 'Không tìm thấy thiếu nhi nào trong lớp "$selectedClassFilter"'
-                : 'Không tìm thấy thiếu nhi nào',
+            'Không tìm thấy thiếu nhi nào',
             style: TextStyle(
               fontSize: 16,
               color: Colors.grey[600],
@@ -113,13 +107,6 @@ class ManualAttendanceResults extends StatelessWidget {
             ),
             textAlign: TextAlign.center,
           ),
-          if (selectedClassFilter != null) ...[
-            const SizedBox(height: 12),
-            TextButton(
-              onPressed: onClearClassFilter,
-              child: const Text('Xem tất cả kết quả'),
-            ),
-          ],
         ],
       ),
     );

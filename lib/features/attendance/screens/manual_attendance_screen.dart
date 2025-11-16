@@ -1,7 +1,6 @@
 // manual_attendance_screen.dart - COMPLETE UPDATED VERSION
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:thieu_nhi_app/core/services/class_service.dart';
 import 'package:thieu_nhi_app/core/services/student_service.dart';
 import 'package:thieu_nhi_app/core/services/attendance_service.dart';
 import 'package:thieu_nhi_app/core/models/student_model.dart';
@@ -10,7 +9,6 @@ import 'package:thieu_nhi_app/features/attendance/bloc/attendance_bloc.dart';
 import 'package:thieu_nhi_app/features/attendance/bloc/attendance_event.dart';
 import 'package:thieu_nhi_app/features/attendance/bloc/attendance_state.dart';
 import 'package:thieu_nhi_app/features/attendance/screens/widgets/manual_attendance_search_bar.dart';
-import 'package:thieu_nhi_app/features/attendance/screens/widgets/manual_attendance_class_filter.dart';
 import 'package:thieu_nhi_app/features/attendance/screens/widgets/manual_attendance_results.dart';
 import 'package:thieu_nhi_app/theme/app_colors.dart';
 
@@ -25,7 +23,6 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
   final TextEditingController _searchController = TextEditingController();
   final StudentService _studentService = StudentService();
   final AttendanceService _attendanceService = AttendanceService();
-  final ClassService _classService = ClassService();
   static const int _pageSize = 10;
   late final ScrollController _resultsScrollController;
 
@@ -35,11 +32,7 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
   bool _hasMore = true;
   int _currentPage = 1;
   TodayAttendanceStatus? _todayStatus;
-  String? _selectedClassFilter;
-  String? _currentClassId;
   String? _currentSearchQuery;
-  List<String> _availableClasses = [];
-  Map<String, int> _classNameToIdMap = {};
   bool _initialDataLoaded = false;
 
   @override
@@ -66,7 +59,7 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
     }
   }
 
-  // UPDATED: Load user's classes first, then auto-select
+  // Load initial list
   void _loadInitialData() async {
     if (_initialDataLoaded) {
       return;
@@ -75,40 +68,16 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
     setState(() => _isSearching = true);
 
     try {
-      // Step 1: Get user's classes based on role
-      final classes = await _getUserClasses();
-      
-      if (classes.isEmpty) {
-        if (mounted) {
-          setState(() {
-            _isSearching = false;
-            _initialDataLoaded = true;
-          });
-        }
-        return;
-      }
-
-      // Step 2: Auto-select first class
-      final firstClassName = classes.keys.first;
-      final firstClassId = classes[firstClassName];
-      
-      // Step 3: Load students for first class only
       final result = await _studentService.getStudents(
         page: 1,
         limit: _pageSize,
-        classFilter: firstClassId.toString(),
       );
       
       if (mounted && result.isSuccess) {
         final students = result.students ?? [];
-        final sortedClasses = classes.keys.toList()..sort();
 
         setState(() {
           _searchResults = students;
-          _availableClasses = sortedClasses;
-          _classNameToIdMap = classes;
-          _selectedClassFilter = firstClassName; // Auto-select first class
-          _currentClassId = firstClassId?.toString();
           _currentSearchQuery = null;
           _currentPage = result.currentPage ?? 1;
           final totalPages = result.totalPages ?? 1;
@@ -132,32 +101,12 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
     }
   }
 
-  // NEW: Get classes (always full list)
-  Future<Map<String, int>> _getUserClasses() async {
-    try {
-      final classes = await _classService.getClasses();
-      final classMap = <String, int>{};
-
-      for (final classModel in classes) {
-        final classId = int.tryParse(classModel.id) ?? 0;
-        if (classId > 0) {
-          classMap[classModel.name] = classId;
-        }
-      }
-
-      return classMap;
-    } catch (e) {
-      print('❌ Get user classes error: $e');
-      return {};
-    }
-  }
-
   String _getAttendanceType() {
     final now = DateTime.now();
     return now.weekday == 7 ? 'sunday' : 'thursday';
   }
 
-  // UPDATED: Search within current class or reload current class
+  // Search in full list
   void onSearchChanged(String query) {
     final trimmed = query.trim();
     if (trimmed.isNotEmpty && trimmed.length < 2) return;
@@ -185,34 +134,10 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
     }
   }
 
-  Map<String, int> get classStudentCounts {
-    final counts = <String, int>{};
-    for (final student in _searchResults) {
-      final className = student.className;
-      counts[className] = (counts[className] ?? 0) + 1;
-    }
-    return counts;
-  }
-
   List<StudentModel> get filteredResults => _searchResults;
 
   List<String> get filteredStudentCodes {
     return filteredResults.map((s) => s.qrId ?? s.id).toList();
-  }
-
-  // UPDATED: Class filter with server-side filtering
-  void onClassFilterChanged(String? newFilter) async {
-    if (_selectedClassFilter == newFilter) return;
-
-    final classId = newFilter != null ? _classNameToIdMap[newFilter] : null;
-
-    setState(() {
-      _selectedClassFilter = newFilter;
-      _currentClassId = classId?.toString();
-    });
-
-    _resetPagination();
-    _fetchStudents(page: 1);
   }
 
   void onMarkAttendance(StudentModel student) {
@@ -260,7 +185,7 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
     );
   }
 
-  // UPDATED: Keep current class when clearing search
+  // Clear search and reload full list
   void onClearSearch() {
     _searchController.clear();
     _currentSearchQuery = null;
@@ -304,15 +229,6 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
                 onClear: onClearSearch,
                 isSearching: _isSearching,
               ),
-
-              // Class filter - Show when classes are available
-              if (_availableClasses.isNotEmpty)
-                ManualAttendanceClassFilter(
-                  availableClasses: _availableClasses,
-                  selectedClass: _selectedClassFilter,
-                  onClassChanged: onClassFilterChanged,
-                  classStudentCounts: classStudentCounts,
-                ),
 
               // Results
               Expanded(
@@ -377,9 +293,7 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
             Text(
               _searchController.text.trim().isNotEmpty 
                   ? 'Không tìm thấy thiếu nhi nào'
-                  : _selectedClassFilter != null
-                      ? 'Lớp $_selectedClassFilter chưa có thiếu nhi'
-                      : 'Chưa có dữ liệu thiếu nhi',
+                  : 'Chưa có dữ liệu thiếu nhi',
               style: TextStyle(fontSize: 16, color: Colors.grey[600]),
               textAlign: TextAlign.center,
             ),
@@ -392,12 +306,10 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
     return ManualAttendanceResults(
       searchController: _searchController,
       filteredResults: filteredResults,
-      selectedClassFilter: _selectedClassFilter,
       todayStatus: _todayStatus,
       attendanceState: state,
       onMarkAttendance: onMarkAttendance,
       onUndoAttendance: onUndoAttendance,
-      onClearClassFilter: () => onClassFilterChanged(null),
       scrollController: _resultsScrollController,
       isLoadingMore: _isLoadingMore,
     );
@@ -446,7 +358,6 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
         page: page,
         limit: _pageSize,
         search: _currentSearchQuery,
-        classFilter: _currentClassId,
       );
 
       if (!mounted) return;
