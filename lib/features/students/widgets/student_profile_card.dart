@@ -26,44 +26,11 @@ class StudentProfileCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              _buildAvatar(),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      student.name,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.grey800,
-                      ),
-                    ),
-                    if (student.saintName?.isNotEmpty ?? false) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        'Tên Thánh: ${student.saintName}',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: AppColors.grey600,
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 4),
-                    Text(
-                      'Mã TN: ${student.qrId ?? 'N/A'}',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: AppColors.grey600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+          Center(
+            child: GestureDetector(
+              onTap: () => _showAvatarViewer(context),
+              child: _buildAvatar(),
+            ),
           ),
           const SizedBox(height: 20),
           _buildInfoRow('Lớp', '${student.className} - ${student.department}',
@@ -112,16 +79,16 @@ class StudentProfileCard extends StatelessWidget {
     final imageUrl = _resolveAvatarUrl(student.avatarUrl ?? student.photoUrl);
 
     return Container(
-      width: 60,
-      height: 60,
+      width: 300,
+      height: 300,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: _getDepartmentGradient(student.department),
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(90),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(90),
         child: imageUrl != null
             ? Image.network(
                 imageUrl,
@@ -129,15 +96,48 @@ class StudentProfileCard extends StatelessWidget {
                 errorBuilder: (_, __, ___) => const Icon(
                   Icons.person,
                   color: Colors.white,
-                  size: 32,
+                  size: 132,
                 ),
               )
             : const Icon(
                 Icons.person,
                 color: Colors.white,
-                size: 32,
+                size: 132,
               ),
       ),
+    );
+  }
+
+  void _showAvatarViewer(BuildContext context) {
+    final imageUrl = _resolveAvatarUrl(student.avatarUrl ?? student.photoUrl);
+    if (imageUrl == null) return;
+
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.85),
+      builder: (ctx) {
+        return GestureDetector(
+          onTap: () => Navigator.of(ctx).pop(),
+          child: InteractiveViewer(
+            minScale: 0.5,
+            maxScale: 4,
+            child: Center(
+              child: Hero(
+                tag: 'student-avatar-${student.id}',
+                child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => const Icon(
+                    Icons.broken_image,
+                    color: Colors.white70,
+                    size: 64,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 

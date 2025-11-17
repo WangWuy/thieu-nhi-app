@@ -58,11 +58,12 @@ class LoadStudentsByDepartment extends StudentsEvent {
 
 class LoadStudentDetail extends StudentsEvent {
   final String studentId;
+  final bool forceRefresh;
 
-  const LoadStudentDetail(this.studentId);
+  const LoadStudentDetail(this.studentId, {this.forceRefresh = false});
 
   @override
-  List<Object?> get props => [studentId];
+  List<Object?> get props => [studentId, forceRefresh];
 }
 
 class AddStudent extends StudentsEvent {

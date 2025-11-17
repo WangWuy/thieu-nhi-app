@@ -1,4 +1,5 @@
 import '../models/user_model.dart';
+import '../models/attendance_models.dart';
 import '../models/student_model.dart';
 import '../models/class_model.dart';
 import '../models/department_model.dart';
@@ -7,9 +8,23 @@ import '../models/department_model.dart';
 class BackendStudentAdapter {
   static StudentModel fromBackendJson(Map<String, dynamic> json) {
     try {
+      final classData = json['class'] as Map<String, dynamic>?;
+      final departmentData =
+          classData?['department'] as Map<String, dynamic>?;
+      final academicYear = json['academicYear'] as Map<String, dynamic>?;
+      final attendanceRecords = (json['attendance'] as List?)
+          ?.whereType<Map<String, dynamic>>()
+          .map(AttendanceRecord.fromJson)
+          .toList();
+      final calculatedStats =
+          json['calculatedStats'] as Map<String, dynamic>?;
+      final progressData =
+          calculatedStats?['attendanceProgress'] as Map<String, dynamic>?;
+
       return StudentModel(
         id: json['id'].toString(),
         qrId: json['studentCode'],
+        qrRawData: json['qrCode'],
         name: json['fullName'] ?? '',
         phone: json['phoneNumber'] ?? '',
         parentPhone: json['parentPhone1'] ?? '',
@@ -17,13 +32,16 @@ class BackendStudentAdapter {
         birthDate: _parseDate(json['birthDate']) ??
             DateTime.now().subtract(const Duration(days: 3650)),
         classId: json['classId'].toString(),
-        className: json['class']?['name'] ?? 'Unknown',
-        department: json['class']?['department']?['displayName'] ?? 'Unknown',
+        className: classData?['name'] ?? 'Unknown',
+        department:
+            departmentData?['displayName'] ?? departmentData?['name'] ?? 'Unknown',
         attendance: const {},
         grades: _parseGrades(json),
         note: json['note'],
         photoUrl: _getStudentPhoto(json),
         avatarUrl: _getStudentAvatar(json),
+        avatarPublicId: json['avatarPublicId']?.toString(),
+        isActive: json['isActive'],
         createdAt: _parseDate(json['createdAt']) ?? DateTime.now(),
         updatedAt: _parseDate(json['updatedAt']) ?? DateTime.now(),
 
@@ -33,8 +51,30 @@ class BackendStudentAdapter {
         thursdayAttendanceCount: _parseInt(json['thursdayAttendanceCount']),
         sundayAttendanceCount: _parseInt(json['sundayAttendanceCount']),
         attendanceAverage: _parseDouble(json['attendanceAverage']),
+        study45Hk1: _parseDouble(json['study45Hk1']),
+        examHk1: _parseDouble(json['examHk1']),
+        study45Hk2: _parseDouble(json['study45Hk2']),
+        examHk2: _parseDouble(json['examHk2']),
         studyAverage: _parseDouble(json['studyAverage']),
         finalAverage: _parseDouble(json['finalAverage']),
+        academicYearId: json['academicYearId'] ?? academicYear?['id'],
+        academicYearName: academicYear?['name'],
+        academicYearTotalWeeks: academicYear?['totalWeeks'],
+        academicYearStartDate: _parseDate(academicYear?['startDate']),
+        academicYearEndDate: _parseDate(academicYear?['endDate']),
+        academicYearIsActive: academicYear?['isActive'],
+        academicYearIsCurrent: academicYear?['isCurrent'],
+        thursdayScore: _parseDouble(json['thursdayScore']),
+        sundayScore: _parseDouble(json['sundayScore']),
+        thursdayProgress: progressData?['thursday'] != null
+            ? AttendanceProgress.fromJson(
+                Map<String, dynamic>.from(progressData!['thursday']))
+            : null,
+        sundayProgress: progressData?['sunday'] != null
+            ? AttendanceProgress.fromJson(
+                Map<String, dynamic>.from(progressData!['sunday']))
+            : null,
+        recentAttendance: attendanceRecords,
       );
     } catch (e) {
       print('Error parsing student: $e');
@@ -71,6 +111,8 @@ class BackendStudentAdapter {
   static StudentModel _createFallbackStudent(Map<String, dynamic> json) {
     return StudentModel(
       id: json['id']?.toString() ?? 'unknown',
+      qrId: json['studentCode'],
+      qrRawData: json['qrCode'],
       name: json['fullName'] ?? 'Unknown Student',
       phone: '',
       parentPhone: '',
@@ -83,6 +125,8 @@ class BackendStudentAdapter {
       grades: const [0.0],
       photoUrl: null,
       avatarUrl: null,
+      avatarPublicId: null,
+      isActive: json['isActive'],
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );

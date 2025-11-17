@@ -58,14 +58,18 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
   void _loadStudentData({bool forceRefresh = false}) {
     // Always load from API to ensure fresh data
     if (forceRefresh || _isInitialLoad) {
-      context.read<StudentsBloc>().add(LoadStudentDetail(widget.studentId));
+      context
+          .read<StudentsBloc>()
+          .add(LoadStudentDetail(widget.studentId, forceRefresh: forceRefresh));
       _isInitialLoad = false;
     }
   }
 
   Future<void> _onRefresh() async {
     _lastRefreshed = DateTime.now();
-    context.read<StudentsBloc>().add(LoadStudentDetail(widget.studentId));
+    context
+        .read<StudentsBloc>()
+        .add(LoadStudentDetail(widget.studentId, forceRefresh: true));
     
     // Add small delay to show refresh indicator
     await Future.delayed(const Duration(milliseconds: 500));
@@ -106,7 +110,7 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
           },
         child: BlocBuilder<StudentsBloc, StudentsState>(
           builder: (context, state) {
-            if (state is StudentsLoading && _isInitialLoad) {
+            if (state is StudentsLoading && student == null) {
               return _buildLoadingScreen();
             }
 

@@ -21,6 +21,8 @@ class StudentModel extends Equatable {
 
   final String? photoUrl;
   final String? avatarUrl;
+  final String? avatarPublicId;
+  final bool? isActive;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -39,6 +41,14 @@ class StudentModel extends Equatable {
   final int? academicYearId;
   final String? academicYearName;
   final int? academicYearTotalWeeks;
+  final DateTime? academicYearStartDate;
+  final DateTime? academicYearEndDate;
+  final bool? academicYearIsCurrent;
+  final bool? academicYearIsActive;
+  final double? thursdayScore;
+  final double? sundayScore;
+  final AttendanceProgress? thursdayProgress;
+  final AttendanceProgress? sundayProgress;
   final List<AttendanceRecord>? recentAttendance;
 
   const StudentModel({
@@ -57,6 +67,8 @@ class StudentModel extends Equatable {
     required this.grades,
     this.photoUrl,
     this.avatarUrl,
+    this.avatarPublicId,
+    this.isActive,
     required this.createdAt,
     required this.updatedAt,
     // New fields
@@ -74,6 +86,14 @@ class StudentModel extends Equatable {
     this.academicYearId,
     this.academicYearName,
     this.academicYearTotalWeeks,
+    this.academicYearStartDate,
+    this.academicYearEndDate,
+    this.academicYearIsCurrent,
+    this.academicYearIsActive,
+    this.thursdayScore,
+    this.sundayScore,
+    this.thursdayProgress,
+    this.sundayProgress,
     this.recentAttendance,
     this.note,
   });
@@ -117,6 +137,8 @@ class StudentModel extends Equatable {
     List<double>? grades,
     String? photoUrl,
     String? avatarUrl,
+    String? avatarPublicId,
+    bool? isActive,
     DateTime? createdAt,
     DateTime? updatedAt,
     String? note,
@@ -136,6 +158,14 @@ class StudentModel extends Equatable {
     int? academicYearId,
     String? academicYearName,
     int? academicYearTotalWeeks,
+    DateTime? academicYearStartDate,
+    DateTime? academicYearEndDate,
+    bool? academicYearIsCurrent,
+    bool? academicYearIsActive,
+    double? thursdayScore,
+    double? sundayScore,
+    AttendanceProgress? thursdayProgress,
+    AttendanceProgress? sundayProgress,
     List<AttendanceRecord>? recentAttendance,
   }) {
     return StudentModel(
@@ -154,6 +184,8 @@ class StudentModel extends Equatable {
       grades: grades ?? this.grades,
       photoUrl: photoUrl ?? this.photoUrl,
       avatarUrl: avatarUrl ?? this.avatarUrl,
+      avatarPublicId: avatarPublicId ?? this.avatarPublicId,
+      isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       note: note ?? this.note,
@@ -173,6 +205,14 @@ class StudentModel extends Equatable {
       academicYearId: academicYearId ?? this.academicYearId,
       academicYearName: academicYearName ?? this.academicYearName,
       academicYearTotalWeeks: academicYearTotalWeeks ?? this.academicYearTotalWeeks,
+      academicYearStartDate: academicYearStartDate ?? this.academicYearStartDate,
+      academicYearEndDate: academicYearEndDate ?? this.academicYearEndDate,
+      academicYearIsCurrent: academicYearIsCurrent ?? this.academicYearIsCurrent,
+      academicYearIsActive: academicYearIsActive ?? this.academicYearIsActive,
+      thursdayScore: thursdayScore ?? this.thursdayScore,
+      sundayScore: sundayScore ?? this.sundayScore,
+      thursdayProgress: thursdayProgress ?? this.thursdayProgress,
+      sundayProgress: sundayProgress ?? this.sundayProgress,
       recentAttendance: recentAttendance ?? this.recentAttendance,
     );
   }
@@ -194,6 +234,8 @@ class StudentModel extends Equatable {
         grades,
         photoUrl,
         avatarUrl,
+        avatarPublicId,
+        isActive,
         createdAt,
         updatedAt,
         // New props
@@ -211,8 +253,46 @@ class StudentModel extends Equatable {
         academicYearId,
         academicYearName,
         academicYearTotalWeeks,
+        academicYearStartDate,
+        academicYearEndDate,
+        academicYearIsCurrent,
+        academicYearIsActive,
+        thursdayScore,
+        sundayScore,
+        thursdayProgress,
+        sundayProgress,
         recentAttendance,
       ];
+}
+
+class AttendanceProgress extends Equatable {
+  final int attended;
+  final int total;
+  final int percentage;
+  final double? score;
+
+  const AttendanceProgress({
+    required this.attended,
+    required this.total,
+    required this.percentage,
+    this.score,
+  });
+
+  factory AttendanceProgress.fromJson(Map<String, dynamic> json) {
+    return AttendanceProgress(
+      attended: _parseInt(json['attended']),
+      total: _parseInt(json['total']),
+      percentage: _parseInt(json['percentage']),
+      score: _parseDouble(json['score']),
+    );
+  }
+
+  @override
+  List<Object?> get props => [attended, total, percentage, score];
+
+  static int _parseInt(dynamic value) => int.tryParse(value?.toString() ?? '') ?? 0;
+  static double? _parseDouble(dynamic value) =>
+      value == null ? null : double.tryParse(value.toString());
 }
 
 // StudentAttendanceRecord - specifically for student detail history

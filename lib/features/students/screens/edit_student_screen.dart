@@ -424,7 +424,7 @@ class _EditStudentScreenState extends State<EditStudentScreen>
               ),
           ],
         ),
-        const SizedBox(width: 16),
+        const SizedBox(width: 20),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

@@ -206,6 +206,8 @@ class StudentsBloc extends Bloc<StudentsEvent, StudentsState> {
     LoadStudentDetail event,
     Emitter<StudentsState> emit,
   ) async {
+    StudentModel? cachedStudent;
+
     try {
       final currentState = state;
 
@@ -214,31 +216,22 @@ class StudentsBloc extends Bloc<StudentsEvent, StudentsState> {
         add(SaveNavigationState(currentState));
 
         // Find student in current state first
-        final cachedStudent = currentState.students
+        cachedStudent = currentState.students
             .where((s) => s.id == event.studentId)
             .firstOrNull;
-
-        // If found and data is fresh, use cached version
-        if (cachedStudent != null && _isDataFresh(currentState.lastUpdated)) {
-          emit(StudentDetailLoaded(
-            student: cachedStudent,
-            lastUpdated: currentState.lastUpdated,
-          ));
-          return;
-        }
       }
 
       // Also check memory cache
-      final cachedStudent = _studentCache[event.studentId];
-      if (cachedStudent != null) {
+      cachedStudent ??= _studentCache[event.studentId];
+      final shouldUseCache = cachedStudent != null && !event.forceRefresh;
+
+      if (shouldUseCache) {
         emit(StudentDetailLoaded(
           student: cachedStudent,
           lastUpdated: DateTime.now(),
         ));
-
-        // Load fresh data in background
-        _loadStudentDetailInBackground(event.studentId);
-        return;
+      } else {
+        emit(const StudentsLoading());
       }
 
       // Load from API if not found in current state or cache
@@ -253,16 +246,28 @@ class StudentsBloc extends Bloc<StudentsEvent, StudentsState> {
           lastUpdated: DateTime.now(),
         ));
       } else {
-        emit(const StudentsError(
-          message: 'Không tìm thấy thông tin thiếu nhi',
-          errorCode: 'STUDENT_NOT_FOUND',
-        ));
+        if (cachedStudent != null) {
+          emit(StudentDetailLoaded(
+            student: cachedStudent,
+            lastUpdated: DateTime.now(),
+          ));
+        } else {
+          emit(const StudentsError(
+            message: 'Không tìm thấy thông tin thiếu nhi',
+            errorCode: 'STUDENT_NOT_FOUND',
+          ));
+        }
       }
     } catch (e) {
-      emit(StudentsError(
-        message: 'Không thể tải thông tin thiếu nhi: ${_formatError(e)}',
-        errorCode: 'LOAD_STUDENT_DETAIL_ERROR',
-      ));
+      if (cachedStudent != null) {
+        // Keep showing cached data and log error silently
+        print('Không thể tải thông tin thiếu nhi mới nhất: $e');
+      } else {
+        emit(StudentsError(
+          message: 'Không thể tải thông tin thiếu nhi: ${_formatError(e)}',
+          errorCode: 'LOAD_STUDENT_DETAIL_ERROR',
+        ));
+      }
     }
   }
 
