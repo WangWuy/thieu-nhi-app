@@ -245,7 +245,6 @@ class EditProfileForm extends StatelessWidget {
 
   Widget _buildReadOnlyInfo(BuildContext context) {
     final theme = Theme.of(context);
-    final muted = theme.colorScheme.onSurface.withOpacity(0.7);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(

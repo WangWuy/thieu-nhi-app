@@ -475,7 +475,6 @@ class _EditStudentScreenState extends State<EditStudentScreen>
 
   Widget _buildBirthDateField() {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final borderColor = theme.dividerColor;
     final muted = theme.colorScheme.onSurface.withOpacity(0.7);
     return GestureDetector(

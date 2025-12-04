@@ -1,4 +1,3 @@
-// lib/features/auth/widgets/modern_text_field.dart
 import 'package:flutter/material.dart';
 
 class ModernTextField extends StatelessWidget {
@@ -48,7 +47,7 @@ class ModernTextField extends StatelessWidget {
           color: decorationTheme.prefixIconColor ?? theme.colorScheme.primary,
           size: 18,
         ),
-        filled: decorationTheme.filled ?? baseDecoration.filled ?? true,
+        filled: decorationTheme.filled,
         contentPadding: decorationTheme.contentPadding ??
             baseDecoration.contentPadding ??
             const EdgeInsets.symmetric(horizontal: 16, vertical: 14),

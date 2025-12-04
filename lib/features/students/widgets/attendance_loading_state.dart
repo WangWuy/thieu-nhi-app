@@ -1,6 +1,4 @@
-// lib/features/students/widgets/attendance_loading_state.dart
 import 'package:flutter/material.dart';
-import 'package:thieu_nhi_app/theme/app_colors.dart';
 
 class AttendanceLoadingState extends StatelessWidget {
   const AttendanceLoadingState({super.key});

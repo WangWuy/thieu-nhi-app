@@ -550,7 +550,6 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
 
   Widget _buildRoleSelector() {
     final theme = Theme.of(context);
-    final muted = theme.colorScheme.onSurface.withOpacity(0.7);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

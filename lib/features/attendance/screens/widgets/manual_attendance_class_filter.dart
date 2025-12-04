@@ -24,7 +24,6 @@ class ManualAttendanceClassFilter extends StatelessWidget {
     final theme = Theme.of(context);
     final muted = theme.colorScheme.onSurface.withOpacity(0.7);
     final borderColor = theme.dividerColor;
-    final isDark = theme.brightness == Brightness.dark;
 
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),

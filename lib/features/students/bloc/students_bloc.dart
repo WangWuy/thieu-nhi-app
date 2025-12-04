@@ -271,31 +271,6 @@ class StudentsBloc extends Bloc<StudentsEvent, StudentsState> {
     }
   }
 
-  // Background refresh for student detail
-  Future<void> _loadStudentDetailInBackground(String studentId) async {
-    try {
-      final student = await _studentService.getStudentById(studentId);
-      if (student != null) {
-        // Update cache silently
-        _studentCache[student.id] = student;
-
-        // Update state if still viewing the same student
-        if (!isClosed && state is StudentDetailLoaded) {
-          final currentDetailState = state as StudentDetailLoaded;
-          if (currentDetailState.student.id == studentId) {
-            emit(StudentDetailLoaded(
-              student: student,
-              lastUpdated: DateTime.now(),
-            ));
-          }
-        }
-      }
-    } catch (e) {
-      // Silent fail for background refresh
-      print('Background refresh failed for student $studentId: $e');
-    }
-  }
-
   Future<void> _onAddStudent(
     AddStudent event,
     Emitter<StudentsState> emit,

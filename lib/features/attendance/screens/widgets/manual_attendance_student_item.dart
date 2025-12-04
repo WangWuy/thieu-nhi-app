@@ -35,7 +35,6 @@ class ManualAttendanceStudentItem extends StatelessWidget {
         : theme.dividerColor;
     final shadowColor =
         isDark ? Colors.black.withOpacity(0.25) : Colors.black.withOpacity(0.05);
-    final mutedColor = theme.colorScheme.onSurface.withOpacity(0.7);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),

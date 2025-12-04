@@ -1,4 +1,3 @@
-// lib/core/router/app_router.dart - UPDATED WITH ENHANCED CLASSES ROUTE
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -142,7 +141,6 @@ class AppRouter {
             path: '/student/:studentId/edit',
             name: 'edit-student',
             builder: (context, state) {
-              final studentId = state.pathParameters['studentId']!;
               final studentData = state.extra as StudentModel?;
 
               if (studentData == null) {
@@ -188,7 +186,6 @@ class AppRouter {
             path: '/admin/accounts/edit/:userId',
             name: 'edit-account',
             builder: (context, state) {
-              final userId = state.pathParameters['userId']!;
               final accountData = state.extra as UserModel?;
 
               return ProtectedRouteWrapper(

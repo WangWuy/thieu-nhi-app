@@ -1,6 +1,4 @@
-// lib/features/students/widgets/attendance_stat_item.dart
 import 'package:flutter/material.dart';
-import 'package:thieu_nhi_app/theme/app_colors.dart';
 
 class AttendanceStatItem extends StatelessWidget {
   final String label;

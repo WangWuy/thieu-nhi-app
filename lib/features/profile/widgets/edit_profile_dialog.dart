@@ -165,7 +165,6 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
 
   Widget _buildActions() {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final borderColor = theme.dividerColor;
     return Container(
       padding: const EdgeInsets.all(24),

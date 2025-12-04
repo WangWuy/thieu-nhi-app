@@ -1,4 +1,3 @@
-// lib/features/classes/screens/all_classes_screen.dart - NEW FILE
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -13,7 +12,7 @@ import 'package:thieu_nhi_app/features/classes/widgets/class_management_card.dar
 import 'package:thieu_nhi_app/theme/app_colors.dart';
 
 class AllClassesScreen extends StatefulWidget {
-  final String initialFilter; // 'all' or department name
+  final String initialFilter;
 
   const AllClassesScreen({super.key, required this.initialFilter});
 
@@ -43,7 +42,6 @@ class _AllClassesScreenState extends State<AllClassesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: _manager.refreshData,

@@ -1,6 +1,4 @@
-// lib/features/students/widgets/attendance_type_summary.dart
 import 'package:flutter/material.dart';
-import 'package:thieu_nhi_app/theme/app_colors.dart';
 
 class AttendanceTypeSummary extends StatelessWidget {
   final String title;

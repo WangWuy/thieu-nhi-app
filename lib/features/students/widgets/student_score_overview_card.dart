@@ -11,7 +11,6 @@ class StudentScoreOverviewCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final mutedColor = theme.colorScheme.onSurface.withOpacity(0.7);
     final shadowColor =
         isDark ? Colors.black.withOpacity(0.35) : Colors.black.withOpacity(0.1);
 

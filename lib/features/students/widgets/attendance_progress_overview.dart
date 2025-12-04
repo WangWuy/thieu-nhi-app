@@ -28,7 +28,7 @@ class AttendanceProgressOverview extends StatelessWidget {
     }
 
     final thursdayWeeks =
-        _buildAttendanceMap('thursday', startDate!, totalWeeks);
+        _buildAttendanceMap('thursday', startDate, totalWeeks);
     final sundayWeeks = _buildAttendanceMap('sunday', startDate, totalWeeks);
     final weeks = List<int>.generate(totalWeeks, (index) => index + 1);
 

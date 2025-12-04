@@ -324,7 +324,6 @@ class _StudentListScreenState extends State<StudentListScreen>
   Widget _buildTeacherFilters() {
     final theme = Theme.of(context);
     final borderColor = theme.dividerColor;
-    final muted = theme.colorScheme.onSurface.withOpacity(0.7);
     return SliverToBoxAdapter(
       child: Container(
         padding: const EdgeInsets.all(16),
