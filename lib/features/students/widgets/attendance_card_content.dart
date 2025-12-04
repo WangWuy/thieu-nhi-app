@@ -2,12 +2,10 @@
 import 'package:flutter/material.dart';
 import 'package:thieu_nhi_app/core/models/student_model.dart';
 import 'package:thieu_nhi_app/core/models/student_attendance_history.dart';
-import 'package:thieu_nhi_app/theme/app_colors.dart';
 import 'attendance_loading_state.dart';
 import 'attendance_error_state.dart';
-import 'attendance_records_list.dart';
-import 'attendance_summary_view.dart';
 import 'attendance_quick_stats.dart';
+import 'attendance_progress_overview.dart';
 
 class AttendanceCardContent extends StatelessWidget {
   final StudentModel student;
@@ -46,21 +44,17 @@ class AttendanceCardContent extends StatelessWidget {
       );
     }
 
-    // Show content based on available data
+    final records = attendanceHistory?.records ?? [];
+
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Main content
-        if (_hasRecentAttendance()) ...[
-          AttendanceRecordsList(
-            records: attendanceHistory!.records.take(10).toList(),
-          ),
-          if (attendanceHistory!.pagination.total > 10) ...[
-            const SizedBox(height: 12),
-            _buildViewAllButton(),
-          ],
-        ] else ...[
-          AttendanceSummaryView(student: student),
-        ],
+        AttendanceProgressOverview(
+          student: student,
+          records: records,
+          isLoading: isLoadingHistory,
+          onViewHistory: onViewAll,
+        ),
 
         // Quick stats (if available)
         if (attendanceStats != null) ...[
@@ -71,22 +65,5 @@ class AttendanceCardContent extends StatelessWidget {
         ],
       ],
     );
-  }
-
-  Widget _buildViewAllButton() {
-    return Center(
-      child: OutlinedButton.icon(
-        onPressed: onViewAll,
-        icon: const Icon(Icons.visibility, size: 18),
-        label: Text('Xem tất cả (${attendanceHistory!.pagination.total})'),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.primary,
-        ),
-      ),
-    );
-  }
-
-  bool _hasRecentAttendance() {
-    return attendanceHistory?.records.isNotEmpty ?? false;
   }
 }

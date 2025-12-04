@@ -160,13 +160,17 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
   }
 
   Widget _buildLoadingScreen() {
+    final theme = Theme.of(context);
+    final onSurface = theme.appBarTheme.foregroundColor ??
+        theme.colorScheme.onSurface;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Đang tải...'),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
+        backgroundColor:
+            theme.appBarTheme.backgroundColor ?? theme.colorScheme.surface,
+        foregroundColor: onSurface,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back, color: onSurface),
           onPressed: _onBackPressed,
         ),
       ),
@@ -184,19 +188,23 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
   }
 
   Widget _buildErrorScreen(String message) {
+    final theme = Theme.of(context);
+    final onSurface = theme.appBarTheme.foregroundColor ??
+        theme.colorScheme.onSurface;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Lỗi'),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
+        backgroundColor:
+            theme.appBarTheme.backgroundColor ?? theme.colorScheme.surface,
+        foregroundColor: onSurface,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back, color: onSurface),
           onPressed: _onBackPressed,
         ),
         actions: [
           IconButton(
             onPressed: () => _loadStudentData(forceRefresh: true),
-            icon: const Icon(Icons.refresh),
+            icon: Icon(Icons.refresh, color: onSurface),
             tooltip: 'Thử lại',
           ),
         ],
@@ -246,13 +254,17 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
   }
 
   Widget _buildNotFoundScreen() {
+    final theme = Theme.of(context);
+    final onSurface = theme.appBarTheme.foregroundColor ??
+        theme.colorScheme.onSurface;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Không tìm thấy'),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
+        backgroundColor:
+            theme.appBarTheme.backgroundColor ?? theme.colorScheme.surface,
+        foregroundColor: onSurface,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back, color: onSurface),
           onPressed: () => context.pop(),
         ),
       ),
@@ -425,17 +437,21 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
   }
 
   Widget _buildSliverAppBar({bool isRefreshing = false}) {
+    final theme = Theme.of(context);
+    final onSurface = theme.appBarTheme.foregroundColor ??
+        theme.colorScheme.onSurface;
     return SliverAppBar(
       floating: false,
       pinned: true,
-      backgroundColor: AppColors.primary,
+      backgroundColor:
+          theme.appBarTheme.backgroundColor ?? theme.colorScheme.surface,
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             student?.name ?? 'Chi tiết thiếu nhi',
-            style: const TextStyle(
-              color: Colors.white,
+            style: theme.textTheme.titleLarge?.copyWith(
+              color: onSurface,
               fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
@@ -443,8 +459,8 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
           if (_lastRefreshed != null) ...[
             Text(
               'Cập nhật: ${_formatTime(_lastRefreshed!)}',
-              style: const TextStyle(
-                color: Colors.white70,
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: onSurface.withOpacity(0.7),
                 fontSize: 12,
               ),
             ),
@@ -452,7 +468,7 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
         ],
       ),
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: Colors.white),
+        icon: Icon(Icons.arrow_back, color: onSurface),
         onPressed: _onBackPressed,
       ),
       actions: [
@@ -471,11 +487,11 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
         else
           IconButton(
             onPressed: _onRefresh,
-            icon: const Icon(Icons.refresh, color: Colors.white),
+            icon: Icon(Icons.refresh, color: onSurface),
             tooltip: 'Làm mới',
           ),
         PopupMenuButton<String>(
-          icon: const Icon(Icons.more_vert, color: Colors.white),
+          icon: Icon(Icons.more_vert, color: onSurface),
           onSelected: (value) {
             switch (value) {
               case 'edit':

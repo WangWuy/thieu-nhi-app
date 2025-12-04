@@ -16,6 +16,7 @@ import 'package:thieu_nhi_app/features/auth/bloc/auth_event.dart';
 import 'package:thieu_nhi_app/features/classes/bloc/classes_bloc.dart';
 import 'package:thieu_nhi_app/features/students/bloc/students_bloc.dart';
 import 'package:thieu_nhi_app/theme/app_theme.dart';
+import 'package:thieu_nhi_app/theme/theme_cubit.dart';
 import 'core/router/app_router.dart';
 
 void main() async {
@@ -97,25 +98,33 @@ class _ThieuNhiAppState extends State<ThieuNhiApp> {
           ),
         ),
 
+        BlocProvider<ThemeCubit>(
+          create: (_) => ThemeCubit(),
+        ),
+
         // NOTE: DashboardCubit is now created locally in DashboardScreen
         // This reduces global state and improves performance
       ],
-      child: MaterialApp.router(
-        title: 'Thiếu Nhi Giáo xử Thiên Ân',
-        theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
-        themeMode: ThemeMode.light,
-        supportedLocales: const [
-          Locale('en'),
-          Locale('vi', 'VN'),
-        ],
-        localizationsDelegates: const [
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        routerConfig: AppRouter.router,
-        debugShowCheckedModeBanner: false,
+      child: BlocBuilder<ThemeCubit, ThemeMode>(
+        builder: (context, themeMode) {
+          return MaterialApp.router(
+            title: 'Thiếu Nhi Giáo xử Thiên Ân',
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: themeMode,
+            supportedLocales: const [
+              Locale('en'),
+              Locale('vi', 'VN'),
+            ],
+            localizationsDelegates: const [
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            routerConfig: AppRouter.router,
+            debugShowCheckedModeBanner: false,
+          );
+        },
       ),
     );
   }

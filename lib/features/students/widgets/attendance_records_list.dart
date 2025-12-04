@@ -28,13 +28,16 @@ class AttendanceRecordItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final mutedColor = theme.colorScheme.onSurface.withOpacity(0.7);
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: record.isPresent
-            ? AppColors.success.withOpacity(0.1)
-            : AppColors.error.withOpacity(0.1),
+            ? AppColors.success.withOpacity(isDark ? 0.2 : 0.1)
+            : AppColors.error.withOpacity(isDark ? 0.2 : 0.1),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: record.isPresent
@@ -56,20 +59,20 @@ class AttendanceRecordItem extends StatelessWidget {
               children: [
                 Text(
                   _formatDate(record.attendanceDate),
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+                  style: theme.textTheme.bodyMedium
+                      ?.copyWith(fontWeight: FontWeight.w700),
                 ),
                 Row(
                   children: [
                     Text(
                       record.attendanceType == 'thursday' ? 'Thứ 5' : 'Chủ nhật',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.grey600,
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: mutedColor,
                       ),
                     ),
                     if (record.note?.isNotEmpty ?? false) ...[
                       const SizedBox(width: 8),
-                      const Icon(Icons.note, size: 12, color: AppColors.grey500),
+                      Icon(Icons.note, size: 12, color: mutedColor),
                     ],
                   ],
                 ),
@@ -77,9 +80,9 @@ class AttendanceRecordItem extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     record.note!,
-                    style: const TextStyle(
+                    style: theme.textTheme.labelSmall?.copyWith(
                       fontSize: 11,
-                      color: AppColors.grey500,
+                      color: mutedColor,
                       fontStyle: FontStyle.italic,
                     ),
                     maxLines: 1,
@@ -102,9 +105,9 @@ class AttendanceRecordItem extends StatelessWidget {
               if (record.markedAt != null) ...[
                 Text(
                   _formatTime(record.markedAt!),
-                  style: const TextStyle(
+                  style: theme.textTheme.labelSmall?.copyWith(
                     fontSize: 10,
-                    color: AppColors.grey500,
+                    color: mutedColor,
                   ),
                 ),
               ],

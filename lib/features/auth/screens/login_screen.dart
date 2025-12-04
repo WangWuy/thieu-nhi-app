@@ -129,6 +129,7 @@ class _LoginScreenState extends State<LoginScreen>
         FocusManager.instance.primaryFocus?.unfocus();
       },
       child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: BlocListener<AuthBloc, AuthState>(
           listener: (context, state) {
             if (state is AuthAuthenticated) {
@@ -147,19 +148,7 @@ class _LoginScreenState extends State<LoginScreen>
             }
           },
           child: Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFFF8F9FA),
-                  Color(0xFFFFFBF0),
-                  Color(0xFFF5F5DC),
-                  Color(0xFFE6F3FF),
-                ],
-                stops: [0.0, 0.3, 0.7, 1.0],
-              ),
-            ),
+            color: Theme.of(context).scaffoldBackgroundColor,
             child: SafeArea(
               child: FadeTransition(
                 opacity: _fadeAnimation,

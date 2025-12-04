@@ -58,6 +58,10 @@ class _StudentListScreenState extends State<StudentListScreen>
     _searchController.addListener(_onSearchChanged);
   }
 
+  PageStorageKey<String> get _scrollKey => PageStorageKey<String>(
+        'students-scroll-${widget.classId}-${widget.isTeacherView ? 'teacher' : 'class'}',
+      );
+
   void _setupAnimations() {
     _fabAnimationController = AnimationController(
       duration: const Duration(milliseconds: 300),
@@ -260,11 +264,13 @@ class _StudentListScreenState extends State<StudentListScreen>
         }
       },
       builder: (context, state) {
+        final theme = Theme.of(context);
         return RefreshIndicator(
           onRefresh: _onRefresh,
           color: AppColors.primary,
-          backgroundColor: Colors.white,
+          backgroundColor: theme.cardColor,
           child: CustomScrollView(
+            key: _scrollKey,
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
               _buildSliverAppBar(state),
@@ -279,31 +285,34 @@ class _StudentListScreenState extends State<StudentListScreen>
   }
 
   Widget _buildSliverAppBar(StudentsState state) {
+    final theme = Theme.of(context);
+    final onSurface = theme.appBarTheme.foregroundColor ??
+        theme.colorScheme.onSurface;
     return SliverAppBar(
       floating: false,
       pinned: true,
-      backgroundColor: AppColors.primary,
+      backgroundColor: theme.appBarTheme.backgroundColor ??
+          theme.colorScheme.surface,
       title: Text(
         _getAppBarTitle(),
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 20,
+        style: theme.textTheme.titleLarge?.copyWith(
+          color: onSurface,
           fontWeight: FontWeight.bold,
         ),
       ),
       leading: IconButton(
         onPressed: () => context.pop(),
-        icon: const Icon(
+        icon: Icon(
           Icons.arrow_back_ios,
-          color: Colors.white,
+          color: onSurface,
         ),
       ),
       actions: [
         IconButton(
           onPressed: _onRefresh,
-          icon: const Icon(
+          icon: Icon(
             Icons.refresh,
-            color: Colors.white,
+            color: onSurface,
           ),
           tooltip: 'Làm mới',
         ),
@@ -313,14 +322,20 @@ class _StudentListScreenState extends State<StudentListScreen>
 
   // NEW: Teacher filters widget
   Widget _buildTeacherFilters() {
+    final theme = Theme.of(context);
+    final borderColor = theme.dividerColor;
+    final muted = theme.colorScheme.onSurface.withOpacity(0.7);
     return SliverToBoxAdapter(
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.cardColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: borderColor),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withOpacity(
+                  theme.brightness == Brightness.dark ? 0.25 : 0.05),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -329,12 +344,12 @@ class _StudentListScreenState extends State<StudentListScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Bộ lọc xem',
-              style: TextStyle(
+              style: theme.textTheme.titleMedium?.copyWith(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: AppColors.grey800,
+                color: theme.colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 12),
@@ -368,15 +383,19 @@ class _StudentListScreenState extends State<StudentListScreen>
   }
 
   Widget _buildFilterButton(String text, IconData icon, bool isSelected, VoidCallback onTap) {
+    final theme = Theme.of(context);
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : AppColors.grey50,
+          color: isSelected
+              ? AppColors.primary
+              : theme.cardColor,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.grey200,
+            color:
+                isSelected ? AppColors.primary : theme.dividerColor,
           ),
         ),
         child: Row(
@@ -385,7 +404,9 @@ class _StudentListScreenState extends State<StudentListScreen>
             Icon(
               icon,
               size: 18,
-              color: isSelected ? Colors.white : AppColors.grey600,
+              color: isSelected
+                  ? Colors.white
+                  : theme.colorScheme.onSurface.withOpacity(0.7),
             ),
             const SizedBox(width: 8),
             Text(
@@ -393,7 +414,9 @@ class _StudentListScreenState extends State<StudentListScreen>
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: isSelected ? Colors.white : AppColors.grey600,
+                color: isSelected
+                    ? Colors.white
+                    : theme.colorScheme.onSurface.withOpacity(0.7),
               ),
             ),
           ],
@@ -403,10 +426,16 @@ class _StudentListScreenState extends State<StudentListScreen>
   }
 
   Widget _buildSearchBar() {
+    final theme = Theme.of(context);
     return SliverToBoxAdapter(
       child: Container(
         padding: const EdgeInsets.all(16),
-        color: Colors.white,
+        decoration: BoxDecoration(
+          color: theme.cardColor,
+          border: Border(
+            bottom: BorderSide(color: theme.dividerColor),
+          ),
+        ),
         child: CustomTextField(
           controller: _searchController,
           label: 'Tìm kiếm thiếu nhi...',
@@ -569,19 +598,23 @@ class _StudentListScreenState extends State<StudentListScreen>
   }
 
   Widget _buildSimplifiedStudentCard(student) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final borderColor = theme.dividerColor;
+    final muted = theme.colorScheme.onSurface.withOpacity(0.7);
     return GestureDetector(
       onTap: () => context.push('/student/${student.id}'),
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.cardColor,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: AppColors.primary.withOpacity(0.2),
+            color: borderColor,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
+              color: Colors.black.withOpacity(isDark ? 0.25 : 0.08),
               blurRadius: 16,
               offset: const Offset(0, 4),
             ),
@@ -597,10 +630,9 @@ class _StudentListScreenState extends State<StudentListScreen>
                 children: [
                   Text(
                     student.name,
-                    style: const TextStyle(
+                    style: theme.textTheme.titleMedium?.copyWith(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.grey800,
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -608,17 +640,17 @@ class _StudentListScreenState extends State<StudentListScreen>
                     children: [
                       Text(
                         '${student.qrId}',
-                        style: const TextStyle(
+                        style: theme.textTheme.bodyMedium?.copyWith(
                           fontSize: 14,
-                          color: AppColors.grey600,
+                          color: muted,
                         ),
                       ),
                       // Show class name if viewing all students
                       if (widget.isTeacherView && teacherViewMode == 'all') ...[
-                        const Text(' • ', style: TextStyle(color: AppColors.grey600)),
+                        Text(' • ', style: TextStyle(color: muted)),
                         Text(
                           student.className,
-                          style: const TextStyle(
+                          style: theme.textTheme.bodyMedium?.copyWith(
                             fontSize: 14,
                             color: AppColors.primary,
                             fontWeight: FontWeight.w500,
@@ -634,12 +666,12 @@ class _StudentListScreenState extends State<StudentListScreen>
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: AppColors.grey100,
+                color: theme.dividerColor.withOpacity(isDark ? 0.35 : 0.6),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.remove_red_eye,
-                color: AppColors.grey600,
+                color: muted,
                 size: 16,
               ),
             ),

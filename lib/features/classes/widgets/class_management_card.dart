@@ -22,6 +22,15 @@ class ClassManagementCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textColor = theme.colorScheme.onSurface;
+    final mutedColor = textColor.withOpacity(0.7);
+    final borderColor =
+        _getDepartmentColor(department).withOpacity(isDark ? 0.35 : 0.2);
+    final shadowColor =
+        isDark ? Colors.black.withOpacity(0.35) : Colors.black.withOpacity(0.08);
+
     return GestureDetector(
       onTap: () => context.pushNamed(
         'students',
@@ -35,14 +44,12 @@ class ClassManagementCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.cardColor,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: _getDepartmentColor(department).withOpacity(0.2),
-          ),
+          border: Border.all(color: borderColor),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
+              color: shadowColor,
               blurRadius: 16,
               offset: const Offset(0, 4),
             ),
@@ -52,17 +59,17 @@ class ClassManagementCard extends StatelessWidget {
           children: [
             _buildClassIcon(),
             const SizedBox(width: 16),
-            Expanded(child: _buildSimpleClassInfo()),
+            Expanded(child: _buildSimpleClassInfo(context)),
             Container(
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: AppColors.grey100,
+                color: theme.dividerColor.withOpacity(isDark ? 0.45 : 0.6),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.arrow_forward_ios,
-                color: AppColors.grey600,
+                color: mutedColor,
                 size: 16,
               ),
             ),
@@ -97,7 +104,11 @@ class ClassManagementCard extends StatelessWidget {
     );
   }
 
-  Widget _buildSimpleClassInfo() {
+  Widget _buildSimpleClassInfo(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final mutedColor = theme.colorScheme.onSurface.withOpacity(0.7);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -106,25 +117,22 @@ class ClassManagementCard extends StatelessWidget {
           children: [
             Text(
               classModel.name,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: AppColors.grey800,
-              ),
+              style: theme.textTheme.titleLarge
+                  ?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: AppColors.grey100,
+                color: theme.colorScheme.primary
+                    .withOpacity(isDark ? 0.25 : 0.12),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 '${classModel.totalStudents} thiếu nhi',
-                style: const TextStyle(
-                  fontSize: 12,
+                style: theme.textTheme.labelMedium?.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: AppColors.grey600,
+                  color: theme.colorScheme.primary,
                 ),
               ),
             ),
@@ -134,10 +142,7 @@ class ClassManagementCard extends StatelessWidget {
         // GLV hiển thị đầy đủ
         Text(
           'GLV: ${classModel.teachersDisplay}',
-          style: const TextStyle(
-            fontSize: 14,
-            color: AppColors.grey600,
-          ),
+          style: theme.textTheme.bodyMedium?.copyWith(color: mutedColor),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
         ),

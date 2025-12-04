@@ -21,12 +21,18 @@ class AttendanceTotalRate extends StatelessWidget {
     final overallPercentage =
         totalPossible > 0 ? (totalAttended / totalPossible * 100) : 0.0;
     final color = _getAttendanceColor(overallPercentage);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final mutedColor = theme.colorScheme.onSurface.withOpacity(0.7);
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [color.withOpacity(0.1), color.withOpacity(0.05)],
+          colors: [
+            color.withOpacity(isDark ? 0.25 : 0.12),
+            color.withOpacity(isDark ? 0.2 : 0.06)
+          ],
         ),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: color.withOpacity(0.3)),
@@ -39,20 +45,20 @@ class AttendanceTotalRate extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Tỷ lệ điểm danh tổng',
-                  style: TextStyle(
+                  style: theme.textTheme.bodyMedium?.copyWith(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.grey700,
+                    color: mutedColor,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   '$totalAttended/$totalPossible buổi',
-                  style: const TextStyle(
+                  style: theme.textTheme.bodySmall?.copyWith(
                     fontSize: 12,
-                    color: AppColors.grey600,
+                    color: mutedColor,
                   ),
                 ),
               ],

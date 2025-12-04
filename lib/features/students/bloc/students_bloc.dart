@@ -793,16 +793,23 @@ class StudentsBloc extends Bloc<StudentsEvent, StudentsState> {
   ) async {
     if (event.previousState != null) {
       emit(event.previousState!);
-    } else if (event.classId != null) {
-      add(LoadStudents(event.classId!));
-    } else if (_savedNavigationState != null) {
-      emit(_savedNavigationState!);
-    } else {
-      emit(const StudentsError(
-        message: 'Không thể quay lại danh sách thiếu nhi',
-        errorCode: 'NAVIGATION_ERROR',
-      ));
+      return;
     }
+
+    if (_savedNavigationState != null) {
+      emit(_savedNavigationState!);
+      return;
+    }
+
+    if (event.classId != null) {
+      add(LoadStudents(event.classId!));
+      return;
+    }
+
+    emit(const StudentsError(
+      message: 'Không thể quay lại danh sách thiếu nhi',
+      errorCode: 'NAVIGATION_ERROR',
+    ));
   }
 
   Future<void> _onForceRefreshStudents(

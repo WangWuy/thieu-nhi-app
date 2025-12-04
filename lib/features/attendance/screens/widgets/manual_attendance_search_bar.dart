@@ -18,31 +18,30 @@ class ManualAttendanceSearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final decoration =
+        const InputDecoration().applyDefaults(theme.inputDecorationTheme);
+    final muted = theme.colorScheme.onSurface.withOpacity(0.7);
     return Container(
       padding: const EdgeInsets.all(16),
       child: TextField(
         controller: controller,
         onChanged: onChanged,
-        decoration: InputDecoration(
+        style: theme.textTheme.bodyLarge,
+        decoration: decoration.copyWith(
           hintText: 'Nhập tên thiếu nhi hoặc lớp để tìm kiếm...',
-          prefixIcon: const Icon(Icons.search, color: AppColors.grey600),
-          suffixIcon: _buildSuffixIcon(),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.grey300),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.secondary),
-          ),
-          filled: true,
-          fillColor: AppColors.grey50,
+          prefixIcon: Icon(Icons.search, color: muted),
+          suffixIcon: _buildSuffixIcon(theme, muted),
+          filled: decoration.filled ?? true,
+          fillColor: decoration.fillColor ?? theme.inputDecorationTheme.fillColor,
+          contentPadding: decoration.contentPadding ??
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         ),
       ),
     );
   }
 
-  Widget? _buildSuffixIcon() {
+  Widget? _buildSuffixIcon(ThemeData theme, Color muted) {
     if (isSearching) {
       return Container(
         width: 20,
@@ -57,7 +56,7 @@ class ManualAttendanceSearchBar extends StatelessWidget {
     
     if (controller.text.isNotEmpty) {
       return IconButton(
-        icon: const Icon(Icons.clear, color: AppColors.grey600),
+        icon: Icon(Icons.clear, color: muted),
         onPressed: onClear,
       );
     }

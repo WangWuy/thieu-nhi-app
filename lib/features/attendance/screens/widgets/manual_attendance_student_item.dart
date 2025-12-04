@@ -27,39 +27,49 @@ class ManualAttendanceStudentItem extends StatelessWidget {
     final parentPhone = student.parentPhone;
     final parentPhone2 = student.parentPhone2;
     final hasAttendance = attendanceStatus != null;
+    final hasAvatar = (student.avatarUrl ?? student.photoUrl)?.isNotEmpty ?? false;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final borderColor = hasAttendance
+        ? AppColors.success.withOpacity(0.4)
+        : theme.dividerColor;
+    final shadowColor =
+        isDark ? Colors.black.withOpacity(0.25) : Colors.black.withOpacity(0.05);
+    final mutedColor = theme.colorScheme.onSurface.withOpacity(0.7);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: hasAttendance
-              ? AppColors.success.withOpacity(0.3)
-              : AppColors.grey200,
-          width: hasAttendance ? 2 : 1,
-        ),
+        border: Border.all(color: borderColor, width: hasAttendance ? 2 : 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: shadowColor,
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: _buildLeadingAvatar(hasAttendance),
-        title: _buildTitle(hasAttendance),
+        leading: InkWell(
+          onTap: hasAvatar && !isProcessing ? () => _showAvatarViewer(context) : null,
+          customBorder: const CircleBorder(),
+          child: _buildLeadingAvatar(context, hasAttendance),
+        ),
+        title: _buildTitle(context, hasAttendance),
         subtitle: _buildSubtitle(
-            studentClass, hasAttendance, parentPhone, parentPhone2),
+            context, studentClass, hasAttendance, parentPhone, parentPhone2),
         trailing: _buildActionButton(hasAttendance),
       ),
     );
   }
 
-  Widget _buildLeadingAvatar(bool hasAttendance) {
+  Widget _buildLeadingAvatar(BuildContext context, bool hasAttendance) {
     final imageUrl = _resolveAvatarUrl(student.avatarUrl ?? student.photoUrl);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Stack(
       alignment: Alignment.center,
@@ -68,7 +78,7 @@ class ManualAttendanceStudentItem extends StatelessWidget {
           radius: 24,
           backgroundColor: hasAttendance
               ? AppColors.success.withOpacity(0.2)
-              : AppColors.grey200,
+              : theme.dividerColor.withOpacity(isDark ? 0.6 : 0.3),
           child: ClipOval(
             child: imageUrl != null
                 ? Image.network(
@@ -76,9 +86,10 @@ class ManualAttendanceStudentItem extends StatelessWidget {
                     width: 44,
                     height: 44,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => _buildPlaceholder(hasAttendance),
+                    errorBuilder: (_, __, ___) =>
+                        _buildPlaceholder(context, hasAttendance),
                   )
-                : _buildPlaceholder(hasAttendance),
+                : _buildPlaceholder(context, hasAttendance),
           ),
         ),
         if (isProcessing)
@@ -94,33 +105,47 @@ class ManualAttendanceStudentItem extends StatelessWidget {
     );
   }
 
-  Widget _buildTitle(bool hasAttendance) {
+  Widget _buildTitle(BuildContext context, bool hasAttendance) {
+    final theme = Theme.of(context);
     return Text(
       student.name,
       style: TextStyle(
         fontWeight: FontWeight.bold,
-        color: hasAttendance ? AppColors.success : AppColors.grey800,
+        color: hasAttendance
+            ? AppColors.success
+            : theme.colorScheme.onSurface,
       ),
     );
   }
 
-  Widget _buildSubtitle(String studentClass, bool hasAttendance,
-      String parentPhone, String? parentPhone2) {
+  Widget _buildSubtitle(BuildContext context, String studentClass,
+      bool hasAttendance, String parentPhone, String? parentPhone2) {
+    final theme = Theme.of(context);
+    final mutedColor = theme.colorScheme.onSurface.withOpacity(0.7);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('$studentClass'),
-        Text('SĐT1: $parentPhone'),
+        Text(
+          '$studentClass',
+          style: theme.textTheme.bodyMedium,
+        ),
+        Text(
+          'SĐT1: $parentPhone',
+          style: theme.textTheme.bodyMedium?.copyWith(color: mutedColor),
+        ),
         if (parentPhone2 == null || parentPhone2.isEmpty) ...[
-          const Text(
+          Text(
             'SĐT2: Chưa cập nhật',
-            style: TextStyle(
+            style: theme.textTheme.bodyMedium?.copyWith(
               fontStyle: FontStyle.italic,
-              color: AppColors.grey600,
+              color: mutedColor,
             ),
           ),
         ] else ...[
-          Text('SĐT2: $parentPhone2'),
+          Text(
+            'SĐT2: $parentPhone2',
+            style: theme.textTheme.bodyMedium?.copyWith(color: mutedColor),
+          ),
         ],
         if (hasAttendance && attendanceStatus?.markedAt != null) ...[
           const SizedBox(height: 4),
@@ -135,10 +160,9 @@ class ManualAttendanceStudentItem extends StatelessWidget {
           if ((attendanceStatus?.markedBy ?? '').isNotEmpty)
             Text(
               'Điểm danh bởi: ${attendanceStatus!.markedBy}',
-              style: const TextStyle(
-                fontSize: 12,
+              style: theme.textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w500,
-                color: AppColors.grey700,
+                color: mutedColor,
               ),
             ),
         ],
@@ -251,9 +275,15 @@ class ManualAttendanceStudentItem extends StatelessWidget {
     return '$hour:$minute, $day/$month/$year, $weekdayLabel';
   }
 
-  Widget _buildPlaceholder(bool hasAttendance) {
+  Widget _buildPlaceholder(BuildContext context, bool hasAttendance) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final baseColor = hasAttendance
+        ? AppColors.success
+        : theme.dividerColor.withOpacity(isDark ? 0.7 : 0.9);
+
     return Container(
-      color: hasAttendance ? AppColors.success : AppColors.grey400,
+      color: baseColor,
       width: 44,
       height: 44,
       child: Icon(
@@ -270,5 +300,38 @@ class ManualAttendanceStudentItem extends StatelessWidget {
     final base = HttpClient().apiBaseUrl;
     if (path.startsWith('/')) return '$base$path';
     return '$base/$path';
+  }
+
+  void _showAvatarViewer(BuildContext context) {
+    final imageUrl = _resolveAvatarUrl(student.avatarUrl ?? student.photoUrl);
+    if (imageUrl == null) return;
+
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.85),
+      builder: (ctx) {
+        return GestureDetector(
+          onTap: () => Navigator.of(ctx).pop(),
+          child: InteractiveViewer(
+            minScale: 0.5,
+            maxScale: 4,
+            child: Center(
+              child: Hero(
+                tag: 'student-avatar-${student.id}',
+                child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => const Icon(
+                    Icons.broken_image,
+                    color: Colors.white70,
+                    size: 64,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 }

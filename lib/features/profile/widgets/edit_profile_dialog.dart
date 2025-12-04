@@ -57,18 +57,22 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final shadowColor =
+        Colors.black.withOpacity(isDark ? 0.4 : 0.12);
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.cardColor,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
+              color: shadowColor,
+              blurRadius: 24,
+              offset: const Offset(0, 12),
             ),
           ],
         ),
@@ -87,6 +91,7 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
   }
 
   Widget _buildHeader() {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -103,7 +108,7 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withOpacity(0.16),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(
@@ -113,10 +118,10 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
             ),
           ),
           const SizedBox(width: 16),
-          const Expanded(
+          Expanded(
             child: Text(
               'Chỉnh sửa thông tin cá nhân',
-              style: TextStyle(
+              style: theme.textTheme.titleLarge?.copyWith(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
@@ -159,14 +164,18 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
   }
 
   Widget _buildActions() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final borderColor = theme.dividerColor;
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: const BoxDecoration(
-        color: AppColors.grey50,
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(20),
           bottomRight: Radius.circular(20),
         ),
+        border: Border(top: BorderSide(color: borderColor)),
       ),
       child: Row(
         children: [
@@ -175,7 +184,7 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
               onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                side: const BorderSide(color: AppColors.grey300),
+                side: BorderSide(color: borderColor),
               ),
               child: const Text(
                 'Hủy',

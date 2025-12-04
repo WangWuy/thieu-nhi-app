@@ -14,10 +14,12 @@ class AttendanceErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.error.withOpacity(0.1),
+        color: AppColors.error.withOpacity(isDark ? 0.18 : 0.12),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.error.withOpacity(0.3)),
       ),
@@ -27,7 +29,8 @@ class AttendanceErrorState extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             error,
-            style: const TextStyle(color: AppColors.error),
+            style:
+                theme.textTheme.bodyMedium?.copyWith(color: AppColors.error),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 12),

@@ -29,9 +29,10 @@ class EditProfileForm extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle('Thông tin cơ bản'),
+        _buildSectionTitle(context, 'Thông tin cơ bản'),
         const SizedBox(height: 16),
         _buildTextField(
+          context: context,
           controller: holyNameController,
           label: 'Tên Thánh',
           icon: Icons.auto_awesome,
@@ -45,6 +46,7 @@ class EditProfileForm extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         _buildTextField(
+          context: context,
           controller: fullNameController,
           label: 'Họ và tên đầy đủ',
           icon: Icons.person,
@@ -64,9 +66,10 @@ class EditProfileForm extends StatelessWidget {
         const SizedBox(height: 16),
         _buildBirthDateField(context),
         const SizedBox(height: 24),
-        _buildSectionTitle('Thông tin liên hệ'),
+        _buildSectionTitle(context, 'Thông tin liên hệ'),
         const SizedBox(height: 16),
         _buildTextField(
+          context: context,
           controller: phoneController,
           label: 'Số điện thoại',
           icon: Icons.phone,
@@ -87,6 +90,7 @@ class EditProfileForm extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         _buildTextField(
+          context: context,
           controller: addressController,
           label: 'Địa chỉ nhà',
           icon: Icons.location_on,
@@ -100,23 +104,24 @@ class EditProfileForm extends StatelessWidget {
           },
         ),
         const SizedBox(height: 24),
-        _buildReadOnlyInfo(),
+        _buildReadOnlyInfo(context),
       ],
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionTitle(BuildContext context, String title) {
+    final theme = Theme.of(context);
     return Text(
       title,
-      style: const TextStyle(
+      style: theme.textTheme.titleMedium?.copyWith(
         fontSize: 18,
         fontWeight: FontWeight.bold,
-        color: AppColors.grey800,
       ),
     );
   }
 
   Widget _buildTextField({
+    required BuildContext context,
     required TextEditingController controller,
     required String label,
     required IconData icon,
@@ -126,15 +131,19 @@ class EditProfileForm extends StatelessWidget {
     String? Function(String?)? validator,
     int maxLines = 1,
   }) {
+    final theme = Theme.of(context);
+    final baseDecoration =
+        const InputDecoration().applyDefaults(theme.inputDecorationTheme);
+    final muted = theme.colorScheme.onSurface.withOpacity(0.7);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: theme.textTheme.bodySmall?.copyWith(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: AppColors.grey700,
+            color: muted,
           ),
         ),
         const SizedBox(height: 8),
@@ -144,51 +153,23 @@ class EditProfileForm extends StatelessWidget {
           inputFormatters: inputFormatters,
           validator: validator,
           maxLines: maxLines,
-          decoration: InputDecoration(
+          decoration: baseDecoration.copyWith(
             hintText: hint,
-            hintStyle: const TextStyle(
-              color: AppColors.grey400,
-              fontSize: 14,
-            ),
-            prefixIcon: Container(
-              margin: const EdgeInsets.all(12),
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
+            prefixIcon: Padding(
+              padding: const EdgeInsets.all(12),
               child: Icon(
                 icon,
                 size: 20,
-                color: AppColors.primary,
+                color: theme.colorScheme.primary,
               ),
             ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.grey300),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.grey300),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.primary, width: 2),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.error),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.error, width: 2),
-            ),
-            filled: true,
-            fillColor: Colors.white,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 16,
-            ),
+            prefixIconConstraints:
+                const BoxConstraints(minHeight: 0, minWidth: 0),
+            filled: baseDecoration.filled ?? true,
+            fillColor: baseDecoration.fillColor ??
+                theme.inputDecorationTheme.fillColor,
+            contentPadding: baseDecoration.contentPadding ??
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           ),
         ),
       ],
@@ -196,15 +177,18 @@ class EditProfileForm extends StatelessWidget {
   }
 
   Widget _buildBirthDateField(BuildContext context) {
+    final theme = Theme.of(context);
+    final borderColor = theme.dividerColor;
+    final muted = theme.colorScheme.onSurface.withOpacity(0.7);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Ngày sinh',
-          style: TextStyle(
+          style: theme.textTheme.bodySmall?.copyWith(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: AppColors.grey700,
+            color: muted,
           ),
         ),
         const SizedBox(height: 8),
@@ -214,8 +198,8 @@ class EditProfileForm extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border.all(color: AppColors.grey300),
+              color: theme.cardColor,
+              border: Border.all(color: borderColor),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -241,15 +225,15 @@ class EditProfileForm extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 16,
                       color: selectedBirthDate != null
-                          ? AppColors.grey800
-                          : AppColors.grey400,
+                          ? theme.colorScheme.onSurface
+                          : muted,
                     ),
                   ),
                 ),
-                const Icon(
+                Icon(
                   Icons.calendar_today,
                   size: 20,
-                  color: AppColors.grey400,
+                  color: muted,
                 ),
               ],
             ),
@@ -259,52 +243,56 @@ class EditProfileForm extends StatelessWidget {
     );
   }
 
-  Widget _buildReadOnlyInfo() {
+  Widget _buildReadOnlyInfo(BuildContext context) {
+    final theme = Theme.of(context);
+    final muted = theme.colorScheme.onSurface.withOpacity(0.7);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.grey50,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.grey200),
+        border: Border.all(color: theme.dividerColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
               Icon(
                 Icons.info_outline,
                 size: 20,
                 color: AppColors.primary,
               ),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Text(
                 'Thông tin không thể thay đổi',
-                style: TextStyle(
+                style: theme.textTheme.titleSmall?.copyWith(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.grey800,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          _buildReadOnlyRow('Email', user.email ?? '', Icons.email),
+          _buildReadOnlyRow(context, 'Email', user.email ?? '', Icons.email),
           _buildReadOnlyRow(
-              'Tên đăng nhập', user.username, Icons.account_circle),
-          _buildReadOnlyRow('Chức vụ', user.role.displayName, Icons.work),
+              context, 'Tên đăng nhập', user.username, Icons.account_circle),
+          _buildReadOnlyRow(context, 'Chức vụ', user.role.displayName, Icons.work),
           _buildReadOnlyRow(
-              'Ngành', 'Ngành ${user.department}', Icons.business),
+              context, 'Ngành', 'Ngành ${user.department}', Icons.business),
           if (user.className != null)
-            _buildReadOnlyRow('Lớp', user.className!, Icons.school,
+            _buildReadOnlyRow(context, 'Lớp', user.className!, Icons.school,
                 isLast: true),
         ],
       ),
     );
   }
 
-  Widget _buildReadOnlyRow(String label, String value, IconData icon,
+  Widget _buildReadOnlyRow(
+      BuildContext context, String label, String value, IconData icon,
       {bool isLast = false}) {
+    final theme = Theme.of(context);
+    final muted = theme.colorScheme.onSurface.withOpacity(0.7);
     return Padding(
       padding: EdgeInsets.only(bottom: isLast ? 0 : 8),
       child: Row(
@@ -312,23 +300,23 @@ class EditProfileForm extends StatelessWidget {
           Icon(
             icon,
             size: 16,
-            color: AppColors.grey500,
+            color: muted,
           ),
           const SizedBox(width: 8),
           Text(
             '$label: ',
-            style: const TextStyle(
+            style: theme.textTheme.bodyMedium?.copyWith(
               fontSize: 14,
-              color: AppColors.grey600,
+              color: theme.colorScheme.onSurface,
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
+              style: theme.textTheme.bodyMedium?.copyWith(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: AppColors.grey800,
+                color: muted,
               ),
             ),
           ),

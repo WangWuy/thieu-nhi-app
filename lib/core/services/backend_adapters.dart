@@ -434,26 +434,6 @@ class BackendClassAdapter {
     return '';
   }
 
-  static String _getTeacherId(Map<String, dynamic> json) {
-    if (json['classTeachers'] != null && json['classTeachers'] is List) {
-      final teachers = json['classTeachers'] as List;
-      if (teachers.isNotEmpty) {
-        return teachers[0]['userId'].toString();
-      }
-    }
-    return '';
-  }
-
-  static String _getTeacherName(Map<String, dynamic> json) {
-    if (json['classTeachers'] != null && json['classTeachers'] is List) {
-      final teachers = json['classTeachers'] as List;
-      if (teachers.isNotEmpty && teachers[0]['user'] != null) {
-        return teachers[0]['user']['fullName'] ?? '';
-      }
-    }
-    return '';
-  }
-
   static List<String> _getStudentIds(Map<String, dynamic> json) {
     if (json['students'] != null && json['students'] is List) {
       return (json['students'] as List)

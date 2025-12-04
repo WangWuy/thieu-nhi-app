@@ -18,6 +18,9 @@ class AttendanceSummaryView extends StatelessWidget {
     final thursdayCount = student.thursdayAttendanceCount ?? 0;
     final sundayCount = student.sundayAttendanceCount ?? 0;
     final totalWeeks = student.academicYearTotalWeeks ?? 40;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final mutedColor = theme.colorScheme.onSurface.withOpacity(0.7);
 
     return Column(
       children: [
@@ -25,20 +28,20 @@ class AttendanceSummaryView extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: AppColors.info.withOpacity(0.1),
+            color: AppColors.info.withOpacity(isDark ? 0.22 : 0.12),
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: AppColors.info.withOpacity(0.3)),
           ),
-          child: const Row(
+          child: Row(
             children: [
-              Icon(Icons.info_outline, color: AppColors.info, size: 16),
-              SizedBox(width: 8),
+              const Icon(Icons.info_outline, color: AppColors.info, size: 16),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   'Chỉ hiển thị tổng kết điểm danh. Chi tiết từng buổi đang tải...',
-                  style: TextStyle(
+                  style: theme.textTheme.bodySmall?.copyWith(
                     fontSize: 12,
-                    color: AppColors.grey600,
+                    color: mutedColor,
                   ),
                 ),
               ),

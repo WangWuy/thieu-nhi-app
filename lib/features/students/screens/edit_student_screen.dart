@@ -153,28 +153,32 @@ class _EditStudentScreenState extends State<EditStudentScreen>
             SliverAppBar(
               floating: false,
               pinned: true,
-              backgroundColor: AppColors.primary,
-              title: const Text(
+              backgroundColor: Theme.of(context).appBarTheme.backgroundColor ??
+                  Theme.of(context).colorScheme.surface,
+              title: Text(
                 'Chỉnh sửa thiếu nhi',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: Theme.of(context).appBarTheme.foregroundColor ??
+                          Theme.of(context).colorScheme.onSurface,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
               ),
               leading: IconButton(
                 onPressed: () => context.pop(),
-                icon: const Icon(
+                icon: Icon(
                   Icons.arrow_back_ios,
-                  color: Colors.white,
+                  color: Theme.of(context).appBarTheme.foregroundColor ??
+                      Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               actions: [
                 IconButton(
                   onPressed: _showDeleteConfirmation,
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.delete,
-                    color: Colors.white,
+                    color: Theme.of(context).appBarTheme.foregroundColor ??
+                        Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               ],
@@ -197,8 +201,9 @@ class _EditStudentScreenState extends State<EditStudentScreen>
   }
 
   Widget _buildForm() {
+    final theme = Theme.of(context);
     return Container(
-      color: AppColors.grey50,
+      color: theme.scaffoldBackgroundColor,
       padding: const EdgeInsets.all(16),
       child: Form(
         key: _formKey,
@@ -220,14 +225,18 @@ class _EditStudentScreenState extends State<EditStudentScreen>
   }
 
   Widget _buildPersonalInfoSection() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final shadowColor =
+        Colors.black.withOpacity(isDark ? 0.25 : 0.05);
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: shadowColor,
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -277,14 +286,18 @@ class _EditStudentScreenState extends State<EditStudentScreen>
   }
 
   Widget _buildContactInfoSection() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final shadowColor =
+        Colors.black.withOpacity(isDark ? 0.25 : 0.05);
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: shadowColor,
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -435,12 +448,14 @@ class _EditStudentScreenState extends State<EditStudentScreen>
                 label: const Text('Cập nhật ảnh'),
               ),
               const SizedBox(height: 4),
-              const Text(
+              Text(
                 'Bấm "Cập nhật ảnh" là ảnh sẽ lưu ngay, không cần bấm "Cập nhật thông tin".',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppColors.grey600,
-                ),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.7),
+                    ),
               ),
               if ((_currentAvatarUrl?.isNotEmpty ?? false) || _avatarFile != null)
                 TextButton.icon(
@@ -459,14 +474,18 @@ class _EditStudentScreenState extends State<EditStudentScreen>
   }
 
   Widget _buildBirthDateField() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final borderColor = theme.dividerColor;
+    final muted = theme.colorScheme.onSurface.withOpacity(0.7);
     return GestureDetector(
       onTap: _selectBirthDate,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         decoration: BoxDecoration(
-          border: Border.all(color: AppColors.grey300),
+          border: Border.all(color: borderColor),
           borderRadius: BorderRadius.circular(12),
-          color: AppColors.grey50,
+          color: theme.cardColor,
         ),
         child: Row(
           children: [
@@ -476,11 +495,11 @@ class _EditStudentScreenState extends State<EditStudentScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Ngày sinh *',
-                    style: TextStyle(
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: muted,
                       fontSize: 12,
-                      color: AppColors.grey600,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -488,20 +507,19 @@ class _EditStudentScreenState extends State<EditStudentScreen>
                     _selectedBirthDate != null
                         ? _formatDate(_selectedBirthDate!)
                         : 'Chọn ngày sinh',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: _selectedBirthDate != null
-                          ? AppColors.grey800
-                          : AppColors.grey500,
-                    ),
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.w500,
+                          color: _selectedBirthDate != null
+                              ? theme.colorScheme.onSurface
+                              : muted,
+                        ),
                   ),
                 ],
               ),
             ),
-            const Icon(
+            Icon(
               Icons.calendar_today,
-              color: AppColors.grey400,
+              color: muted,
               size: 20,
             ),
           ],
@@ -511,13 +529,15 @@ class _EditStudentScreenState extends State<EditStudentScreen>
   }
 
   Widget _buildSectionHeader(String title, IconData icon) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Row(
       children: [
         Container(
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
+            color: AppColors.primary.withOpacity(isDark ? 0.2 : 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(
@@ -529,10 +549,9 @@ class _EditStudentScreenState extends State<EditStudentScreen>
         const SizedBox(width: 12),
         Text(
           title,
-          style: const TextStyle(
+          style: theme.textTheme.titleMedium?.copyWith(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: AppColors.grey800,
           ),
         ),
       ],
@@ -540,14 +559,18 @@ class _EditStudentScreenState extends State<EditStudentScreen>
   }
 
   Widget _buildNoteSection() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final shadowColor =
+        Colors.black.withOpacity(isDark ? 0.25 : 0.05);
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: shadowColor,
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -831,40 +854,6 @@ class _EditStudentScreenState extends State<EditStudentScreen>
   void _deleteStudent() {
     context.read<StudentsBloc>().add(DeleteStudent(widget.student.id));
     context.pop(); // Quay về trang trước
-  }
-
-  // Helper methods
-  Widget _buildPreviewAvatar() {
-    final imageUrl = _resolveAvatarUrl(_currentAvatarUrl);
-
-    return Container(
-      width: 50,
-      height: 50,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: AppColors.primaryGradient,
-        ),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: imageUrl != null
-            ? Image.network(
-                imageUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const Icon(
-                  Icons.person,
-                  color: Colors.white,
-                  size: 24,
-                ),
-              )
-            : const Icon(
-                Icons.person,
-                color: Colors.white,
-                size: 24,
-              ),
-      ),
-    );
   }
 
   bool _isValidPhoneNumber(String phone) {

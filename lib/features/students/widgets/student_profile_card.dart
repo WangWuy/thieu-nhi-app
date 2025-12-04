@@ -10,16 +10,22 @@ class StudentProfileCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final mutedColor = theme.colorScheme.onSurface.withOpacity(0.7);
+    final shadowColor =
+        isDark ? Colors.black.withOpacity(0.35) : Colors.black.withOpacity(0.1);
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: shadowColor,
+            blurRadius: 14,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -33,40 +39,42 @@ class StudentProfileCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          _buildInfoRow('Lớp', '${student.className} - ${student.department}',
+          _buildInfoRow(context, 'Lớp', '${student.className} - ${student.department}',
               Icons.class_),
           _buildInfoRow(
+              context,
               'Ngày sinh', _formatDate(student.birthDate), Icons.cake),
           _buildInfoRow(
+              context,
               'Điện thoại',
               student.phone.isNotEmpty ? student.phone : 'Chưa có',
               Icons.phone),
           _buildInfoRow(
+              context,
               'SĐT phụ huynh 1', student.parentPhone, Icons.contact_phone),
           if (student.parentPhone2?.isNotEmpty ?? false)
-            _buildInfoRow(
+            _buildInfoRow(context,
                 'SĐT phụ huynh 2', student.parentPhone2!, Icons.contact_phone),
-          _buildInfoRow('Địa chỉ', student.address, Icons.location_on),
+          _buildInfoRow(context, 'Địa chỉ', student.address, Icons.location_on),
           if (student.note?.isNotEmpty ?? false)
-            _buildInfoRow('Ghi chú', student.note!, Icons.note_alt,
+            _buildInfoRow(context, 'Ghi chú', student.note!, Icons.note_alt,
                 isLast: true)
           else
-            _buildInfoRow('Ghi chú', 'Chưa có', Icons.note_alt, isLast: true),
+            _buildInfoRow(
+                context, 'Ghi chú', 'Chưa có', Icons.note_alt, isLast: true),
 
           // Thêm thông tin thời gian
           const SizedBox(height: 16),
-          const Divider(),
+          Divider(color: theme.dividerColor),
           const SizedBox(height: 8),
           Row(
             children: [
-              const Icon(Icons.schedule, size: 16, color: AppColors.grey600),
+              Icon(Icons.schedule, size: 16, color: mutedColor),
               const SizedBox(width: 8),
               Text(
                 'Cập nhật: ${_formatDateTime(student.updatedAt)}',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.grey600,
-                ),
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(color: mutedColor, fontWeight: FontWeight.w500),
               ),
             ],
           ),
@@ -141,14 +149,17 @@ class StudentProfileCard extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoRow(String label, String value, IconData icon,
+  Widget _buildInfoRow(
+      BuildContext context, String label, String value, IconData icon,
       {bool isLast = false}) {
+    final theme = Theme.of(context);
+    final mutedColor = theme.colorScheme.onSurface.withOpacity(0.7);
     return Padding(
       padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 20, color: AppColors.grey600),
+          Icon(icon, size: 20, color: mutedColor),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -156,19 +167,16 @@ class StudentProfileCard extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: AppColors.grey600,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: mutedColor,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   value,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.grey800,
-                  ),
+                  style: theme.textTheme.bodyLarge
+                      ?.copyWith(fontWeight: FontWeight.w600),
                 ),
               ],
             ),

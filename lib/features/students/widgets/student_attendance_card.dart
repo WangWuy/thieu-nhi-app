@@ -51,10 +51,14 @@ class _StudentAttendanceCardState extends State<StudentAttendanceCard> {
     });
 
     try {
+      final targetWeeks = widget.student.academicYearTotalWeeks ?? 40;
+      final targetLimit = (targetWeeks > 0 ? targetWeeks : 40) * 2;
       final response = await _studentService.getStudentAttendanceHistory(
         widget.student.id,
         page: 1,
-        limit: 10,
+        // Lấy đủ dữ liệu để dựng tiến độ theo tuần (2 buổi/tuần)
+        limit: targetLimit,
+        filter: _buildAcademicYearFilter(),
       );
 
       setState(() {
@@ -71,6 +75,17 @@ class _StudentAttendanceCardState extends State<StudentAttendanceCard> {
         _isLoadingHistory = false;
       });
     }
+  }
+
+  AttendanceHistoryFilter? _buildAcademicYearFilter() {
+    final start = widget.student.academicYearStartDate;
+    final end = widget.student.academicYearEndDate;
+    if (start == null || end == null) return null;
+
+    return AttendanceHistoryFilter(
+      startDate: AttendanceHistoryDateUtils.formatDateForAPI(start),
+      endDate: AttendanceHistoryDateUtils.formatDateForAPI(end),
+    );
   }
 
   Future<void> _loadAttendanceStats() async {
@@ -111,16 +126,21 @@ class _StudentAttendanceCardState extends State<StudentAttendanceCard> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final shadowColor =
+        isDark ? Colors.black.withOpacity(0.35) : Colors.black.withOpacity(0.1);
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: shadowColor,
+            blurRadius: 14,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -128,9 +148,9 @@ class _StudentAttendanceCardState extends State<StudentAttendanceCard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           AttendanceCardHeader(
-            attendanceHistory: _attendanceHistory,
             isLoading: _isLoadingHistory,
             onRefresh: _onRefresh,
+            onViewHistory: _onViewAllPressed,
           ),
           const SizedBox(height: 16),
           AttendanceCardContent(

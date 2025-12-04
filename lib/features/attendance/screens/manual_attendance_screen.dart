@@ -1,6 +1,8 @@
 // manual_attendance_screen.dart - COMPLETE UPDATED VERSION
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:thieu_nhi_app/core/models/class_model.dart';
+import 'package:thieu_nhi_app/core/services/class_service.dart';
 import 'package:thieu_nhi_app/core/services/student_service.dart';
 import 'package:thieu_nhi_app/core/services/attendance_service.dart';
 import 'package:thieu_nhi_app/core/models/student_model.dart';
@@ -8,6 +10,7 @@ import 'package:thieu_nhi_app/core/models/attendance_models.dart';
 import 'package:thieu_nhi_app/features/attendance/bloc/attendance_bloc.dart';
 import 'package:thieu_nhi_app/features/attendance/bloc/attendance_event.dart';
 import 'package:thieu_nhi_app/features/attendance/bloc/attendance_state.dart';
+import 'package:thieu_nhi_app/features/attendance/screens/widgets/manual_attendance_class_filter.dart';
 import 'package:thieu_nhi_app/features/attendance/screens/widgets/manual_attendance_search_bar.dart';
 import 'package:thieu_nhi_app/features/attendance/screens/widgets/manual_attendance_results.dart';
 import 'package:thieu_nhi_app/theme/app_colors.dart';
@@ -21,24 +24,30 @@ class ManualAttendanceScreen extends StatefulWidget {
 
 class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final ClassService _classService = ClassService();
   final StudentService _studentService = StudentService();
   final AttendanceService _attendanceService = AttendanceService();
   static const int _pageSize = 10;
   late final ScrollController _resultsScrollController;
 
   List<StudentModel> _searchResults = [];
+  List<ClassModel> _classes = [];
   bool _isSearching = false;
   bool _isLoadingMore = false;
+  bool _isLoadingClasses = false;
   bool _hasMore = true;
   int _currentPage = 1;
+  int _latestFetchId = 0; // Track latest fetch to ignore stale responses
   TodayAttendanceStatus? _todayStatus;
   String? _currentSearchQuery;
+  String? _selectedClassId;
   bool _initialDataLoaded = false;
 
   @override
   void initState() {
     super.initState();
     _resultsScrollController = ScrollController()..addListener(_handleScroll);
+    _loadClasses();
     _loadInitialData();
   }
 
@@ -59,6 +68,26 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
     }
   }
 
+  Future<void> _loadClasses() async {
+    setState(() => _isLoadingClasses = true);
+
+    try {
+      final classes = await _classService.getClasses();
+
+      if (!mounted) return;
+
+      setState(() {
+        _classes = classes;
+        _isLoadingClasses = false;
+      });
+    } catch (e) {
+      print('Load classes error: $e');
+      if (mounted) {
+        setState(() => _isLoadingClasses = false);
+      }
+    }
+  }
+
   // Load initial list
   void _loadInitialData() async {
     if (_initialDataLoaded) {
@@ -71,6 +100,7 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
       final result = await _studentService.getStudents(
         page: 1,
         limit: _pageSize,
+        classFilter: _selectedClassId,
       );
       
       if (mounted && result.isSuccess) {
@@ -193,6 +223,18 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
     _fetchStudents(page: 1);
   }
 
+  void onClassFilterChanged(String? classId) {
+    if (_selectedClassId == classId) return;
+
+    setState(() {
+      _selectedClassId = classId;
+      _todayStatus = null;
+    });
+
+    _resetPagination();
+    _fetchStudents(page: 1);
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<AttendanceBloc, AttendanceState>(
@@ -209,16 +251,20 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
       },
       builder: (context, state) {
         return Scaffold(
-          backgroundColor: Colors.white,
           appBar: AppBar(
-            title: const Text(
+            title: Text(
               'Điểm danh thủ công',
-              style: TextStyle(fontWeight: FontWeight.bold),
+              style: Theme.of(context)
+                  .textTheme
+                  .titleLarge
+                  ?.copyWith(fontWeight: FontWeight.bold),
             ),
-            backgroundColor: Colors.white,
             elevation: 0,
             scrolledUnderElevation: 0,
-            iconTheme: const IconThemeData(color: AppColors.grey800),
+            iconTheme: IconThemeData(
+              color: Theme.of(context).appBarTheme.foregroundColor ??
+                  Theme.of(context).colorScheme.onSurface,
+            ),
           ),
           body: Column(
             children: [
@@ -228,6 +274,12 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
                 onChanged: onSearchChanged,
                 onClear: onClearSearch,
                 isSearching: _isSearching,
+              ),
+              ManualAttendanceClassFilter(
+                classes: _classes,
+                selectedClassId: _selectedClassId,
+                onClassChanged: onClassFilterChanged,
+                isLoading: _isLoadingClasses,
               ),
 
               // Results
@@ -243,6 +295,9 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
 
   // UPDATED: Better loading states
   Widget _buildResultsWidget(AttendanceState state) {
+    final mutedColor =
+        Theme.of(context).colorScheme.onSurface.withOpacity(0.45);
+
     // Loading initial data
     if (!_initialDataLoaded && _isSearching) {
       return const Center(
@@ -263,11 +318,16 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
+            Icon(Icons.error_outline, size: 64, color: mutedColor),
             const SizedBox(height: 16),
             Text(
               'Không thể tải dữ liệu',
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.7),
+                  ),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
@@ -288,13 +348,18 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.people_outline, size: 64, color: Colors.grey[400]),
+            Icon(Icons.people_outline, size: 64, color: mutedColor),
             const SizedBox(height: 16),
             Text(
               _searchController.text.trim().isNotEmpty 
                   ? 'Không tìm thấy thiếu nhi nào'
                   : 'Chưa có dữ liệu thiếu nhi',
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.7),
+                  ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -349,6 +414,8 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
     required int page,
     bool append = false,
   }) async {
+    final fetchId = ++_latestFetchId;
+
     if (!append) {
       setState(() => _isSearching = true);
     }
@@ -358,9 +425,15 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
         page: page,
         limit: _pageSize,
         search: _currentSearchQuery,
+        classFilter: _selectedClassId,
       );
 
       if (!mounted) return;
+
+      // Ignore stale responses when a newer fetch was triggered
+      if (fetchId != _latestFetchId) {
+        return;
+      }
 
       if (result.isSuccess) {
         final students = result.students ?? [];
@@ -385,7 +458,7 @@ class _ManualAttendanceScreenState extends State<ManualAttendanceScreen> {
       }
     } catch (e) {
       print('Fetch students error: $e');
-      if (!mounted) return;
+      if (!mounted || fetchId != _latestFetchId) return;
       setState(() {
         _isSearching = false;
         _isLoadingMore = false;

@@ -1,59 +1,68 @@
 import 'package:flutter/material.dart';
+import 'package:thieu_nhi_app/core/models/class_model.dart';
 import 'package:thieu_nhi_app/theme/app_colors.dart';
 
 class ManualAttendanceClassFilter extends StatelessWidget {
-  final List<String> availableClasses;
-  final String? selectedClass;
-  final Function(String?) onClassChanged;
-  final Map<String, int> classStudentCounts; // NEW: Số lượng học sinh theo lớp
+  final List<ClassModel> classes;
+  final String? selectedClassId;
+  final ValueChanged<String?> onClassChanged;
+  final bool isLoading;
 
   const ManualAttendanceClassFilter({
     super.key,
-    required this.availableClasses,
-    required this.selectedClass,
+    required this.classes,
+    required this.selectedClassId,
     required this.onClassChanged,
-    required this.classStudentCounts,
+    this.isLoading = false,
   });
+
+  int get _totalStudents =>
+      classes.fold(0, (sum, classItem) => sum + classItem.totalStudents);
 
   @override
   Widget build(BuildContext context) {
-    final totalStudents = classStudentCounts.values.fold(0, (sum, count) => sum + count);
+    final theme = Theme.of(context);
+    final muted = theme.colorScheme.onSurface.withOpacity(0.7);
+    final borderColor = theme.dividerColor;
+    final isDark = theme.brightness == Brightness.dark;
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header với dropdown
           Row(
             children: [
-              const Icon(Icons.filter_list, size: 20, color: AppColors.grey600),
+              Icon(Icons.filter_list, size: 20, color: muted),
               const SizedBox(width: 8),
-              const Text(
-                'Lọc theo lớp:',
-                style: TextStyle(fontWeight: FontWeight.w500),
-              ),
+              Text('Lọc theo lớp:',
+                  style: theme.textTheme.bodyMedium
+                      ?.copyWith(fontWeight: FontWeight.w600)),
               const SizedBox(width: 12),
               Expanded(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   decoration: BoxDecoration(
-                    border: Border.all(color: AppColors.grey300),
+                    border: Border.all(color: borderColor),
                     borderRadius: BorderRadius.circular(8),
-                    color: Colors.white,
+                    color: theme.cardColor,
                   ),
-                  child: DropdownButton<String?>(
-                    value: selectedClass,
-                    isExpanded: true,
-                    underline: const SizedBox(),
-                    hint: Text(
-                      'Tất cả ($totalStudents học sinh)',
-                      style: const TextStyle(color: AppColors.grey600),
-                    ),
-                    icon: const Icon(Icons.keyboard_arrow_down, color: AppColors.grey600),
-                    items: _buildDropdownItems(),
-                    onChanged: onClassChanged,
-                  ),
+                  child: isLoading
+                      ? _buildLoadingState(context)
+                      : DropdownButton<String?>(
+                          value: selectedClassId,
+                          isExpanded: true,
+                          underline: const SizedBox(),
+                          hint: Text(
+                            'Tất cả ($_totalStudents học sinh)',
+                            style:
+                                theme.textTheme.bodyMedium?.copyWith(color: muted),
+                          ),
+                          icon: Icon(Icons.keyboard_arrow_down, color: muted),
+                          items: _buildDropdownItems(context),
+                          onChanged: onClassChanged,
+                        ),
                 ),
               ),
             ],
@@ -63,9 +72,28 @@ class ManualAttendanceClassFilter extends StatelessWidget {
     );
   }
 
-  List<DropdownMenuItem<String?>> _buildDropdownItems() {
-    final totalStudents = classStudentCounts.values.fold(0, (sum, count) => sum + count);
-    
+  Widget _buildLoadingState(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const SizedBox(
+          width: 18,
+          height: 18,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          'Đang tải danh sách lớp...',
+          style: Theme.of(context)
+              .textTheme
+              .bodyMedium
+              ?.copyWith(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
+        ),
+      ],
+    );
+  }
+
+  List<DropdownMenuItem<String?>> _buildDropdownItems(BuildContext context) {
     return [
       DropdownMenuItem<String?>(
         value: null,
@@ -75,52 +103,42 @@ class ManualAttendanceClassFilter extends StatelessWidget {
             const SizedBox(width: 8),
             const Text('Tất cả'),
             const Spacer(),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                '$totalStudents',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
+            _buildCountBadge(context, _totalStudents, AppColors.primary),
           ],
         ),
       ),
-      ...availableClasses.map((className) {
-        final count = classStudentCounts[className] ?? 0;
+      ...classes.map((classItem) {
         return DropdownMenuItem<String?>(
-          value: className,
+          value: classItem.id,
           child: Row(
             children: [
               const Icon(Icons.class_, size: 16, color: AppColors.secondary),
               const SizedBox(width: 8),
-              Expanded(child: Text(className)),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppColors.secondary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  '$count',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.secondary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
+              Expanded(child: Text(classItem.name)),
+              _buildCountBadge(
+                  context, classItem.totalStudents, AppColors.secondary),
             ],
           ),
         );
       }),
     ];
+  }
+
+  Widget _buildCountBadge(BuildContext context, int count, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withOpacity(Theme.of(context).brightness == Brightness.dark ? 0.22 : 0.12),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        '$count',
+        style: TextStyle(
+          fontSize: 12,
+          color: color,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
   }
 }

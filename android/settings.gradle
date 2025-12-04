@@ -20,7 +20,8 @@ plugins {
     id "dev.flutter.flutter-plugin-loader" version "1.0.0"
     id "com.android.application" version "8.6.0" apply false
     // END: FlutterFire Configuration
-    id "org.jetbrains.kotlin.android" version "1.8.22" apply false
+    // mobile_scanner 7.x được biên dịch với Kotlin metadata 2.1.x -> cần Kotlin 2.0.x trở lên
+    id "org.jetbrains.kotlin.android" version "2.1.0" apply false
 }
 
 include ":app"

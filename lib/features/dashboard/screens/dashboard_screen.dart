@@ -14,6 +14,10 @@ class DashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
+    final muted = onSurface.withOpacity(0.7);
+
     return BlocProvider(
       create: (context) => DashboardCubit(DashboardService())..loadDashboard(),
       child: BlocBuilder<AuthBloc, AuthState>(
@@ -36,7 +40,7 @@ class DashboardScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildHeader(user),
+                        _buildHeader(context, user, onSurface, muted),
                         const SizedBox(height: 20),
                         _buildStatsSection(user),
                         const SizedBox(height: 24),
@@ -54,7 +58,9 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(UserModel user) {
+  Widget _buildHeader(
+      BuildContext context, UserModel user, Color onSurface, Color muted) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -64,20 +70,20 @@ class DashboardScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Xin chào,',
                     style: TextStyle(
                       fontSize: 16,
-                      color: AppColors.grey600,
+                      color: muted,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     user.displayName,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.grey800,
+                      color: onSurface,
                     ),
                   ),
                 ],
@@ -89,7 +95,8 @@ class DashboardScreen extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: _getRoleColor(user.role).withOpacity(0.1),
+            color: _getRoleColor(user.role)
+                .withOpacity(isDark ? 0.25 : 0.1),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
@@ -112,39 +119,42 @@ class DashboardScreen extends StatelessWidget {
           final data = state is DashboardLoaded
               ? state.data
               : (state as DashboardRefreshing).previousData;
+          final theme = Theme.of(context);
+          final isDark = theme.brightness == Brightness.dark;
+          final overlayColor = Colors.black.withOpacity(isDark ? 0.25 : 0.12);
 
           return Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: _getRoleGradient(user.role),
-              ),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: _getRoleColor(user.role).withOpacity(0.3),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
-              ],
+            gradient: LinearGradient(
+              colors: _getRoleGradient(user.role),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Icon(
-                        _getRoleIcon(user.role),
-                        color: Colors.white,
-                        size: 24,
-                      ),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: _getRoleColor(user.role).withOpacity(0.18),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: overlayColor,
+                      borderRadius: BorderRadius.circular(16),
                     ),
+                    child: Icon(
+                      _getRoleIcon(user.role),
+                      color: Colors.white.withOpacity(0.9),
+                      size: 24,
+                    ),
+                  ),
                     const SizedBox(width: 16),
                     Expanded(
                       child: Column(
@@ -183,23 +193,24 @@ class DashboardScreen extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 20),
-                _buildStatsContent(user, data),
+                _buildStatsContent(context, user, data),
               ],
             ),
           );
         }
-        return _buildStatsLoading();
+        return _buildStatsLoading(context);
       },
     );
   }
 
-  Widget _buildStatsContent(UserModel user, data) {
+  Widget _buildStatsContent(BuildContext context, UserModel user, data) {
     switch (user.role) {
       case UserRole.admin:
         return Row(
           children: [
             Expanded(
               child: _buildStatItem(
+                context,
                 'Tổng thiếu nhi',
                 data.totalStudents.toString(),
                 Icons.groups,
@@ -208,6 +219,7 @@ class DashboardScreen extends StatelessWidget {
             const SizedBox(width: 16),
             Expanded(
               child: _buildStatItem(
+                context,
                 'Tổng lớp',
                 data.totalClasses.toString(),
                 Icons.school,
@@ -221,6 +233,7 @@ class DashboardScreen extends StatelessWidget {
           children: [
             Expanded(
               child: _buildStatItem(
+                context,
                 'thiếu nhi ngành',
                 departmentStudents.toString(),
                 Icons.people,
@@ -229,6 +242,7 @@ class DashboardScreen extends StatelessWidget {
             const SizedBox(width: 16),
             Expanded(
               child: _buildStatItem(
+                context,
                 'Có mặt hôm nay',
                 data.presentToday.toString(),
                 Icons.check_circle,
@@ -243,6 +257,7 @@ class DashboardScreen extends StatelessWidget {
           children: [
             Expanded(
               child: _buildStatItem(
+                context,
                 'thiếu nhi lớp',
                 classStudentCount.toString(),
                 Icons.people,
@@ -251,6 +266,7 @@ class DashboardScreen extends StatelessWidget {
             const SizedBox(width: 16),
             Expanded(
               child: _buildStatItem(
+                context,
                 'Có mặt hôm nay',
                 presentCount.toString(),
                 Icons.check_circle,
@@ -261,16 +277,20 @@ class DashboardScreen extends StatelessWidget {
     }
   }
 
-  Widget _buildStatItem(String label, String value, IconData icon) {
+  Widget _buildStatItem(
+      BuildContext context, String label, String value, IconData icon) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final overlay = Colors.black.withOpacity(isDark ? 0.2 : 0.1);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
+        color: overlay,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         children: [
-          Icon(icon, color: Colors.white, size: 24),
+          Icon(icon, color: Colors.white.withOpacity(0.9), size: 24),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -288,7 +308,7 @@ class DashboardScreen extends StatelessWidget {
                 Text(
                   label,
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withOpacity(0.85),
                     fontSize: 12,
                   ),
                 ),
@@ -300,12 +320,12 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatsLoading() {
+  Widget _buildStatsLoading(BuildContext context) {
     return Container(
       height: 120,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.grey100,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(20),
       ),
       child: const Center(
@@ -343,7 +363,7 @@ class DashboardScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader('Quản lý hệ thống', Icons.admin_panel_settings),
+        _buildSectionHeader(context, 'Quản lý hệ thống', Icons.admin_panel_settings),
         const SizedBox(height: 16),
         
         // 2 cards in a row
@@ -383,7 +403,7 @@ class DashboardScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader('Quản lý ngành ${user.department}', Icons.business),
+        _buildSectionHeader(context, 'Quản lý ngành ${user.department}', Icons.business),
         const SizedBox(height: 16),
         Center(
           child: SizedBox(
@@ -406,7 +426,7 @@ class DashboardScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader('Lớp học của tôi', Icons.school),
+        _buildSectionHeader(context, 'Lớp học của tôi', Icons.school),
         const SizedBox(height: 16),
         if (user.className != null)
           Center(
@@ -547,17 +567,17 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionHeader(String title, IconData icon) {
+  Widget _buildSectionHeader(BuildContext context, String title, IconData icon) {
+    final theme = Theme.of(context);
     return Row(
       children: [
         Icon(icon, color: AppColors.primary, size: 24),
         const SizedBox(width: 12),
         Text(
           title,
-          style: const TextStyle(
+          style: theme.textTheme.titleLarge?.copyWith(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: AppColors.grey800,
           ),
         ),
       ],

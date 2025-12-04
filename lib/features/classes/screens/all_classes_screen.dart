@@ -43,6 +43,7 @@ class _AllClassesScreenState extends State<AllClassesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: _manager.refreshData,
@@ -62,25 +63,23 @@ class _AllClassesScreenState extends State<AllClassesScreen> {
   }
 
   Widget _buildAppBar() {
+    final theme = Theme.of(context);
+    final onSurface = theme.appBarTheme.foregroundColor ?? theme.colorScheme.onSurface;
+    final background =
+        theme.appBarTheme.backgroundColor ?? theme.colorScheme.surface;
     return SliverAppBar(
       expandedHeight: 60,
       pinned: true,
-      backgroundColor: AppColors.primary,
+      backgroundColor: background,
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: AppColors.primaryGradient,
-            ),
-          ),
-          child: const SafeArea(
+          color: background,
+          child: SafeArea(
             child: Center(
               child: Text(
                 'Quản lý lớp',
-                style: TextStyle(
-                  color: Colors.white,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  color: onSurface,
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
@@ -94,21 +93,29 @@ class _AllClassesScreenState extends State<AllClassesScreen> {
         padding: const EdgeInsets.only(left: 16),
         child: IconButton(
           onPressed: () => context.pop(),
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+          icon: Icon(Icons.arrow_back_ios, color: onSurface),
         ),
       ),
     );
   }
 
   Widget _buildFilters() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final borderColor = theme.dividerColor;
+    final inputDecoration =
+        const InputDecoration().applyDefaults(theme.inputDecorationTheme);
+    final muted = theme.colorScheme.onSurface.withOpacity(0.7);
     return SliverToBoxAdapter(
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.cardColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: borderColor),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withOpacity(isDark ? 0.25 : 0.05),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -119,21 +126,20 @@ class _AllClassesScreenState extends State<AllClassesScreen> {
             // Search bar
             Container(
               decoration: BoxDecoration(
-                color: AppColors.grey50,
+                color: inputDecoration.fillColor ?? theme.cardColor,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.grey200),
+                border: Border.all(color: borderColor),
               ),
               child: TextField(
                 onChanged: _manager.updateSearchTerm,
-                decoration: const InputDecoration(
+                style: theme.textTheme.bodyLarge,
+                decoration: inputDecoration.copyWith(
                   hintText: 'Tìm kiếm tên lớp...',
-                  hintStyle: TextStyle(color: AppColors.grey500),
-                  prefixIcon: Icon(Icons.search, color: AppColors.grey500),
+                  hintStyle: TextStyle(color: muted),
+                  prefixIcon: Icon(Icons.search, color: muted),
                   border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
               ),
             ),
@@ -144,23 +150,30 @@ class _AllClassesScreenState extends State<AllClassesScreen> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               decoration: BoxDecoration(
-                color: AppColors.grey50,
+                color: theme.cardColor,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.grey200),
+                border: Border.all(color: borderColor),
               ),
               child: DropdownButtonHideUnderline(
                 child: DropdownButton<String>(
                   value: _manager.selectedDepartment,
-                  hint: const Text('Chọn ngành', style: TextStyle(color: AppColors.grey500)),
+                  hint: Text('Chọn ngành',
+                      style: TextStyle(
+                          color:
+                              theme.colorScheme.onSurface.withOpacity(0.9),
+                          fontWeight: FontWeight.w600)),
                   isExpanded: true,
+                  style: TextStyle(
+                      color: theme.colorScheme.onSurface.withOpacity(0.9)),
                   items: _manager.departmentOptions.map((option) {
                     return DropdownMenuItem<String>(
                       value: option.value,
                       child: Text(
                         option.label,
-                        style: const TextStyle(
-                          color: AppColors.grey800,
-                          fontWeight: FontWeight.w500,
+                        style: TextStyle(
+                          color:
+                              theme.colorScheme.onSurface.withOpacity(0.9),
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     );
@@ -201,10 +214,11 @@ class _AllClassesScreenState extends State<AllClassesScreen> {
   }
 
   Widget _buildStatChip(String text, IconData icon, Color color) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withOpacity(isDark ? 0.2 : 0.1),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: color.withOpacity(0.3)),
       ),
@@ -279,7 +293,7 @@ class _AllClassesScreenState extends State<AllClassesScreen> {
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
-                color: AppColors.grey50,
+                color: Theme.of(context).cardColor,
                 child: Row(
                   children: [
                     Container(
@@ -293,17 +307,17 @@ class _AllClassesScreenState extends State<AllClassesScreen> {
                     const SizedBox(width: 12),
                     Text(
                       'Ngành ${departmentGroup.displayName}',
-                      style: const TextStyle(
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.grey800,
                       ),
                     ),
                     const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: _getDepartmentColor(departmentGroup.name).withOpacity(0.1),
+                        color: _getDepartmentColor(departmentGroup.name)
+                            .withOpacity(Theme.of(context).brightness == Brightness.dark ? 0.2 : 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(

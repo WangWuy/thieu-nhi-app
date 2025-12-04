@@ -202,20 +202,24 @@ class _PendingUsersScreenState extends State<PendingUsersScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final onSurface =
+        theme.appBarTheme.foregroundColor ?? theme.colorScheme.onSurface;
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         centerTitle: true,
-        title: const Text(
+        title: Text(
           'Đăng ký chờ phê duyệt',
-          style: TextStyle(
-              fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+          style: theme.textTheme.titleLarge?.copyWith(
+              fontSize: 20, fontWeight: FontWeight.bold, color: onSurface),
         ),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
+        backgroundColor:
+            theme.appBarTheme.backgroundColor ?? theme.colorScheme.surface,
+        foregroundColor: onSurface,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
+            icon: Icon(Icons.refresh, color: onSurface),
             onPressed: _loadPendingUsers,
           ),
         ],
@@ -244,18 +248,25 @@ class _PendingUsersScreenState extends State<PendingUsersScreen> {
                   ),
                 )
               : _pendingUsers.isEmpty
-                  ? const Center(
+                  ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.check_circle_outline,
+                          const Icon(Icons.check_circle_outline,
                               size: 64, color: AppColors.success),
-                          SizedBox(height: 16),
+                          const SizedBox(height: 16),
                           Text(
                             'Không có đăng ký nào chờ phê duyệt',
                             textAlign: TextAlign.center,
-                            style: TextStyle(
-                                fontSize: 16, color: AppColors.grey600),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyLarge
+                                ?.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurface
+                                      .withOpacity(0.7),
+                                ),
                           ),
                         ],
                       ),

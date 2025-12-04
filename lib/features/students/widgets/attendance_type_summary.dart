@@ -21,11 +21,14 @@ class AttendanceTypeSummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final percentage = totalWeeks > 0 ? (attendedCount / totalWeeks * 100) : 0.0;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final mutedColor = theme.colorScheme.onSurface.withOpacity(0.8);
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withOpacity(isDark ? 0.2 : 0.12),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: color.withOpacity(0.3)),
       ),
@@ -52,10 +55,10 @@ class AttendanceTypeSummary extends StatelessWidget {
             children: [
               Text(
                 '$attendedCount/$totalWeeks buổi',
-                style: const TextStyle(
+                style: theme.textTheme.bodyLarge?.copyWith(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.grey800,
+                  color: mutedColor,
                 ),
               ),
               Text(
@@ -71,7 +74,7 @@ class AttendanceTypeSummary extends StatelessWidget {
           const SizedBox(height: 8),
           LinearProgressIndicator(
             value: percentage / 100,
-            backgroundColor: AppColors.grey200,
+            backgroundColor: theme.dividerColor.withOpacity(0.6),
             valueColor: AlwaysStoppedAnimation<Color>(color),
           ),
         ],

@@ -9,28 +9,33 @@ class StudentScoreOverviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final mutedColor = theme.colorScheme.onSurface.withOpacity(0.7);
+    final shadowColor =
+        isDark ? Colors.black.withOpacity(0.35) : Colors.black.withOpacity(0.1);
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: shadowColor,
+            blurRadius: 14,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Tổng quan điểm số',
-            style: TextStyle(
+            style: theme.textTheme.titleLarge?.copyWith(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: AppColors.grey800,
             ),
           ),
           const SizedBox(height: 20),
@@ -38,8 +43,9 @@ class StudentScoreOverviewCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _buildScoreItem(
+                  context,
                   'Điểm danh',
-                  student.attendanceAverage?.toStringAsFixed(1) ?? '0.0',
+                  student.attendanceAverage?.toStringAsFixed(2) ?? '0.00',
                   AppColors.primary,
                   Icons.event_available,
                 ),
@@ -47,8 +53,9 @@ class StudentScoreOverviewCard extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: _buildScoreItem(
+                  context,
                   'Học tập',
-                  student.studyAverage?.toStringAsFixed(1) ?? '0.0',
+                  student.studyAverage?.toStringAsFixed(2) ?? '0.00',
                   AppColors.secondary,
                   Icons.school,
                 ),
@@ -56,8 +63,9 @@ class StudentScoreOverviewCard extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: _buildScoreItem(
+                  context,
                   'Tổng kết',
-                  student.finalAverage?.toStringAsFixed(1) ?? '0.0',
+                  student.finalAverage?.toStringAsFixed(2) ?? '0.00',
                   _getScoreColor(student.finalAverage ?? 0.0),
                   Icons.star,
                 ),
@@ -68,6 +76,7 @@ class StudentScoreOverviewCard extends StatelessWidget {
           // Thêm progress bars
           const SizedBox(height: 20),
           _buildProgressBar(
+            context,
             'Điểm danh',
             student.attendanceAverage ?? 0.0,
             10.0,
@@ -75,6 +84,7 @@ class StudentScoreOverviewCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _buildProgressBar(
+            context,
             'Học tập',
             student.studyAverage ?? 0.0,
             10.0,
@@ -82,6 +92,7 @@ class StudentScoreOverviewCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _buildProgressBar(
+            context,
             'Tổng kết',
             student.finalAverage ?? 0.0,
             10.0,
@@ -93,11 +104,13 @@ class StudentScoreOverviewCard extends StatelessWidget {
   }
 
   Widget _buildScoreItem(
-      String title, String score, Color color, IconData icon) {
+      BuildContext context, String title, String score, Color color, IconData icon) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withOpacity(isDark ? 0.2 : 0.12),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: color.withOpacity(0.3)),
       ),
@@ -116,9 +129,9 @@ class StudentScoreOverviewCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             title,
-            style: const TextStyle(
+            style: theme.textTheme.bodySmall?.copyWith(
               fontSize: 12,
-              color: AppColors.grey600,
+              color: theme.colorScheme.onSurface.withOpacity(0.7),
               fontWeight: FontWeight.w600,
             ),
             textAlign: TextAlign.center,
@@ -129,8 +142,9 @@ class StudentScoreOverviewCard extends StatelessWidget {
   }
 
   Widget _buildProgressBar(
-      String label, double value, double maxValue, Color color) {
+      BuildContext context, String label, double value, double maxValue, Color color) {
     final percentage = (value / maxValue).clamp(0.0, 1.0);
+    final theme = Theme.of(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -140,14 +154,14 @@ class StudentScoreOverviewCard extends StatelessWidget {
           children: [
             Text(
               label,
-              style: const TextStyle(
+              style: theme.textTheme.bodyMedium?.copyWith(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: AppColors.grey700,
+                color: theme.colorScheme.onSurface.withOpacity(0.8),
               ),
             ),
             Text(
-              '${value.toStringAsFixed(1)}/${maxValue.toInt()}',
+              '${value.toStringAsFixed(2)}/${maxValue.toInt()}',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -160,7 +174,7 @@ class StudentScoreOverviewCard extends StatelessWidget {
         Container(
           height: 8,
           decoration: BoxDecoration(
-            color: AppColors.grey200,
+            color: theme.dividerColor.withOpacity(0.6),
             borderRadius: BorderRadius.circular(4),
           ),
           child: FractionallySizedBox(

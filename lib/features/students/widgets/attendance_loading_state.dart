@@ -7,17 +7,19 @@ class AttendanceLoadingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const SizedBox(
+    final muted =
+        Theme.of(context).colorScheme.onSurface.withOpacity(0.7);
+    return SizedBox(
       height: 120,
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 8),
+            const CircularProgressIndicator(),
+            const SizedBox(height: 8),
             Text(
               'Đang tải lịch sử điểm danh...',
-              style: TextStyle(color: AppColors.grey600),
+              style: TextStyle(color: muted),
             ),
           ],
         ),

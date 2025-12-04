@@ -146,11 +146,15 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final onSurface =
+        theme.appBarTheme.foregroundColor ?? theme.colorScheme.onSurface;
     return Scaffold(
       appBar: AppBar(
         title: Text('Lịch sử điểm danh'),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
+        backgroundColor:
+            theme.appBarTheme.backgroundColor ?? theme.colorScheme.surface,
+        foregroundColor: onSurface,
         actions: [
           IconButton(
             icon: const Icon(Icons.filter_list),

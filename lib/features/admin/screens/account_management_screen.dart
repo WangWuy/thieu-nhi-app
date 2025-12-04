@@ -139,6 +139,7 @@ class _AccountManagementScreenState extends State<AccountManagementScreen>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, authState) {
         if (authState is! AuthAuthenticated) {
@@ -155,7 +156,7 @@ class _AccountManagementScreenState extends State<AccountManagementScreen>
         }
 
         return Scaffold(
-          backgroundColor: Colors.grey[50],
+          backgroundColor: theme.scaffoldBackgroundColor,
           body: BlocConsumer<AdminBloc, AdminState>(
             listener: _handleBlocStateChange,
             builder: (context, state) {
@@ -192,26 +193,30 @@ class _AccountManagementScreenState extends State<AccountManagementScreen>
 
   // COMPACT APP BAR - No expandable space
   Widget _buildCompactAppBar() {
+    final theme = Theme.of(context);
+    final onSurface =
+        theme.appBarTheme.foregroundColor ?? theme.colorScheme.onSurface;
     return SliverAppBar(
       pinned: true,
       floating: false,
-      backgroundColor: AppColors.primary,
+      backgroundColor:
+          theme.appBarTheme.backgroundColor ?? theme.colorScheme.surface,
       elevation: 2,
       leading: IconButton(
         onPressed: () => context.pop(),
-        icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+        icon: Icon(Icons.arrow_back_ios, color: onSurface),
       ),
-      title: const Text(
+      title: Text(
         'Quản lý tài khoản',
-        style: TextStyle(
-          color: Colors.white,
+        style: theme.textTheme.titleLarge?.copyWith(
+          color: onSurface,
           fontSize: 18,
           fontWeight: FontWeight.w600,
         ),
       ),
       actions: [
         IconButton(
-          icon: const Icon(Icons.refresh, color: Colors.white),
+          icon: Icon(Icons.refresh, color: onSurface),
           onPressed: () => context.read<AdminBloc>().add(const RefreshUsers()),
           tooltip: 'Làm mới',
         ),
@@ -221,10 +226,27 @@ class _AccountManagementScreenState extends State<AccountManagementScreen>
 
   // COMPACT FILTER - Single row, minimal padding
   Widget _buildCompactFilter() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final borderColor = theme.dividerColor;
+    final decoration =
+        const InputDecoration().applyDefaults(theme.inputDecorationTheme);
+    final muted = theme.colorScheme.onSurface.withOpacity(0.7);
     return SliverToBoxAdapter(
       child: Container(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-        color: Colors.white,
+        decoration: BoxDecoration(
+          color: theme.cardColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: borderColor),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.25 : 0.06),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
         child: Column(
           children: [
             // Search bar
@@ -232,13 +254,15 @@ class _AccountManagementScreenState extends State<AccountManagementScreen>
               height: 40,
               child: TextField(
                 controller: _searchController,
-                decoration: InputDecoration(
+                style: theme.textTheme.bodyLarge,
+                decoration: decoration.copyWith(
                   hintText: 'Tìm kiếm...',
-                  hintStyle: const TextStyle(fontSize: 14),
-                  prefixIcon: const Icon(Icons.search, size: 20),
+                  hintStyle:
+                      TextStyle(fontSize: 14, color: muted),
+                  prefixIcon: Icon(Icons.search, size: 20, color: muted),
                   suffixIcon: _searchQuery.isNotEmpty
                       ? IconButton(
-                          icon: const Icon(Icons.clear, size: 18),
+                          icon: Icon(Icons.clear, size: 18, color: muted),
                           onPressed: () {
                             _searchController.clear();
                             _clearAllFilters();
@@ -247,17 +271,18 @@ class _AccountManagementScreenState extends State<AccountManagementScreen>
                       : null,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(20),
-                    borderSide: const BorderSide(color: AppColors.grey300),
+                    borderSide: BorderSide(color: borderColor),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(20),
-                    borderSide: const BorderSide(color: AppColors.grey300),
+                    borderSide: BorderSide(color: borderColor),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(20),
                     borderSide: const BorderSide(color: AppColors.primary),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 ),
               ),
             ),
@@ -275,29 +300,62 @@ class _AccountManagementScreenState extends State<AccountManagementScreen>
                       border: Border.all(color: AppColors.grey300),
                       borderRadius: BorderRadius.circular(18),
                     ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String?>(
-                        hint: const Text('Ngành', style: TextStyle(fontSize: 13)),
-                        value: _selectedDepartmentFilter,
-                        items: [
-                          const DropdownMenuItem<String?>(
-                            value: null,
-                            child: Text('Tất cả', style: TextStyle(fontSize: 13)),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String?>(
+                      hint: Text(
+                        'Ngành',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.9),
+                        ),
+                      ),
+                      value: _selectedDepartmentFilter,
+                      items: [
+                        DropdownMenuItem<String?>(
+                          value: null,
+                          child: Text(
+                            'Tất cả',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.9),
+                            ),
                           ),
-                          ...['Chiên', 'Ấu', 'Thiếu', 'Nghĩa'].map((dept) => 
+                        ),
+                        ...['Chiên', 'Ấu', 'Thiếu', 'Nghĩa'].map((dept) =>
                             DropdownMenuItem<String?>(
                               value: dept,
-                              child: Text(dept, style: const TextStyle(fontSize: 13)),
+                              child: Text(
+                                dept,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurface
+                                      .withOpacity(0.9),
+                                ),
+                              ),
                             )),
-                        ],
-                        onChanged: (value) {
-                          setState(() => _selectedDepartmentFilter = value);
-                          _applyFilters();
-                        },
-                        isExpanded: true,
-                        style: const TextStyle(fontSize: 13, color: Colors.black87),
+                      ],
+                      onChanged: (value) {
+                        setState(() => _selectedDepartmentFilter = value);
+                        _applyFilters();
+                      },
+                      isExpanded: true,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.9),
                       ),
                     ),
+                  ),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -332,7 +390,7 @@ class _AccountManagementScreenState extends State<AccountManagementScreen>
       pinned: true,
       delegate: _TabBarDelegate(
         Container(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           child: TabBar(
             controller: _tabController,
             onTap: (_) {
@@ -671,7 +729,9 @@ class _AccountManagementScreenState extends State<AccountManagementScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Đặt lại mật khẩu'),
+        backgroundColor: Theme.of(context).cardColor,
+        title: Text('Đặt lại mật khẩu',
+            style: Theme.of(context).textTheme.titleLarge),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -682,7 +742,6 @@ class _AccountManagementScreenState extends State<AccountManagementScreen>
               obscureText: true,
               decoration: const InputDecoration(
                 labelText: 'Mật khẩu mới',
-                border: OutlineInputBorder(),
               ),
             ),
           ],
@@ -718,7 +777,9 @@ class _AccountManagementScreenState extends State<AccountManagementScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('${action.capitalize()} tài khoản'),
+        backgroundColor: Theme.of(context).cardColor,
+        title: Text('${action.capitalize()} tài khoản',
+            style: Theme.of(context).textTheme.titleLarge),
         content: Text('Bạn có chắc muốn $action tài khoản ${user.displayName}?'),
         actions: [
           TextButton(
@@ -745,7 +806,9 @@ class _AccountManagementScreenState extends State<AccountManagementScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Xác nhận xóa'),
+        backgroundColor: Theme.of(context).cardColor,
+        title: Text('Xác nhận xóa',
+            style: Theme.of(context).textTheme.titleLarge),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -783,11 +846,13 @@ class _AccountManagementScreenState extends State<AccountManagementScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: Theme.of(context).cardColor,
         title: Row(
           children: [
             Icon(Icons.warning, color: AppColors.error, size: 28),
             const SizedBox(width: 8),
-            const Text('Xóa vĩnh viễn'),
+            Text('Xóa vĩnh viễn',
+                style: Theme.of(context).textTheme.titleLarge),
           ],
         ),
         content: SingleChildScrollView(

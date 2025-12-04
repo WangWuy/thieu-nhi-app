@@ -216,12 +216,16 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.accountData != null;
+    final theme = Theme.of(context);
+    final onSurface =
+        theme.appBarTheme.foregroundColor ?? theme.colorScheme.onSurface;
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
+        backgroundColor:
+            theme.appBarTheme.backgroundColor ?? theme.colorScheme.surface,
+        foregroundColor: onSurface,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -230,7 +234,8 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
               isEditing
                   ? 'Cập nhật thông tin ${widget.accountData?.displayName ?? ""}'
                   : 'Tạo tài khoản mới cho hệ thống',
-              style: const TextStyle(fontSize: 12, color: Colors.white70),
+              style: TextStyle(
+                  fontSize: 12, color: onSurface.withOpacity(0.7)),
             ),
           ],
         ),
@@ -357,16 +362,20 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Ảnh đại diện',
-          style: TextStyle(fontWeight: FontWeight.w600),
+          style: Theme.of(context)
+              .textTheme
+              .bodyMedium
+              ?.copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 12),
         Row(
           children: [
             CircleAvatar(
               radius: 32,
-              backgroundColor: AppColors.primary.withOpacity(0.1),
+              backgroundColor: AppColors.primary.withOpacity(
+                  Theme.of(context).brightness == Brightness.dark ? 0.25 : 0.1),
               backgroundImage: imageProvider,
               child: imageProvider == null
                   ? const Icon(Icons.person, color: AppColors.primary, size: 32)
@@ -501,12 +510,16 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
   }
 
   Widget _buildDatePicker() {
+    final theme = Theme.of(context);
+    final borderColor = theme.dividerColor;
+    final muted = theme.colorScheme.onSurface.withOpacity(0.7);
     return GestureDetector(
       onTap: _selectBirthDate,
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          border: Border.all(color: AppColors.grey300),
+          color: theme.cardColor,
+          border: Border.all(color: borderColor),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -517,17 +530,18 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Ngày sinh',
-                      style: TextStyle(fontSize: 12, color: AppColors.grey600)),
+                  Text('Ngày sinh',
+                      style: theme.textTheme.labelMedium
+                          ?.copyWith(color: muted, fontSize: 12)),
                   Text(
                     '${_selectedBirthDate.day}/${_selectedBirthDate.month}/${_selectedBirthDate.year}',
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w500),
+                    style: theme.textTheme.bodyLarge
+                        ?.copyWith(fontWeight: FontWeight.w600),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.calendar_today, color: AppColors.grey400),
+            Icon(Icons.calendar_today, color: muted),
           ],
         ),
       ),
@@ -535,10 +549,14 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
   }
 
   Widget _buildRoleSelector() {
+    final theme = Theme.of(context);
+    final muted = theme.colorScheme.onSurface.withOpacity(0.7);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Vai trò', style: TextStyle(fontWeight: FontWeight.w600)),
+        Text('Vai trò',
+            style: theme.textTheme.bodyMedium
+                ?.copyWith(fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
         ...UserRole.values.map((role) => _buildRoleOption(role)),
       ],
@@ -546,6 +564,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
   }
 
   Widget _buildRoleOption(UserRole role) {
+    final theme = Theme.of(context);
     final isSelected = _selectedRole == role;
     final roleData = _getRoleData(role);
 
@@ -563,10 +582,13 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isSelected ? roleData['color'].withOpacity(0.1) : Colors.white,
+          color: isSelected
+              ? roleData['color'].withOpacity(
+                  theme.brightness == Brightness.dark ? 0.2 : 0.1)
+              : theme.cardColor,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected ? roleData['color'] : AppColors.grey300,
+            color: isSelected ? roleData['color'] : theme.dividerColor,
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -579,10 +601,13 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(role.displayName,
-                      style: const TextStyle(fontWeight: FontWeight.bold)),
+                      style: theme.textTheme.bodyMedium
+                          ?.copyWith(fontWeight: FontWeight.bold)),
                   Text(roleData['description'],
-                      style: const TextStyle(
-                          fontSize: 12, color: AppColors.grey600)),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontSize: 12,
+                        color: theme.colorScheme.onSurface.withOpacity(0.7),
+                      )),
                 ],
               ),
             ),
@@ -723,21 +748,39 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+        Text(label,
+            style: Theme.of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
-            border: Border.all(color: AppColors.grey300),
+            border: Border.all(color: Theme.of(context).dividerColor),
             borderRadius: BorderRadius.circular(8),
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<T>(
               value: effectiveValue,
               isExpanded: true,
-              hint: hint != null ? Text(hint) : null,
+              hint: hint != null
+                  ? Text(
+                      hint,
+                      style: TextStyle(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.9)),
+                    )
+                  : null,
               onChanged: onChanged,
               items: items,
+              style: TextStyle(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withOpacity(0.9)),
             ),
           ),
         ),
@@ -813,16 +856,21 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
   }
 
   Widget _buildPreviewRow(String label, String value, IconData icon) {
+    final theme = Theme.of(context);
+    final muted = theme.colorScheme.onSurface.withOpacity(0.7);
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         children: [
-          Icon(icon, size: 16, color: AppColors.grey600),
+          Icon(icon, size: 16, color: muted),
           const SizedBox(width: 8),
-          Text('$label: ', style: const TextStyle(color: AppColors.grey600)),
+          Text('$label: ',
+              style: theme.textTheme.bodyMedium
+                  ?.copyWith(color: muted, fontWeight: FontWeight.w600)),
           Expanded(
               child: Text(value,
-                  style: const TextStyle(fontWeight: FontWeight.w500))),
+                  style: theme.textTheme.bodyMedium
+                      ?.copyWith(fontWeight: FontWeight.w500))),
         ],
       ),
     );

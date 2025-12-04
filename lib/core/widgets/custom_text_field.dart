@@ -25,42 +25,28 @@ class CustomTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final decorationTheme = theme.inputDecorationTheme;
+    final baseDecoration =
+        const InputDecoration().applyDefaults(decorationTheme);
+
     return TextFormField(
       controller: controller,
       obscureText: obscureText,
       keyboardType: keyboardType,
       validator: validator,
       maxLines: obscureText ? 1 : maxLines,
-      style: const TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.w500,
-      ),
-      decoration: InputDecoration(
+      style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500),
+      decoration: baseDecoration.copyWith(
         labelText: label,
-        prefixIcon: Icon(icon, color: AppColors.primary),
+        prefixIcon: Icon(icon,
+            color:
+                decorationTheme.prefixIconColor ?? theme.colorScheme.primary),
         suffixIcon: suffixIcon,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.grey300),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.grey300),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.primary, width: 2),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.error),
-        ),
-        filled: true,
-        fillColor: AppColors.grey50,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 16,
-        ),
+        filled: decorationTheme.filled ?? baseDecoration.filled ?? true,
+        contentPadding: decorationTheme.contentPadding ??
+            baseDecoration.contentPadding ??
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
     );
   }

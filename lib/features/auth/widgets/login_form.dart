@@ -82,29 +82,26 @@ class _LoginFormState extends State<LoginForm> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Container(
       width: double.infinity,
       constraints: const BoxConstraints(maxWidth: 400),
       margin: const EdgeInsets.symmetric(vertical: 20),
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.95),
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFFDC143C).withOpacity(0.1),
+          color: const Color(0xFFDC143C).withOpacity(isDark ? 0.25 : 0.1),
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withOpacity(isDark ? 0.35 : 0.08),
             blurRadius: 25,
             offset: const Offset(0, 12),
             spreadRadius: 0,
-          ),
-          BoxShadow(
-            color: const Color(0xFFDC143C).withOpacity(0.08),
-            blurRadius: 15,
-            offset: const Offset(0, 6),
           ),
         ],
       ),

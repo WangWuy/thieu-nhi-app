@@ -109,12 +109,21 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
   }
 
   Widget _buildBottomNavigationBar(List<TabItem> tabs, UserModel user) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final isDark = scheme.brightness == Brightness.dark;
+    final background =
+        theme.bottomNavigationBarTheme.backgroundColor ?? scheme.surface;
+    final shadowColor =
+        isDark ? Colors.black.withOpacity(0.35) : Colors.black.withOpacity(0.1);
+    final inactiveColor = scheme.onSurface.withOpacity(0.65);
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: background,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: shadowColor,
             blurRadius: 20,
             offset: const Offset(0, -5),
           ),
@@ -137,6 +146,15 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
               // Special styling for QR tab (middle)
               final isQRTab = index == 1;
               final isManualTab = index == 2; // Manual attendance tab
+              final selectedBaseColor =
+                  (isQRTab || isManualTab) ? scheme.secondary : _getRoleColor(user.role);
+              final selectedContainerColor =
+                  selectedBaseColor.withOpacity(isDark ? 0.18 : 0.12);
+              final selectedIconColor = selectedBaseColor.computeLuminance() > 0.5
+                  ? Colors.black
+                  : Colors.white;
+              final iconColor = isActive ? selectedIconColor : inactiveColor;
+              final labelColor = isActive ? selectedBaseColor : inactiveColor;
 
               return Expanded(
                 child: GestureDetector(
@@ -145,11 +163,8 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
                     duration: const Duration(milliseconds: 200),
                     padding: const EdgeInsets.symmetric(vertical: 4),
                     decoration: BoxDecoration(
-                      color: isActive
-                          ? (isQRTab || isManualTab
-                              ? AppColors.secondary.withOpacity(0.1)
-                              : _getRoleColor(user.role).withOpacity(0.1))
-                          : Colors.transparent,
+                      color:
+                          isActive ? selectedContainerColor : Colors.transparent,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Column(
@@ -162,18 +177,15 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
                             isQRTab || isManualTab ? 8 : 6,
                           ),
                           decoration: BoxDecoration(
-                            color: isActive
-                                ? (isQRTab || isManualTab
-                                    ? AppColors.secondary
-                                    : _getRoleColor(user.role))
-                                : Colors.transparent,
+                            color:
+                                isActive ? selectedBaseColor : Colors.transparent,
                             borderRadius: BorderRadius.circular(
                               isQRTab || isManualTab ? 14 : 12,
                             ),
                           ),
                           child: Icon(
                             isActive ? tab.activeIcon : tab.icon,
-                            color: isActive ? Colors.white : AppColors.grey600,
+                            color: iconColor,
                             size: isQRTab || isManualTab ? 22 : 20,
                           ),
                         ),
@@ -185,11 +197,7 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
                               fontSize: 10,
                               fontWeight:
                                   isActive ? FontWeight.w600 : FontWeight.w500,
-                              color: isActive
-                                  ? (isQRTab || isManualTab
-                                      ? AppColors.secondary
-                                      : _getRoleColor(user.role))
-                                  : AppColors.grey600,
+                              color: labelColor,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,

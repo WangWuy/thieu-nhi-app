@@ -18,6 +18,7 @@ class AttendanceStatItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(8),
       child: Column(
@@ -34,9 +35,9 @@ class AttendanceStatItem extends StatelessWidget {
           ),
           Text(
             label,
-            style: const TextStyle(
+            style: theme.textTheme.labelSmall?.copyWith(
               fontSize: 10,
-              color: AppColors.grey600,
+              color: theme.colorScheme.onSurface.withOpacity(0.7),
             ),
           ),
         ],

@@ -12,19 +12,38 @@ class UserDetailsDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final avatarUrl = _resolveAvatarUrl(user.avatarUrl);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final shadowColor =
+        Colors.black.withOpacity(isDark ? 0.35 : 0.12);
+    final borderColor = theme.dividerColor;
+
     return Dialog(
+      backgroundColor: Colors.transparent,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Container(
         constraints: const BoxConstraints(maxWidth: 500),
+        decoration: BoxDecoration(
+          color: theme.cardColor,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: shadowColor,
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            )
+          ],
+          border: Border.all(color: borderColor),
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             // Header
             Container(
               padding: const EdgeInsets.all(20),
-              decoration: const BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: BorderRadius.only(
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(12),
                   topRight: Radius.circular(12),
                 ),
@@ -33,14 +52,14 @@ class UserDetailsDialog extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     radius: 30,
-                    backgroundColor: Colors.white,
+                    backgroundColor: theme.dividerColor,
                     backgroundImage:
                         avatarUrl != null ? NetworkImage(avatarUrl) : null,
                     child: avatarUrl == null
                         ? Text(
                             _getUserInitials(user),
-                            style: const TextStyle(
-                              color: AppColors.primary,
+                            style: TextStyle(
+                              color: theme.colorScheme.onSurface,
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
@@ -54,17 +73,17 @@ class UserDetailsDialog extends StatelessWidget {
                       children: [
                         Text(
                           user.displayName,
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: theme.textTheme.titleMedium?.copyWith(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.onSurface,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           '@${user.username}',
-                          style: const TextStyle(
-                            color: Colors.white70,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurface.withOpacity(0.7),
                             fontSize: 14,
                           ),
                         ),
@@ -72,15 +91,15 @@ class UserDetailsDialog extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: theme.colorScheme.primary.withOpacity(
+                                theme.brightness == Brightness.dark ? 0.25 : 0.12),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
                             user.role.displayName,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: theme.colorScheme.primary,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
@@ -89,7 +108,7 @@ class UserDetailsDialog extends StatelessWidget {
                   ),
                   IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close, color: Colors.white),
+                    icon: Icon(Icons.close, color: theme.colorScheme.onSurface),
                   ),
                 ],
               ),
@@ -174,11 +193,12 @@ class UserDetailsDialog extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.grey[50],
+                color: theme.cardColor,
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(12),
                   bottomRight: Radius.circular(12),
                 ),
+                border: Border(top: BorderSide(color: borderColor)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -248,7 +268,8 @@ class DetailSection extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
+                color: AppColors.primary.withOpacity(
+                    Theme.of(context).brightness == Brightness.dark ? 0.2 : 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
@@ -260,10 +281,10 @@ class DetailSection extends StatelessWidget {
             const SizedBox(width: 12),
             Text(
               title,
-              style: const TextStyle(
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: AppColors.primary,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ],
@@ -272,9 +293,9 @@ class DetailSection extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.grey[50],
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey[200]!),
+            border: Border.all(color: Theme.of(context).dividerColor),
           ),
           child: Column(
             children: items.asMap().entries.map((entry) {
@@ -289,7 +310,10 @@ class DetailSection extends StatelessWidget {
                         Icon(
                           item.icon,
                           size: 16,
-                          color: Colors.grey[600],
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.7),
                         ),
                         const SizedBox(width: 8),
                       ],
@@ -297,21 +321,27 @@ class DetailSection extends StatelessWidget {
                         width: 120,
                         child: Text(
                           '${item.label}:',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                            fontWeight: FontWeight.w500,
-                          ),
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                fontSize: 14,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface,
+                                fontWeight: FontWeight.w500,
+                              ),
                         ),
                       ),
                       Expanded(
                         child: Text(
                           item.value,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: item.textColor ?? Colors.grey[800],
-                          ),
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: item.textColor ??
+                                    Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withOpacity(0.9),
+                              ),
                         ),
                       ),
                     ],
